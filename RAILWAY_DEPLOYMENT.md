@@ -7,7 +7,7 @@ OSM 2.0 is the deployment target for the backend. It is a modular monolith: one 
 Deploy this folder as the backend service:
 
 ```text
-OSM 2.0
+C:\oosm
 ```
 
 Railway will use `Dockerfile`, build `app`, and run `osm-monolith.jar`.
