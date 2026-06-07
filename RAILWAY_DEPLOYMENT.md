@@ -23,7 +23,17 @@ DB_PASS=<password>
 HIBERNATE_DDL_AUTO=update
 ```
 
-For Railway PostgreSQL, copy the values from the database variables and compose `DB_URL` manually as a JDBC URL.
+Railway PostgreSQL variables can also be used directly:
+
+```text
+PGHOST=<railway-postgres-host>
+PGPORT=<railway-postgres-port>
+PGDATABASE=<railway-postgres-database>
+PGUSER=<railway-postgres-user>
+PGPASSWORD=<railway-postgres-password>
+```
+
+`DB_URL`, `DB_USER`, and `DB_PASS` override the `PG*` variables when both are present.
 
 ## Required Runtime Variables
 
@@ -42,6 +52,8 @@ ONESIGNAL_API_KEY=<onesignal-api-key>
 Railway injects `PORT`; `application.yml` now reads it automatically.
 
 Keep `OAUTH2_CLIENT_SECRET` equal to the frontend Basic auth header unless the frontend is rebuilt with a matching header.
+
+Railway healthcheck uses `/actuator/health/liveness`; this confirms the service process is alive without failing deployment because PostgreSQL readiness is still warming up.
 
 ## Local Build
 

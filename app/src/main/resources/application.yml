@@ -12,9 +12,9 @@ spring:
     name: ${SPRING_APP_NAME:osm-monolith}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://localhost:5432/osm}
-    username: ${DB_USER:postgres}
-    password: ${DB_PASS:root}
+    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:osm}}
+    username: ${DB_USER:${PGUSER:postgres}}
+    password: ${DB_PASS:${PGPASSWORD:root}}
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-init-sql: SET search_path TO public
@@ -111,6 +111,8 @@ management:
   endpoint:
     health:
       show-details: always
+      probes:
+        enabled: true
 
 logging:
   level:
