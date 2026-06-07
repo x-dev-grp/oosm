@@ -1,0 +1,250 @@
+package com.xdev.ooms.inventory.service;
+
+import com.xdev.ooms.inventory.Enum.ProduitFinalType;
+import com.xdev.ooms.inventory.dto.BOMDto;
+import com.xdev.ooms.inventory.dto.BomLineDto;
+import com.xdev.ooms.inventory.exception.InventoryBusinessException;
+import com.xdev.ooms.inventory.exception.ResourceNotFoundException;
+import com.xdev.ooms.inventory.entity.ArticleSec;
+import com.xdev.ooms.inventory.entity.BOM;
+import com.xdev.ooms.inventory.entity.BomLine;
+import com.xdev.ooms.inventory.entity.ProduitFinal;
+import com.xdev.ooms.inventory.repository.ArticleSecRepository;
+import com.xdev.ooms.inventory.repository.BomRepository;
+import com.xdev.ooms.inventory.repository.ProduitFinalRepository;
+import com.xdev.ooms.sharedkernel.qr.CodeGenerator;
+import com.xdev.ooms.sharedkernel.repos.BaseRepository;
+import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+@Service
+public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
+
+    private final BomRepository bomRepository;
+    private final ProduitFinalRepository produitFinalRepository;
+    private final ArticleSecRepository articleRepository;
+
+    @Autowired
+    public BomService(BaseRepository<BOM> repository,
+                      BomRepository bomRepository,
+                      ProduitFinalRepository produitFinalRepository,
+                      CodeGenerator codeGenerator,
+                      ArticleSecRepository articleRepository,
+                      ModelMapper modelMapper) {
+        super(repository, codeGenerator, modelMapper);
+        this.bomRepository = bomRepository;
+        this.produitFinalRepository = produitFinalRepository;
+        this.articleRepository = articleRepository;
+    }
+
+    @Override
+    public Class<BOM> getEntityClass() {
+        return BOM.class;
+    }
+
+    @Transactional(readOnly = true)
+    public BOMDto getBomById(UUID id) {
+        BOM bom = bomRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
+        return convertToDto(bom);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BOMDto> getBomsByProduct(UUID productId) {
+        return bomRepository.findByProduitFinalId(productId).stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public BOMDto getActiveBomForProduct(UUID productId) {
+        return bomRepository.findFirstByProduitFinalIdAndActiveTrue(productId)
+                .map(this::convertToDto)
+                .orElse(null);
+    }
+
+    @Transactional
+    public BOMDto activateBom(UUID bomId) {
+        BOM bom = bomRepository.findById(bomId)
+                .orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + bomId));
+        if (bom.getProduitFinal() == null) {
+            throw new InventoryBusinessException("BOM_NO_PRODUCT", "Impossible d'activer une nomenclature sans produit");
+        }
+        UUID productId = bom.getProduitFinal().getId();
+        List<BOM> siblings = bomRepository.findByProduitFinalId(productId);
+        for (BOM other : siblings) {
+            other.setActive(other.getId().equals(bomId));
+        }
+        return convertToDto(bomRepository.saveAll(siblings).stream()
+                .filter(b -> b.getId().equals(bomId))
+                .findFirst()
+                .orElse(bom));
+    }
+
+    @Transactional
+    public BOMDto createBom(BOMDto bomDto) {
+        validateBomDto(bomDto, true);
+
+        ProduitFinal produitFinal = produitFinalRepository.findById(bomDto.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + bomDto.getProductId()));
+        if (produitFinal.getType() == ProduitFinalType.VRAC) {
+            throw new InventoryBusinessException("BOM_VRAC_NOT_ALLOWED", "Une nomenclature emballage n'est pas applicable aux produits VRAC");
+        }
+
+        int count = bomRepository.findByProduitFinalId(bomDto.getProductId()).size();
+        String version = "V" + (count + 1);
+
+        BOM bom = new BOM();
+        bom.setProduitFinal(produitFinal);
+        bom.setVersion(version);
+        bom.setLines(buildLines(bom, bomDto.getLines()));
+
+        boolean shouldActivate = Boolean.TRUE.equals(bomDto.getActive()) || count == 0;
+        if (shouldActivate) {
+            List<BOM> existing = bomRepository.findByProduitFinalId(produitFinal.getId());
+            existing.forEach(other -> other.setActive(false));
+            if (!existing.isEmpty()) {
+                bomRepository.saveAll(existing);
+            }
+            bom.setActive(true);
+        }
+
+        BOM saved = bomRepository.save(bom);
+        return convertToDto(saved);
+    }
+
+    @Transactional
+    public BOMDto updateBom(UUID id, BOMDto bomDto) {
+        BOM bom = bomRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
+        validateBomDto(bomDto, false);
+
+        if (bomDto.getProductId() == null) {
+            throw new InventoryBusinessException("BOM_PRODUCT_REQUIRED", "Le produit fini est obligatoire");
+        }
+
+        ProduitFinal produitFinal = produitFinalRepository.findById(bomDto.getProductId())
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + bomDto.getProductId()));
+        if (produitFinal.getType() == ProduitFinalType.VRAC) {
+            throw new InventoryBusinessException("BOM_VRAC_NOT_ALLOWED", "Une nomenclature emballage n'est pas applicable aux produits VRAC");
+        }
+
+        bom.setProduitFinal(produitFinal);
+        if (bomDto.getVersion() != null && !bomDto.getVersion().isBlank()) {
+            bom.setVersion(bomDto.getVersion());
+        }
+        bom.getLines().clear();
+        bom.getLines().addAll(buildLines(bom, bomDto.getLines()));
+
+        if (Boolean.TRUE.equals(bomDto.getActive())) {
+            List<BOM> siblings = bomRepository.findByProduitFinalId(produitFinal.getId());
+            for (BOM other : siblings) {
+                other.setActive(other.getId().equals(bom.getId()));
+            }
+            if (!siblings.isEmpty()) {
+                return convertToDto(bomRepository.saveAll(siblings).stream()
+                        .filter(b -> b.getId().equals(bom.getId()))
+                        .findFirst()
+                        .orElse(bom));
+            }
+            bom.setActive(true);
+        } else if (Boolean.FALSE.equals(bomDto.getActive())) {
+            bom.setActive(false);
+        }
+
+        BOM updated = bomRepository.save(bom);
+        return convertToDto(updated);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BOMDto> getAllBoms() {
+        return bomRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void deleteBom(UUID id) {
+        BOM bom = bomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
+        if (bom.isActive()) {
+            throw new InventoryBusinessException("BOM_ACTIVE_DELETE", "Desactivez la nomenclature avant de la supprimer");
+        }
+        bomRepository.deleteById(id);
+    }
+
+    private void validateBomDto(BOMDto bomDto, boolean creating) {
+        if (bomDto.getProductId() == null) {
+            throw new InventoryBusinessException("BOM_PRODUCT_REQUIRED", "Le produit fini est obligatoire");
+        }
+        if (bomDto.getLines() == null || bomDto.getLines().isEmpty()) {
+            throw new InventoryBusinessException("BOM_LINES_REQUIRED", "La nomenclature doit contenir au moins une ligne");
+        }
+
+        Set<UUID> articleIds = new HashSet<>();
+        for (BomLineDto lineDto : bomDto.getLines()) {
+            if (lineDto.getArticleId() == null) {
+                throw new InventoryBusinessException("BOM_LINE_ARTICLE_REQUIRED", "Chaque ligne doit referencer un article");
+            }
+            if (!articleIds.add(lineDto.getArticleId())) {
+                throw new InventoryBusinessException("BOM_DUPLICATE_ARTICLE", "Un article ne peut apparaitre qu'une seule fois dans la nomenclature");
+            }
+            if (lineDto.getQuantity() <= 0) {
+                throw new InventoryBusinessException("BOM_LINE_QTY_INVALID", "La quantite par unite doit etre positive");
+            }
+            ArticleSec article = articleRepository.findById(lineDto.getArticleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Article non trouve avec l'id : " + lineDto.getArticleId()));
+            if (!Boolean.TRUE.equals(article.getActif())) {
+                throw new InventoryBusinessException(
+                        "BOM_INACTIVE_ARTICLE",
+                        "L'article " + article.getNom() + " est inactif et ne peut pas etre utilise"
+                );
+            }
+        }
+    }
+
+    private List<BomLine> buildLines(BOM bom, List<BomLineDto> lineDtos) {
+        return lineDtos.stream().map(lineDto -> {
+            ArticleSec article = articleRepository.findById(lineDto.getArticleId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Article non trouve avec l'id : " + lineDto.getArticleId()));
+            BomLine line = new BomLine();
+            line.setBom(bom);
+            line.setArticle(article);
+            line.setQuantity(lineDto.getQuantity());
+            line.setUnitOfMeasure(article.getUm());
+            return line;
+        }).collect(Collectors.toList());
+    }
+
+    private BOMDto convertToDto(BOM bom) {
+        BOMDto dto = new BOMDto();
+        dto.setId(bom.getId());
+        if (bom.getProduitFinal() != null) {
+            dto.setProductId(bom.getProduitFinal().getId());
+            dto.setProductName(bom.getProduitFinal().getName());
+        } else {
+            dto.setProductName("Produit non assigne");
+        }
+        dto.setVersion(bom.getVersion());
+        dto.setActive(bom.isActive());
+
+        List<BomLineDto> lineDtos = bom.getLines().stream().map(line -> {
+            BomLineDto lineDto = new BomLineDto();
+            lineDto.setId(line.getId());
+            if (line.getArticle() != null) {
+                lineDto.setArticleId(line.getArticle().getId());
+                lineDto.setArticleName(line.getArticle().getNom());
+            } else {
+                lineDto.setArticleName("Article inconnu");
+            }
+            lineDto.setQuantity(line.getQuantity());
+            lineDto.setUnitOfMeasure(line.getUnitOfMeasure());
+            return lineDto;
+        }).collect(Collectors.toList());
+        dto.setLines(lineDtos);
+        return dto;
+    }
+}

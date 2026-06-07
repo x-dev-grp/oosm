@@ -1,0 +1,20 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: osm-monolith-postgres
+    environment:
+      POSTGRES_DB: osm
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    volumes:
+      - osm_monolith_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d osm"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  osm_monolith_postgres_data:

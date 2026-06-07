@@ -1,0 +1,13 @@
+.git
+.idea
+.mvn
+**/target
+**/.classpath
+**/.project
+**/.settings
+*.iml
+*.log
+.env
+.env.*
+migration-reports
+scripts

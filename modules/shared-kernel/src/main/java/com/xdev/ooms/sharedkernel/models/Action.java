@@ -1,0 +1,66 @@
+package com.xdev.ooms.sharedkernel.models;
+
+public enum Action {
+    READ,
+    DETAIL,
+    CREATE,
+    UPDATE,
+    DELETE,
+    CANCEL,
+    OLIVE_QUALITY,
+    OIL_QUALITY,
+    UPDATE_OLIVE_QUALITY,
+    UPDATE_OIL_QUALITY,
+    TO_PROD,
+    COMPLETE,
+    OIL_PAYMENT,
+    OIL_OUT_TRANSACTION,
+    OIL_IN_TRANSACTION,
+    OIL_RECEPTION,
+    SET_PRICE,
+    ASSIGN_SUPPLIER,
+    COMPLETE_PAYMENT_DETAILS,
+    VALIDATE,
+    PAY,
+    GEN_PDF,
+    GEN_INVOICE,
+    GEN_PDF_QC_OIL,
+    GEN_PDF_QC_OLIVE,
+    GEN_PDF_PRODUCTION,
+    APPROVE,
+    REJECT,
+    MAINTENANCE,
+    PLANNING,
+    DELIVERYHISTORY,
+    START,
+    PAUSE,
+    RESUME,
+    CLOSE,
+    SHIP,
+    DELIVER,
+    ADD_LINE,
+    REMOVE_LINE,
+    UPDATE_STATUS,
+    DRAFT,
+    FINALIZE,
+    EXPORT,
+    SYNC,
+    REPORT,
+    //Actions liées au stock / inventaire
+    ENTREE_STOCK ,
+
+    SORTIE_STOCK,
+
+    AJUSTER_STOCK,
+
+    ASSIGN_EMPLACEMENT,
+
+    RESERVER_STOCK,
+
+    LIBERER_STOCK,
+
+    CHECK_STOCK,
+
+    TRANSFERER_STOCK,
+
+}

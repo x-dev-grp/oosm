@@ -1,0 +1,89 @@
+package com.xdev.ooms.production.service;
+
+
+import com.xdev.ooms.production.dto.*;
+import com.xdev.ooms.production.feignClients.services.FinancialTransactionFeignService;
+import com.xdev.ooms.production.model.Waste;
+import com.xdev.ooms.production.repository.WasteRepository;
+import  com.xdev.ooms.sharedkernel.Enum.*;
+import com.xdev.ooms.sharedkernel.communicator.models.shared.FinancialTransactionDto;
+import com.xdev.ooms.production.dto.SupplierDto;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import org.modelmapper.ModelMapper;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+@Service
+public class WasteService extends BaseServiceImpl<Waste, WasteDTO, WasteDTO> {
+
+    private final FinancialTransactionFeignService financialTransactionFeignService;
+    private final WasteRepository wasteRepository;
+
+    public WasteService(WasteRepository repository,
+                        ModelMapper modelMapper,
+                        FinancialTransactionFeignService financialTransactionFeignService, WasteRepository wasteRepository) {
+        super(repository, modelMapper);
+        this.financialTransactionFeignService = financialTransactionFeignService;
+        this.wasteRepository = wasteRepository;
+    }
+
+    @Override
+    public Set<Action> actionsMapping(Waste waste) {
+        Set<Action> actions = new HashSet<>();
+        actions.add(Action.UPDATE);
+        actions.add(Action.DELETE);
+        actions.add(Action.READ);
+        return actions;
+    }
+
+    @Transactional
+    public void processPayment(PaymentDTO paymentDTO) {
+        if (paymentDTO.getIdOperation() == null) {
+            return;
+        }
+        Waste waste = wasteRepository.findByIdAndIsDeletedFalse(paymentDTO.getIdOperation()).orElse(null);
+        if (waste == null) {
+            throw new IllegalArgumentException("Waste Sale not found for ID: " + paymentDTO.getIdOperation());
+        }
+        BigDecimal paidAmount = waste.getPaidAmount() != null ? BigDecimal.valueOf(waste.getPaidAmount()) : BigDecimal.ZERO;
+        BigDecimal unpaidAmount = waste.getUnpaidAmount() != null ? BigDecimal.valueOf(waste.getUnpaidAmount()) : BigDecimal.ZERO;
+
+        double payment = paymentDTO.getAmount() != null ? paymentDTO.getAmount() : 0d;
+
+        waste.setPaid(payment > 0 && payment == unpaidAmount.doubleValue());
+        waste.setPaidAmount((paidAmount.add(BigDecimal.valueOf(payment))).doubleValue());
+        waste.setUnpaidAmount((unpaidAmount.subtract(BigDecimal.valueOf(payment))).doubleValue());
+
+        wasteRepository.save(waste);
+        prepareFinanacalTransaction(paymentDTO, payment, waste, TransactionDirection.INBOUND, TransactionType.WASTE_SALE, OperationType.WASTE_SALE);
+
+    }
+    private void prepareFinanacalTransaction(PaymentDTO paymentDTO, double amount, Waste delivery, TransactionDirection direction, TransactionType transactionType, OperationType wasteSale) {
+        // Build Financial Transaction DTO
+        FinancialTransactionDto financialTransactionDto = new FinancialTransactionDto();
+        financialTransactionDto.setTransactionType(transactionType);
+        financialTransactionDto.setDirection(direction);
+        financialTransactionDto.setAmount(BigDecimal.valueOf(amount));
+        financialTransactionDto.setCurrency(paymentDTO.getCurrency() != null ? paymentDTO.getCurrency() : Currency.TND);
+        financialTransactionDto.setPaymentMethod(paymentDTO.getPaymentMethod() != null ? paymentDTO.getPaymentMethod() : PaymentMethod.CASH);
+        financialTransactionDto.setBankAccount(paymentDTO.getBankAccount() != null ? paymentDTO.getBankAccount() : null);
+        financialTransactionDto.setCheckNumber(paymentDTO.getCheckNumber() != null ? paymentDTO.getCheckNumber() : null);
+        financialTransactionDto.setLotNumber("N/A");
+        financialTransactionDto.setsupplier(paymentDTO.getSupplier() != null ? modelMapper.map(paymentDTO.getSupplier(), com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class): null);
+        financialTransactionDto.setTransactionDate(LocalDateTime.now());
+        financialTransactionDto.setApproved(true);
+        financialTransactionDto.setApprovalDate(LocalDateTime.now());
+        financialTransactionDto.setApprovedBy(null);
+        financialTransactionDto.setExternalTransactionId(delivery.getExternalId().toString());
+        financialTransactionDto.setOperationType(wasteSale);
+
+        // Send to finance service
+        financialTransactionFeignService.create(financialTransactionDto);
+    }
+}

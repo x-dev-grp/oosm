@@ -1,0 +1,140 @@
+server:
+  address: 0.0.0.0
+  port: 8086
+  max-http-request-header-size: 32KB      # Boot 3.x+
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: hr-service
+
+  main:
+    banner-mode: console
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/osmRh
+    username: postgres
+    password: root
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    jdbc:
+      dialect: postgresql
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: xdevgroupe@gmail.com
+    password: aqxe aofi yxzn qrvy
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          timeout: 5000
+          connectiontimeout: 5000
+      default-encoding: UTF-8
+      messages:
+        cache-duration: PT1S
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: http://localhost:8088
+          jwk-set-uri: http://localhost:8088/oauth2/jwks
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 60000
+            loggerLevel: basic
+eureka:
+  client:
+    # pull the registry every 5s (default 30s)
+    registry-fetch-interval-seconds: 5
+    # don’t block startup waiting for registry sync
+    wait-for-registry-sync: false
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    hostname: ${HOSTNAME:localhost}
+    # heartbeat every 5s (default 30s)
+    lease-renewal-interval-in-seconds: 5
+    # expire missing instances after ~15s (default 90s)
+    lease-expiration-duration-in-seconds: 15
+
+
+
+logging:
+  level:
+    com.osm.finance_service: DEBUG
+    com.xdev: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    feign: DEBUG
+    io.github.resilience4j: DEBUG
+    com.netflix.discovery: ${LOG_LEVEL_EUREKA:WARN}
+    org.springframework.web.client.RestTemplate: ${LOG_LEVEL_REST:WARN}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+
+# Resilience4j Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      genericService:
+        register-health-indicator: true
+        failure-rate-threshold: 50
+        minimum-number-of-calls: 5
+        automatic-transition-from-open-to-half-open-enabled: true
+        wait-duration-in-open-state: 30s
+        permitted-number-of-calls-in-half-open-state: 3
+        sliding-window-size: 10
+        sliding-window-type: count_based
+
+  retry:
+    instances:
+      genericService:
+        max-attempts: 3
+        wait-duration: 2s
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - feign.RetryableException
+
+  timelimiter:
+    instances:
+      genericService:
+        timeout-duration: 70s
+        cancel-running-future: true
+
+  spring:
+          docker:
+            compose:
+              enabled: false
+management:
+  endpoint:
+    web:
+      exposure:
+        include:*
+    health:
+      show-details: always

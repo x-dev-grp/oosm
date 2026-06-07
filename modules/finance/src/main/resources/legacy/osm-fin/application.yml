@@ -1,0 +1,136 @@
+spring:
+  application:
+    name: ${SPRING_APP_NAME:finance-service}
+
+  main:
+    banner-mode: ${BANNER_MODE:console}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/osmfinance}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:root}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    jdbc:
+      dialect: postgresql
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:xdevgroupe@gmail.com}
+    password: ${MAIL_PASS:changeme}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          timeout: ${MAIL_TIMEOUT:5000}
+          connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
+      default-encoding: UTF-8
+      messages:
+        cache-duration: ${MAIL_MESSAGES_CACHE_DURATION:PT1S}
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8088}
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8088/oauth2/jwks}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: ${FEIGN_CONNECT_TIMEOUT:10000}
+            readTimeout: ${FEIGN_READ_TIMEOUT:60000}
+            loggerLevel: ${FEIGN_LOGGER_LEVEL:basic}
+onesignal:
+  app-id: e548b208-cac7-4a46-833b-e2ad16add4ac
+  api-key: os_v2_app_4velecgky5fenaz34kwrnlouvqfrkkmn2xuebsu67orcddmxhzdwahpph7rbaqrqbaw4o5dl2fg5z52kkk3u6jy47lxmikwg3vjjuuy
+  endpoint: "https://onesignal.com/api/v1/notifications"
+
+eureka:
+  client:
+    registry-fetch-interval-seconds: ${EUREKA_REGISTRY_FETCH_INTERVAL_SECONDS:5}
+    wait-for-registry-sync: ${EUREKA_WAIT_FOR_REGISTRY_SYNC:false}
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: ${EUREKA_PREFER_IP_ADDRESS:true}
+    hostname: ${HOSTNAME:localhost}
+    lease-renewal-interval-in-seconds: ${EUREKA_LEASE_RENEWAL_INTERVAL:5}
+    lease-expiration-duration-in-seconds: ${EUREKA_LEASE_EXPIRATION_DURATION:15}
+
+server:
+  port: ${SERVER_PORT:8085}
+  max-http-request-header-size: ${MAX_HTTP_REQUEST_HEADER_SIZE:32KB}  # Boot 3.x+
+  error:
+    include-message: always
+    include-binding-errors: always
+
+logging:
+  level:
+    com.osm.finance_service: ${LOG_LEVEL_OSM:DEBUG}
+    com.xdev: ${LOG_LEVEL_XDEV:DEBUG}
+    org.springframework.security: ${LOG_LEVEL_SECURITY:DEBUG}
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.hibernate.SQL: ${LOG_LEVEL_HIBERNATE_SQL:WARN}
+    org.hibernate.type.descriptor.sql.BasicBinder: ${LOG_LEVEL_HIBERNATE_BINDER:WARN}
+    feign: ${LOG_LEVEL_FEIGN:DEBUG}
+    io.github.resilience4j: ${LOG_LEVEL_RESILIENCE4J:DEBUG}
+    com.netflix.discovery: ${LOG_LEVEL_EUREKA:WARN}
+    org.springframework.web.client.RestTemplate: ${LOG_LEVEL_REST:WARN}
+
+springdoc:
+  api-docs:
+    path: ${SPRINGDOC_API_DOCS_PATH:/v3/api-docs}
+  swagger-ui:
+    path: ${SPRINGDOC_SWAGGER_UI_PATH:/swagger-ui.html}
+
+# Resilience4j (parameterized via env)
+resilience4j:
+  circuitbreaker:
+    instances:
+      genericService:
+        register-health-indicator: ${CB_REGISTER_HEALTH_INDICATOR:true}
+        failure-rate-threshold: ${CB_FAILURE_RATE_THRESHOLD:50}
+        minimum-number-of-calls: ${CB_MIN_CALLS:5}
+        automatic-transition-from-open-to-half-open-enabled: ${CB_AUTO_TRANSITION:true}
+        wait-duration-in-open-state: ${CB_OPEN_STATE_WAIT:30s}
+        permitted-number-of-calls-in-half-open-state: ${CB_PERMITTED_CALLS_HALF_OPEN:3}
+        sliding-window-size: ${CB_SLIDING_WINDOW_SIZE:10}
+        sliding-window-type: ${CB_SLIDING_WINDOW_TYPE:count_based}
+
+  retry:
+    instances:
+      genericService:
+        max-attempts: ${RETRY_MAX_ATTEMPTS:3}
+        wait-duration: ${RETRY_WAIT_DURATION:2s}
+        retry-exceptions:
+          - java.net.ConnectException
+          - java.net.SocketTimeoutException
+          - feign.RetryableException
+
+  timelimiter:
+    instances:
+      genericService:
+        timeout-duration: ${TL_TIMEOUT_DURATION:70s}
+        cancel-running-future: ${TL_CANCEL_RUNNING_FUTURE:true}
+management:
+  endpoint:
+    web:
+      exposure:
+        include:*
+    health:
+      show-details: always

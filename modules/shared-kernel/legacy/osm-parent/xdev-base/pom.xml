@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ============================================================ -->
+    <!-- Parent POM : hérite des configurations communes              -->
+    <!-- ============================================================ -->
+    <parent>
+        <groupId>com.xdev</groupId>
+        <artifactId>xdev-parent</artifactId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+
+    <!-- ============================================================ -->
+    <!-- Informations du projet                                       -->
+    <!-- ============================================================ -->
+    <artifactId>xdev-base</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <name>xdev-base</name>
+    <description>xdev-base - Module de base avec génération QR code</description>
+
+    <!-- ============================================================ -->
+    <!-- Dépendances du projet                                        -->
+    <!-- ============================================================ -->
+    <dependencies>
+
+        <!-- ==================== SPRING BOOT STARTERS ==================== -->
+
+        <!-- Spring Boot Starter Security : Sécurité et authentification -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- OAuth2 Resource Server : Protection des APIs REST -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter : Démarrage de base Spring -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Data JPA : Accès aux données avec Hibernate -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Web : APIs REST, contrôleurs, etc. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- Spring Boot Starter Mail : Envoi d'emails -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- ==================== UTILITAIRES ET MAPPING ==================== -->
+
+        <!-- ModelMapper : Mapping entre DTO et Entités -->
+        <dependency>
+            <groupId>org.modelmapper</groupId>
+            <artifactId>modelmapper</artifactId>
+        </dependency>
+
+        <!-- Support pour l'envoi d'emails avec Spring -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
+
+        <!-- ==================== AUDIT ET HISTORISATION ==================== -->
+
+        <!-- Hibernate Envers : Audit et versionnement des entités -->
+        <dependency>
+            <groupId>org.hibernate.orm</groupId>
+            <artifactId>hibernate-envers</artifactId>
+        </dependency>
+
+        <!-- Spring Data Envers : Support pour les audits avec Spring Data -->
+        <dependency>
+            <groupId>org.springframework.data</groupId>
+            <artifactId>spring-data-envers</artifactId>
+        </dependency>
+
+        <!-- ==================== BASE DE DONNÉES ==================== -->
+
+        <!-- PostgreSQL : Driver JDBC pour PostgreSQL -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ==================== MICROSERVICES ==================== -->
+
+        <!-- Eureka Client : Découverte de services (microservices) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+        </dependency>
+
+        <!-- ==================== DOCUMENTATION API ==================== -->
+
+        <!-- SpringDoc OpenAPI : Documentation Swagger/OpenAPI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+        </dependency>
+
+        <!-- ==================== GÉNÉRATION DE FICHIERS ==================== -->
+
+        <!-- iTextPDF : Génération de documents PDF -->
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>5.5.13.3</version>
+        </dependency>
+
+        <!-- Apache Commons CSV : Lecture/écriture de fichiers CSV -->
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-csv</artifactId>
+            <version>1.14.0</version>
+        </dependency>
+
+        <!-- Apache POI : Lecture/écriture de fichiers Excel (format XLS) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi</artifactId>
+            <version>5.2.3</version>
+        </dependency>
+
+        <!-- Apache POI OOXML : Lecture/écriture de fichiers Excel (format XLSX) -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.2.3</version>
+        </dependency>
+
+        <!-- ==================== GÉNÉRATION DE QR CODES ==================== -->
+        <!-- ZXing Core : Noyau pour la génération et lecture de QR codes -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+
+        <!-- ZXing JavaSE : Support Java pour générer des images de QR codes -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>javase</artifactId>
+            <version>3.5.3</version>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- ================ FIN GÉNÉRATION DE QR CODES ================= -->
+
+    </dependencies>
+
+</project>

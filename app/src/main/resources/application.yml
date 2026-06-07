@@ -1,0 +1,123 @@
+server:
+  address: 0.0.0.0
+  port: ${PORT:${SERVER_PORT:8084}}
+  forward-headers-strategy: framework
+  max-http-request-header-size: 32KB
+  error:
+    include-message: always
+    include-binding-errors: always
+
+spring:
+  application:
+    name: ${SPRING_APP_NAME:osm-monolith}
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/osm}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:root}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      connection-init-sql: SET search_path TO public
+
+  flyway:
+    enabled: false
+
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:true}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    properties:
+      hibernate:
+        default_schema: public
+        format_sql: true
+        envers:
+          audit_table_suffix: _aud
+          revision_field_name: rev
+          revision_type_field_name: revtype
+        id:
+          db_structure_naming_strategy: standard
+
+  sql:
+    init:
+      mode: never
+
+  data:
+    jdbc:
+      dialect: postgresql
+
+  security:
+    oauth2:
+      resource-server:
+        jwt:
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8084/oauth2/jwks}
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8084}
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8084/oauth2/jwks}
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:xdevgroupe@gmail.com}
+    password: ${MAIL_PASS:jzea krmd ubpo nlos}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          timeout: ${MAIL_TIMEOUT:5000}
+          connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
+
+oauth2:
+  client:
+    id: ${OAUTH2_CLIENT_ID:osm-client}
+    secret: ${OAUTH2_CLIENT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
+
+otp:
+  code:
+    length: 6
+    expiry:
+      minutes: 15
+  resend:
+    delay:
+      minutes: 2
+  max:
+    attempts: 3
+
+app:
+  frontend:
+    base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
+
+onesignal:
+  app-id: ${ONESIGNAL_APP_ID:e548b208-cac7-4a46-833b-e2ad16add4ac}
+  api-key: ${ONESIGNAL_API_KEY:os_v2_app_4velecgky5fenaz34kwrnlouvqygyzrdzj3eb3ul5kbvtv7lywxz76qxofcuoatnskdgszlm7om2rgcnbtdxm5wnmeqnyyj5t657rvq}
+  endpoint: ${ONESIGNAL_ENDPOINT:https://onesignal.com/api/v1/notifications}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.xdev.ooms.security: INFO
+    org.springframework.security: INFO
+    org.springframework.security.oauth2: INFO
+    org.springframework.web: ${LOG_LEVEL_WEB:INFO}
+    org.hibernate.SQL: WARN
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    org.springframework.web.client.RestTemplate: ${LOG_LEVEL_REST:WARN}

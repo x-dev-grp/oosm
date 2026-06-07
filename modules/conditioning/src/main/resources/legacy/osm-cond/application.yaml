@@ -1,0 +1,123 @@
+server:
+  port: ${SERVER_PORT:8089}
+  max-http-request-header-size: 32KB      # Boot 3.x+
+  error:
+    include-message: always
+    include-binding-errors: always
+
+
+spring:
+  application:
+    name: ${SPRING_APP_NAME:conditioning-service}
+
+  main:
+    banner-mode: console
+
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/osmoc}
+    username: ${DB_USER:postgres}
+    password: ${DB_PASS:root}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: ${HIBERNATE_DDL_AUTO:update}
+    show-sql: ${SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+
+  data:
+    jdbc:
+      dialect: postgresql
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USER:xdevgroupe@gmail.com}
+    password: ${MAIL_PASS:changeme}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_SMTP_AUTH:true}
+          starttls:
+            enable: ${MAIL_STARTTLS:true}
+          timeout: ${MAIL_TIMEOUT:5000}
+          connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
+      default-encoding: UTF-8
+      messages:
+        cache-duration: PT1S   # 1 s
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8088}
+          jwk-set-uri: ${JWK_SET_URI:http://localhost:8088/oauth2/jwks}
+
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 60000
+            loggerLevel: basic
+
+eureka:
+  client:
+    # pull the registry every 5s (default 30s)
+    registry-fetch-interval-seconds: 5
+    # don’t block startup waiting for registry sync
+    wait-for-registry-sync: false
+    service-url:
+      defaultZone: ${EUREKA_DEFAULT_ZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+    hostname: ${HOSTNAME:localhost}
+    # heartbeat every 5s (default 30s)
+    lease-renewal-interval-in-seconds: 5
+    # expire missing instances after ~15s (default 90s)
+    lease-expiration-duration-in-seconds: 15
+
+
+logging:
+  level:
+    com.osm.oilproductionservice: DEBUG
+    com.xdev: DEBUG
+    org.springframework.security: DEBUG
+    org.springframework.web: ${LOG_LEVEL_WEB:DEBUG}
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: WARN
+    feign: DEBUG
+    com.netflix.discovery: ${LOG_LEVEL_EUREKA:WARN}
+    org.springframework.web.client.RestTemplate: ${LOG_LEVEL_REST:WARN}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+management:
+  endpoint:
+    web:
+      exposure:
+        include:*
+    health:
+      show-details: always
+inventory:
+  service:
+    url: ${INVENTORY_SERVICE_URL:http://localhost:1234}
+production:
+  service:
+    url: ${PRODUCTION_SERVICE_URL:http://localhost:8083}
+hr:
+  service:
+    url: ${HR_SERVICE_URL:http://localhost:8086}
+security:
+  service:
+    url: ${SECURITY_SERVICE_URL:http://localhost:8088}
+onesignal:
+  app-id: e548b208-cac7-4a46-833b-e2ad16add4ac
+  api-key: os_v2_app_4velecgky5fenaz34kwrnlouvqygyzrdzj3eb3ul5kbvtv7lywxz76qxofcuoatnskdgszlm7om2rgcnbtdxm5wnmeqnyyj5t657rvq
+  endpoint: "https://onesignal.com/api/v1/notifications"
+
