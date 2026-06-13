@@ -10,21 +10,32 @@ services:
     plan: free
     autoDeployTrigger: off
     healthCheckPath: /actuator/health/liveness
-
-  - type: web
-    name: oosm-web
-    runtime: docker
-    repo: https://github.com/x-dev-grp/osm-ms-fe
-    branch: main
-    dockerfilePath: ./Dockerfile
-    dockerContext: .
-    region: frankfurt
-    plan: free
-    autoDeployTrigger: off
-    healthCheckPath: /
     envVars:
-      - key: BACKEND_HOSTPORT
-        fromService:
-          name: oosm-api
-          type: web
-          property: hostport
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: HIBERNATE_DDL_AUTO
+        value: update
+      - key: SHOW_SQL
+        value: "false"
+      - key: FRONTEND_ENTRY_POINT
+        sync: false
+      - key: APP_CORS_ALLOWED_ORIGIN_PATTERNS
+        sync: false
+      - key: OAUTH2_CLIENT_ID
+        sync: false
+      - key: OAUTH2_CLIENT_SECRET
+        sync: false
+      - key: SECURITY_BOOTSTRAP_ENABLED
+        value: "true"
+      - key: SECURITY_BOOTSTRAP_USERNAME
+        sync: false
+      - key: SECURITY_BOOTSTRAP_PASSWORD
+        sync: false
+      - key: SECURITY_BOOTSTRAP_EMAIL
+        sync: false
+      - key: SECURITY_BOOTSTRAP_PHONE
+        sync: false

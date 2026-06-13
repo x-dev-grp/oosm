@@ -11,20 +11,20 @@ import com.xdev.ooms.security.userManagement.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
 @Configuration
+@ConditionalOnProperty(name = "app.security.bootstrap.enabled", havingValue = "true")
 public class SecurityBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityBootstrap.class);
-    public static final String RAW_PASSWORD1 = "osmAdmin123";
-    public static final String OSM_ADMIN = "osmAdmin";
-    public static final String MAIL1 = "osmAdmin@example.com";
-    public static final String NUMBER1 = "1234567819";
     public static final String OSMADMIN = "OSMADMIN";
 
     private final UserService userService;
@@ -32,17 +32,29 @@ public class SecurityBootstrap {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final UserRepository userRepository;
+    private final String adminUsername;
+    private final String adminPassword;
+    private final String adminEmail;
+    private final String adminPhone;
 
     public SecurityBootstrap(UserService userService,
                              RoleService roleService,
                              PasswordEncoder passwordEncoder,
                              RoleRepository roleRepository,
-                             UserRepository userRepository) {
+                             UserRepository userRepository,
+                             @Value("${app.security.bootstrap.username}") String adminUsername,
+                             @Value("${app.security.bootstrap.password}") String adminPassword,
+                             @Value("${app.security.bootstrap.email}") String adminEmail,
+                             @Value("${app.security.bootstrap.phone}") String adminPhone) {
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
         this.roleRepository = roleRepository;
         this.userRepository = userRepository;
+        this.adminUsername = adminUsername;
+        this.adminPassword = adminPassword;
+        this.adminEmail = adminEmail;
+        this.adminPhone = adminPhone;
     }
 
     @Bean
@@ -73,18 +85,23 @@ public class SecurityBootstrap {
     }
 
     private void ensureUser(RoleDTO role) {
-        Optional<OSMUser> existing = userRepository.findByUsername(OSM_ADMIN);
+        if (!StringUtils.hasText(adminPassword)) {
+            throw new IllegalStateException(
+                    "SECURITY_BOOTSTRAP_PASSWORD is required when SECURITY_BOOTSTRAP_ENABLED=true");
+        }
+
+        Optional<OSMUser> existing = userRepository.findByUsername(adminUsername);
         if (existing.isPresent()) {
-            log.debug("User '{}' already exists (id={})", OSM_ADMIN, existing.get().getId());
+            log.debug("User '{}' already exists (id={})", adminUsername, existing.get().getId());
             return;
         }
 
-        log.info("Creating user '{}'", OSM_ADMIN);
+        log.info("Creating user '{}'", adminUsername);
         OSMUserDTO dto = new OSMUserDTO();
-        dto.setUsername(OSM_ADMIN);
-        dto.setPassword(passwordEncoder.encode(RAW_PASSWORD1));
-        dto.setEmail(MAIL1);
-        dto.setPhoneNumber(NUMBER1);
+        dto.setUsername(adminUsername);
+        dto.setPassword(passwordEncoder.encode(adminPassword));
+        dto.setEmail(adminEmail);
+        dto.setPhoneNumber(adminPhone);
         dto.setRole(role);
         dto.setLocked(false);
         userService.save(dto);

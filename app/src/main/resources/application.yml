@@ -4,8 +4,8 @@ server:
   forward-headers-strategy: framework
   max-http-request-header-size: 32KB
   error:
-    include-message: always
-    include-binding-errors: always
+    include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:never}
+    include-binding-errors: ${SERVER_ERROR_INCLUDE_BINDING_ERRORS:never}
 
 spring:
   application:
@@ -25,7 +25,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: ${HIBERNATE_DDL_AUTO:update}
-    show-sql: ${SHOW_SQL:true}
+    show-sql: ${SHOW_SQL:false}
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
@@ -40,7 +40,8 @@ spring:
 
   sql:
     init:
-      mode: never
+      mode: always
+      schema-locations: classpath:db/oauth2-schema.sql
 
   data:
     jdbc:
@@ -51,16 +52,12 @@ spring:
       resource-server:
         jwt:
           jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}}
-          jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USER:xdevgroupe@gmail.com}
-    password: ${MAIL_PASS:jzea krmd ubpo nlos}
+    username: ${MAIL_USER:}
+    password: ${MAIL_PASS:}
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -75,7 +72,7 @@ spring:
 oauth2:
   client:
     id: ${OAUTH2_CLIENT_ID:osm-client}
-    secret: ${OAUTH2_CLIENT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
+    secret: ${OAUTH2_CLIENT_SECRET}
 
 otp:
   code:
@@ -91,10 +88,20 @@ otp:
 app:
   frontend:
     base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
+  cors:
+    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}
+  internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
+  security:
+    bootstrap:
+      enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
+      username: ${SECURITY_BOOTSTRAP_USERNAME:osmAdmin}
+      password: ${SECURITY_BOOTSTRAP_PASSWORD:}
+      email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
+      phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
 
 onesignal:
-  app-id: ${ONESIGNAL_APP_ID:e548b208-cac7-4a46-833b-e2ad16add4ac}
-  api-key: ${ONESIGNAL_API_KEY:os_v2_app_4velecgky5fenaz34kwrnlouvqygyzrdzj3eb3ul5kbvtv7lywxz76qxofcuoatnskdgszlm7om2rgcnbtdxm5wnmeqnyyj5t657rvq}
+  app-id: ${ONESIGNAL_APP_ID:}
+  api-key: ${ONESIGNAL_API_KEY:}
   endpoint: ${ONESIGNAL_ENDPOINT:https://onesignal.com/api/v1/notifications}
 
 springdoc:
@@ -110,7 +117,7 @@ management:
         include: health,info
   endpoint:
     health:
-      show-details: always
+      show-details: ${HEALTH_SHOW_DETAILS:never}
       probes:
         enabled: true
 

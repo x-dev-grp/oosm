@@ -2,6 +2,7 @@ package com.xdev.ooms.security.securityConfig;
 
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -56,6 +57,7 @@ public class ClientRegistry {
 //    }
 
     @Bean
+    @DependsOnDatabaseInitialization
     public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
         JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
 

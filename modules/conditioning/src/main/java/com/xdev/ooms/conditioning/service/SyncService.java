@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.conditioning.dto.SyncRequestDto;
 import com.xdev.ooms.conditioning.model.OfflineOperation;
 import com.xdev.ooms.conditioning.repository.OfflineOperationRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -20,11 +21,16 @@ public class SyncService {
     private final OfflineOperationRepository logRepository;
     private final RestTemplate restTemplate;
     private final ObjectMapper objectMapper;
+    private final String internalBaseUrl;
 
-    public SyncService(OfflineOperationRepository logRepository, RestTemplate restTemplate, ObjectMapper objectMapper) {
+    public SyncService(OfflineOperationRepository logRepository,
+                       RestTemplate restTemplate,
+                       ObjectMapper objectMapper,
+                       @Value("${app.internal-base-url}") String internalBaseUrl) {
         this.logRepository = logRepository;
         this.restTemplate = restTemplate;
         this.objectMapper = objectMapper;
+        this.internalBaseUrl = internalBaseUrl.replaceAll("/+$", "");
     }
 
     @Transactional
@@ -53,7 +59,7 @@ public class SyncService {
 
         try {
             // 3. Construire l'URL complète (utilise l'URL de base configurée)
-            String fullUrl = "http://localhost:8084" + request.getUrl();
+            String fullUrl = internalBaseUrl + request.getUrl();
 
             // 4. Récupérer le token JWT depuis le contexte de sécurité
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
