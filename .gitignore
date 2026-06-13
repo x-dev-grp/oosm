@@ -17,6 +17,7 @@ logs/
 ### Environment ###
 .env
 .env.*
+!.env.render.example
 
 ### OS ###
 .DS_Store

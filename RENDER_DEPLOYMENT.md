@@ -1,4 +1,4 @@
-# Render Deployment
+# Render Test Deployment
 
 This blueprint deploys:
 
@@ -7,7 +7,8 @@ oosm-api  Spring Boot modular monolith
 oosm-web  Angular frontend served by Nginx
 ```
 
-Use [render.yaml](render.yaml) from this repo as the Blueprint.
+Use [render.yaml](render.yaml) from this repo as the Blueprint. Both services
+use the Frankfurt region, free instances, and manual deploys.
 
 ## Backend
 
@@ -19,13 +20,9 @@ https://github.com/x-dev-grp/oosm
 
 The database is Supabase PostgreSQL. Render does not create a database.
 
-Set these backend environment variables in Render:
-
-```text
-DB_URL=jdbc:postgresql://<supabase-host>:5432/postgres?sslmode=require
-DB_USER=<supabase-db-user>
-DB_PASS=<supabase-db-password>
-```
+Import [.env.render.example](.env.render.example) into the `oosm-api`
+environment using Render's **Add from .env** control. Replace every
+`CHANGE_ME` value first.
 
 Supabase pooler format is also valid if the host, port, user, and password match the Supabase connection string.
 
@@ -50,12 +47,30 @@ The frontend runs from:
 https://github.com/x-dev-grp/osm-ms-fe
 ```
 
-It is deployed as a Docker web service, not a Render static site. Nginx proxies:
+It is deployed as a Docker web service, not a Render static site. The Blueprint
+injects the backend private `hostport`. Nginx proxies:
 
 ```text
 /api/*    -> oosm-api
 /oauth2/* -> oosm-api
+/.well-known/* -> oosm-api
+/jwks -> oosm-api
+/actuator/* -> oosm-api
 ```
+
+The frontend template is
+`osm-ms-fe/.env.render.example`. No frontend secret is required at runtime.
+
+## Deployment Order
+
+1. Push both repositories and branches referenced by `render.yaml`.
+2. Create a Render Blueprint from the backend repository.
+3. Import the backend `.env.render.example` values into `oosm-api`.
+4. Confirm the generated service URLs match `oosm-api.onrender.com` and
+   `oosm-web.onrender.com`. Update the URL variables when Render changes a name.
+5. Deploy `oosm-api`.
+6. Deploy `oosm-web` after the backend health check passes.
+7. Test `/actuator/health/liveness` through both service URLs.
 
 ## Database Scripts
 
@@ -66,6 +81,8 @@ After the first backend deploy creates/updates the base schema in Supabase:
 
 The same SQL bootstrap applies to Supabase.
 
-## Important
+## Secrets
 
-Do not expose Supabase service-role API keys to the frontend. The backend needs only PostgreSQL connection credentials.
+Do not commit the populated `.env.render` files. Do not expose Supabase
+service-role keys to the frontend. The backend needs PostgreSQL credentials,
+not Supabase browser API keys.
