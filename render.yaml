@@ -17,6 +17,8 @@ services:
         sync: false
       - key: DB_PASS
         sync: false
+      - key: SPRING_APP_NAME
+        sync: false
       - key: HIBERNATE_DDL_AUTO
         value: update
       - key: SHOW_SQL
@@ -39,3 +41,37 @@ services:
         sync: false
       - key: SECURITY_BOOTSTRAP_PHONE
         sync: false
+      - key: MAIL_HOST
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASS
+        sync: false
+      - key: MAIL_SMTP_AUTH
+        value: "true"
+      - key: MAIL_STARTTLS
+        value: "true"
+      - key: MAIL_TIMEOUT
+        value: "5000"
+      - key: MAIL_CONN_TIMEOUT
+        value: "5000"
+      - key: ONESIGNAL_APP_ID
+        sync: false
+      - key: ONESIGNAL_API_KEY
+        sync: false
+      - key: ONESIGNAL_ENDPOINT
+        value: https://onesignal.com/api/v1/notifications
+      - key: QR_BASE_URL
+        sync: false
+      - key: SERVER_ERROR_INCLUDE_MESSAGE
+        value: never
+      - key: SERVER_ERROR_INCLUDE_BINDING_ERRORS
+        value: never
+      - key: HEALTH_SHOW_DETAILS
+        value: never
+      - key: LOG_LEVEL_WEB
+        value: INFO
+      - key: LOG_LEVEL_REST
+        value: WARN

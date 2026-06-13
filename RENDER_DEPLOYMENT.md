@@ -38,6 +38,7 @@ SECURITY_BOOTSTRAP_USERNAME=CHANGE_ME_ADMIN_USERNAME
 SECURITY_BOOTSTRAP_PASSWORD=CHANGE_ME_ADMIN_PASSWORD
 SECURITY_BOOTSTRAP_EMAIL=CHANGE_ME_ADMIN_EMAIL
 SECURITY_BOOTSTRAP_PHONE=CHANGE_ME_ADMIN_PHONE
+QR_BASE_URL=https://CHANGE_ME_PUBLIC_QR_HOST/q/v1
 ```
 
 `FRONTEND_ENTRY_POINT` and `APP_CORS_ALLOWED_ORIGIN_PATTERNS` may temporarily
@@ -65,6 +66,10 @@ ONESIGNAL_ENDPOINT=https://onesignal.com/api/v1/notifications
 ```
 
 Mail and OneSignal credentials may remain empty when those features are unused.
+
+Render supplies `PORT` and `RENDER_EXTERNAL_URL`. Do not define them manually.
+Do not define `JWK_SET_URI`; the application derives it from
+`RENDER_EXTERNAL_URL`.
 
 ## Deployment
 

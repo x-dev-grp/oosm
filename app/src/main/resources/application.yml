@@ -104,6 +104,9 @@ onesignal:
   api-key: ${ONESIGNAL_API_KEY:}
   endpoint: ${ONESIGNAL_ENDPOINT:https://onesignal.com/api/v1/notifications}
 
+qr:
+  base-url: ${QR_BASE_URL:https://x-dev.pro/q/v1}
+
 springdoc:
   api-docs:
     path: /v3/api-docs
