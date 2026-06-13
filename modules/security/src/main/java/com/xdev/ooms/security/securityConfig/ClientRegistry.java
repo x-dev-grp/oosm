@@ -60,9 +60,9 @@ public class ClientRegistry {
     @DependsOnDatabaseInitialization
     public RegisteredClientRepository registeredClientRepository(JdbcTemplate jdbcTemplate) {
         JdbcRegisteredClientRepository repository = new JdbcRegisteredClientRepository(jdbcTemplate);
+        RegisteredClient existingClient = repository.findByClientId(clientId);
 
-        // Check if client exists already (avoid duplicates on restarts)
-        if (repository.findByClientId(clientId) == null) {
+        if (existingClient == null) {
             RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
                     .clientSecret(passwordEncoder.encode(clientSecret))
@@ -84,6 +84,14 @@ public class ClientRegistry {
                     .build();
 
             repository.save(client);
+        } else if (!passwordEncoder.matches(clientSecret, existingClient.getClientSecret())) {
+            jdbcTemplate.update(
+                    "UPDATE oauth2_registered_client " +
+                            "SET client_secret = ?, client_secret_expires_at = NULL " +
+                            "WHERE client_id = ?",
+                    passwordEncoder.encode(clientSecret),
+                    clientId
+            );
         }
 
         return repository;
