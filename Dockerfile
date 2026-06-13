@@ -22,7 +22,7 @@ RUN apt-get update \
 COPY --from=build --chown=osm:osm /workspace/app/target/osm-monolith.jar /app/osm-monolith.jar
 
 ENV SERVER_PORT=8084 \
-    JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+ExitOnOutOfMemoryError" \
+    JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError" \
     JAVA_OPTS=""
 
 USER osm

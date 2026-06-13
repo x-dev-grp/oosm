@@ -11,6 +11,8 @@ services:
     autoDeployTrigger: off
     healthCheckPath: /actuator/health/liveness
     envVars:
+      - key: JAVA_TOOL_OPTIONS
+        value: -XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError
       - key: DB_URL
         sync: false
       - key: DB_USER
@@ -22,6 +24,32 @@ services:
       - key: HIBERNATE_DDL_AUTO
         value: update
       - key: SHOW_SQL
+        value: "false"
+      - key: FORMAT_SQL
+        value: "false"
+      - key: SPRING_MAIN_LAZY_INITIALIZATION
+        value: "true"
+      - key: SPRING_JMX_ENABLED
+        value: "false"
+      - key: DB_POOL_MAX_SIZE
+        value: "3"
+      - key: DB_POOL_MIN_IDLE
+        value: "1"
+      - key: DB_CONNECTION_TIMEOUT
+        value: "30000"
+      - key: DB_IDLE_TIMEOUT
+        value: "300000"
+      - key: DB_MAX_LIFETIME
+        value: "900000"
+      - key: TOMCAT_MAX_THREADS
+        value: "20"
+      - key: TOMCAT_MIN_SPARE_THREADS
+        value: "2"
+      - key: TOMCAT_MAX_CONNECTIONS
+        value: "100"
+      - key: TOMCAT_ACCEPT_COUNT
+        value: "50"
+      - key: SPRINGDOC_ENABLED
         value: "false"
       - key: FRONTEND_ENTRY_POINT
         sync: false

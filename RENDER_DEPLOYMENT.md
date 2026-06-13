@@ -23,7 +23,24 @@ DB_USER=<database-user>
 DB_PASS=<database-password>
 ```
 
-For Supabase, use the Session Pooler connection on port `5432`.
+For an existing Render Postgres database in the same workspace and Frankfurt
+region, use its internal hostname:
+
+```text
+DB_URL=jdbc:postgresql://<render-internal-hostname>:5432/<database>?sslmode=require
+DB_USER=<render-database-user>
+DB_PASS=<render-database-password>
+```
+
+For the current database, the non-secret values are:
+
+```text
+DB_URL=jdbc:postgresql://dpg-d8mm0t3tqb8s73c8v73g-a:5432/oosm?sslmode=require
+DB_USER=oosm_user
+```
+
+Use the database's current password from Render as `DB_PASS`. Do not use the
+external hostname from a Render-hosted backend.
 
 ## Required Placeholders
 
