@@ -3,6 +3,12 @@ server:
   port: ${PORT:${SERVER_PORT:8084}}
   forward-headers-strategy: framework
   max-http-request-header-size: 32KB
+  tomcat:
+    threads:
+      max: ${TOMCAT_MAX_THREADS:20}
+      min-spare: ${TOMCAT_MIN_SPARE_THREADS:2}
+    max-connections: ${TOMCAT_MAX_CONNECTIONS:100}
+    accept-count: ${TOMCAT_ACCEPT_COUNT:50}
   error:
     include-message: ${SERVER_ERROR_INCLUDE_MESSAGE:never}
     include-binding-errors: ${SERVER_ERROR_INCLUDE_BINDING_ERRORS:never}
@@ -10,6 +16,10 @@ server:
 spring:
   application:
     name: ${SPRING_APP_NAME:osm-monolith}
+  main:
+    lazy-initialization: ${SPRING_MAIN_LAZY_INITIALIZATION:true}
+  jmx:
+    enabled: ${SPRING_JMX_ENABLED:false}
 
   datasource:
     url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:osm}}
@@ -18,11 +28,17 @@ spring:
     driver-class-name: org.postgresql.Driver
     hikari:
       connection-init-sql: SET search_path TO public
+      maximum-pool-size: ${DB_POOL_MAX_SIZE:3}
+      minimum-idle: ${DB_POOL_MIN_IDLE:1}
+      connection-timeout: ${DB_CONNECTION_TIMEOUT:30000}
+      idle-timeout: ${DB_IDLE_TIMEOUT:300000}
+      max-lifetime: ${DB_MAX_LIFETIME:900000}
 
   flyway:
     enabled: false
 
   jpa:
+    open-in-view: false
     hibernate:
       ddl-auto: ${HIBERNATE_DDL_AUTO:update}
     show-sql: ${SHOW_SQL:false}
@@ -30,7 +46,7 @@ spring:
     properties:
       hibernate:
         default_schema: public
-        format_sql: true
+        format_sql: ${FORMAT_SQL:false}
         envers:
           audit_table_suffix: _aud
           revision_field_name: rev
@@ -109,8 +125,10 @@ qr:
 
 springdoc:
   api-docs:
+    enabled: ${SPRINGDOC_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
+    enabled: ${SPRINGDOC_ENABLED:false}
     path: /swagger-ui.html
 
 management:
