@@ -20,9 +20,10 @@ https://github.com/x-dev-grp/oosm
 
 The database is Supabase PostgreSQL. Render does not create a database.
 
-Import [.env.render.example](.env.render.example) into the `oosm-api`
-environment using Render's **Add from .env** control. Replace every
-`CHANGE_ME` value first.
+Import the ignored `.env.render` file into the `oosm-api` environment using
+Render's **Add from .env** control. It contains the current Render PostgreSQL
+internal connection values. The tracked [.env.render.example](.env.render.example)
+remains a secret-free template.
 
 Supabase pooler format is also valid if the host, port, user, and password match the Supabase connection string.
 
@@ -64,6 +65,7 @@ The frontend template is
 ## Deployment Order
 
 1. Push both repositories and branches referenced by `render.yaml`.
+   The backend deploys from `main`; the frontend deploys from `pfe-v2-final`.
 2. Create a Render Blueprint from the backend repository.
 3. Import the backend `.env.render.example` values into `oosm-api`.
 4. Confirm the generated service URLs match `oosm-api.onrender.com` and

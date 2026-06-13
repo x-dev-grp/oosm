@@ -15,7 +15,7 @@ services:
     name: oosm-web
     runtime: docker
     repo: https://github.com/x-dev-grp/osm-ms-fe
-    branch: main
+    branch: pfe-v2-final
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: frankfurt
