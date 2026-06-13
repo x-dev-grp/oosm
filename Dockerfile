@@ -30,6 +30,6 @@ USER osm
 EXPOSE 8084
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
-    CMD-SHELL curl --fail --silent "http://localhost:${PORT:-${SERVER_PORT}}/actuator/health/liveness" > /dev/null || exit 1
+    CMD curl --fail --silent "http://localhost:${PORT:-${SERVER_PORT}}/actuator/health/liveness" > /dev/null || exit 1
 
 ENTRYPOINT ["sh", "-c", "if [ -n \"$DATABASE_URL\" ] && [ -z \"$DB_URL\" ]; then export DB_URL=\"$(printf '%s' \"$DATABASE_URL\" | sed -e 's#^postgres://#jdbc:postgresql://#' -e 's#^postgresql://#jdbc:postgresql://#')\"; fi; java $JAVA_OPTS -jar /app/osm-monolith.jar"]
