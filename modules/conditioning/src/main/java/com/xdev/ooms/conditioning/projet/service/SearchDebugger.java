@@ -3,9 +3,11 @@ package com.xdev.ooms.conditioning.projet.service;
 import com.xdev.ooms.conditioning.projet.entity.Projet;
 import com.xdev.ooms.conditioning.projet.repository.ProjetRepository;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 @Component
+@ConditionalOnProperty(name = "app.debug.search-on-startup", havingValue = "true")
 public class SearchDebugger implements CommandLineRunner {
     private final ProjetRepository projetRepository;
 

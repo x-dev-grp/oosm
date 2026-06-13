@@ -7,6 +7,7 @@ import org.springframework.context.annotation.FullyQualifiedAnnotationBeanNameGe
 import org.springframework.data.envers.repository.support.EnversRevisionRepositoryFactoryBean;
 import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.repository.config.BootstrapMode;
 
 @SpringBootApplication(
         scanBasePackages = "com.xdev.ooms",
@@ -17,7 +18,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
 @EnableJpaRepositories(
         basePackages = "com.xdev.ooms",
         repositoryFactoryBeanClass = EnversRevisionRepositoryFactoryBean.class,
-        nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class
+        nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class,
+        bootstrapMode = BootstrapMode.LAZY
 )
 public class OsmMonolithApplication {
 

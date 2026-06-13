@@ -22,7 +22,15 @@ services:
       - key: SPRING_APP_NAME
         sync: false
       - key: HIBERNATE_DDL_AUTO
-        value: update
+        value: none
+      - key: HIBERNATE_ALLOW_JDBC_METADATA_ACCESS
+        value: "false"
+      - key: JPA_REPOSITORY_BOOTSTRAP_MODE
+        value: lazy
+      - key: DB_MAJOR_VERSION
+        value: "17"
+      - key: DB_MINOR_VERSION
+        value: "0"
       - key: SHOW_SQL
         value: "false"
       - key: FORMAT_SQL
@@ -37,6 +45,10 @@ services:
         value: "1"
       - key: DB_CONNECTION_TIMEOUT
         value: "30000"
+      - key: DB_VALIDATION_TIMEOUT
+        value: "5000"
+      - key: DB_INITIALIZATION_FAIL_TIMEOUT
+        value: "10000"
       - key: DB_IDLE_TIMEOUT
         value: "300000"
       - key: DB_MAX_LIFETIME
@@ -50,6 +62,8 @@ services:
       - key: TOMCAT_ACCEPT_COUNT
         value: "50"
       - key: SPRINGDOC_ENABLED
+        value: "false"
+      - key: SEARCH_DEBUG_ON_STARTUP
         value: "false"
       - key: FRONTEND_ENTRY_POINT
         sync: false
