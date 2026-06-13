@@ -100,7 +100,7 @@ spring:
 oauth2:
   client:
     id: ${OAUTH2_CLIENT_ID:osm-client}
-    secret: ${OAUTH2_CLIENT_SECRET}
+    secret: ${OAUTH2_CLIENT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
 
 otp:
   code:
