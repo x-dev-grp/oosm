@@ -1,11 +1,13 @@
 package com.xdev.ooms.security.userManagement.controller;
 
+import com.xdev.ooms.security.userManagement.dtos.OUTDTO.AssignableUserDTO;
 import com.xdev.ooms.security.userManagement.dtos.OUTDTO.OSMUserDTO;
 import com.xdev.ooms.security.userManagement.dtos.OUTDTO.OSMUserOUTDTO;
 import com.xdev.ooms.security.userManagement.dtos.OUTDTO.UpdatePasswordDTO;
 import com.xdev.ooms.security.userManagement.models.OSMUser;
 import com.xdev.ooms.security.userManagement.service.UserService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
+import com.xdev.ooms.sharedkernel.models.OSMModule;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.modelmapper.ModelMapper;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.CredentialExpiredException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -221,6 +224,24 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error: " + e.getMessage());
+        }
+    }
+
+    @GetMapping("/assignable")
+    public ResponseEntity<?> getAssignableUsersByPermission(@RequestParam String module,
+                                                            @RequestParam String entity,
+                                                            @RequestParam String permission) {
+        try {
+            OSMModule moduleEnum = OSMModule.valueOf(module.toUpperCase(Locale.ROOT));
+            List<AssignableUserDTO> users =
+                    userService.findAssignableUsersByPermissionIncludingAdmins(moduleEnum, entity, permission);
+            return ResponseEntity.ok(users);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Invalid module or permission parameters");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to fetch assignable users");
         }
     }
     }

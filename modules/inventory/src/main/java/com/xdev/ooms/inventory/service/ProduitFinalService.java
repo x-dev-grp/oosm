@@ -23,16 +23,20 @@ public class ProduitFinalService extends BaseServiceImpl<ProduitFinal, ProduitFi
 
     private final ProduitFinalRepository produitFinalRepository;
     private final ModelMapper modelMapper;
+    private final InventoryDeleteGuardService deleteGuard;
 
     @Autowired
     public ProduitFinalService(BaseRepository<ProduitFinal> repository,
                                ProduitFinalRepository produitFinalRepository,
-                               ModelMapper modelMapper) {
+                               ModelMapper modelMapper,
+                               InventoryDeleteGuardService deleteGuard) {
         super(repository, modelMapper);
         this.produitFinalRepository = produitFinalRepository;
         this.modelMapper = modelMapper;
+        this.deleteGuard = deleteGuard;
     }
 
+    @Transactional(readOnly = true)
     public List<ProduitFinalDto> getAllProduitsFinaux() {
         return produitFinalRepository.findByIsDeletedFalse().stream()
                 .map(produitFinal -> modelMapper.map(produitFinal, ProduitFinalDto.class))
@@ -51,6 +55,7 @@ public class ProduitFinalService extends BaseServiceImpl<ProduitFinal, ProduitFi
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
     public List<ProduitFinalDto> getProduitsFinauxByType(ProduitFinalType type) {
         return produitFinalRepository.findByTypeAndIsDeletedFalse(type).stream()
                 .map(produitFinal -> modelMapper.map(produitFinal, ProduitFinalDto.class))
@@ -89,6 +94,7 @@ public class ProduitFinalService extends BaseServiceImpl<ProduitFinal, ProduitFi
     public void desactiverProduitFinal(UUID id) {
         ProduitFinal produitFinal = produitFinalRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Produit non trouve avec id: " + id));
+        deleteGuard.assertProduitFinalCanBeRemoved(id);
         produitFinal.setActif(false);
         produitFinalRepository.save(produitFinal);
     }
@@ -105,9 +111,24 @@ public class ProduitFinalService extends BaseServiceImpl<ProduitFinal, ProduitFi
     public void supprimerProduitFinal(UUID id) {
         ProduitFinal produitFinal = produitFinalRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new RuntimeException("Produit non trouve avec id: " + id));
+        deleteGuard.assertProduitFinalCanBeRemoved(id);
         produitFinal.setDeleted(true);
         produitFinal.setActif(false);
         produitFinalRepository.save(produitFinal);
+    }
+
+    @Override
+    @Transactional
+    public ProduitFinalDto delete(UUID id) {
+        ProduitFinalDto dto = getProduitFinalById(id);
+        supprimerProduitFinal(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        supprimerProduitFinal(id);
     }
 
     private void applyProduitFinalDto(ProduitFinal produitFinal, ProduitFinalDto produitFinalDto, String name, String code) {

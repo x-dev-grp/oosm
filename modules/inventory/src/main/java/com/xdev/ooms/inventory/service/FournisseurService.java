@@ -21,16 +21,19 @@ public class FournisseurService extends BaseServiceImpl<Fournisseur, Fournisseur
 
     private final FournisseurRepository fournisseurRepository;
     private final ModelMapper modelMapper;
+    private final InventoryDeleteGuardService deleteGuard;
 
     @Autowired
-    public FournisseurService(BaseRepository<Fournisseur> repository, FournisseurRepository fournisseurRepository, ModelMapper modelMapper) {
+    public FournisseurService(BaseRepository<Fournisseur> repository, FournisseurRepository fournisseurRepository, ModelMapper modelMapper, InventoryDeleteGuardService deleteGuard) {
         super(repository, modelMapper);
         this.fournisseurRepository = fournisseurRepository;
         this.modelMapper = modelMapper;
+        this.deleteGuard = deleteGuard;
     }
 
+    @Transactional(readOnly = true)
     public List<FournisseurDto> getAllFournisseurs() {
-        return fournisseurRepository.findAll().stream()
+        return fournisseurRepository.findAllByIsDeletedFalse().stream()
                 .map(f -> modelMapper.map(f, FournisseurDto.class))
                 .collect(Collectors.toList());
     }
@@ -146,15 +149,41 @@ public class FournisseurService extends BaseServiceImpl<Fournisseur, Fournisseur
     public FournisseurDto desactiverFournisseur(UUID id) {
         Fournisseur fournisseur = fournisseurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec id: " + id));
+        deleteGuard.assertFournisseurCanBeRemoved(id);
         fournisseur.setActif(false);
         Fournisseur updatedFournisseur = fournisseurRepository.save(fournisseur);
         return modelMapper.map(updatedFournisseur, FournisseurDto.class);
     }
+    @Transactional
+    public void supprimerFournisseur(UUID id) {
+        Fournisseur fournisseur = fournisseurRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new RuntimeException("Fournisseur non trouve avec id: " + id));
+        deleteGuard.assertFournisseurCanBeRemoved(id);
+        fournisseur.setDeleted(true);
+        fournisseur.setActif(false);
+        fournisseurRepository.save(fournisseur);
+    }
+
+    @Override
+    @Transactional
+    public FournisseurDto delete(UUID id) {
+        FournisseurDto dto = getFournisseurById(id);
+        supprimerFournisseur(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        supprimerFournisseur(id);
+    }
+
     private String genererCodeFournisseur() {
         return generateBusinessCode("code", "FO");
     }
+    @Transactional(readOnly = true)
     public List<FournisseurDto> getActiveFournisseurs() {
-        return fournisseurRepository.findByActifTrue().stream()
+        return fournisseurRepository.findByActifTrueAndIsDeletedFalse().stream()
                 .map(f -> modelMapper.map(f, FournisseurDto.class))
                 .collect(Collectors.toList());
     }

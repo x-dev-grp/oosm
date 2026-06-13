@@ -1,8 +1,11 @@
 package com.xdev.ooms.conditioning.projet.service;
 
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
+import com.xdev.ooms.conditioning.dto.ArticleSecDto;
 import com.xdev.ooms.conditioning.dto.BOMDto;
 import com.xdev.ooms.conditioning.dto.BomLineDto;
+import com.xdev.ooms.conditioning.dto.ProduitFinalDto;
+import com.xdev.ooms.conditioning.dto.StockSecDto;
 import com.xdev.ooms.conditioning.projet.dto.ClientDto;
 import com.xdev.ooms.conditioning.projet.dto.ProjetDto;
 import com.xdev.ooms.conditioning.projet.dto.ProjetProduitDto;
@@ -10,10 +13,15 @@ import com.xdev.ooms.conditioning.projet.entity.Client;
 import com.xdev.ooms.conditioning.projet.entity.Projet;
 import com.xdev.ooms.conditioning.projet.entity.ProjetProduit;
 import com.xdev.ooms.conditioning.projet.entity.ProjetReservation;
+import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.repository.ClientRepository;
 import com.xdev.ooms.conditioning.projet.repository.ProjetRepository;
+import com.xdev.ooms.conditioning.model.LabelContent;
+import com.xdev.ooms.conditioning.repository.LabelContentRepository;
 import com.xdev.ooms.conditioning.shipping.service.ShippingInfoService;
+import com.xdev.ooms.conditioning.util.InventoryQuantityUtil;
 
+import com.xdev.ooms.sharedkernel.Enum.LabelContentStatus;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.qr.CodeGenerator;
 import com.xdev.ooms.sharedkernel.qr.model.QrCodeInfo;
@@ -47,6 +55,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
     private final ClientService clientService;
     private final ClientRepository clientRepository;
     private final ConditioningInventorySupport inventorySupport;
+    private final LabelContentRepository labelContentRepository;
 
     public ProjetService(
             BaseRepository<Projet> repository,
@@ -56,7 +65,8 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
             ShippingInfoService shippingInfoService,
             ClientService clientService,
             ClientRepository clientRepository,
-            ConditioningInventorySupport inventorySupport
+            ConditioningInventorySupport inventorySupport,
+            LabelContentRepository labelContentRepository
     ) {
         super(repository, codeGenerator, modelMapper);
         this.projetRepository = projetRepository;
@@ -64,6 +74,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
         this.shippingInfoService = shippingInfoService;
         this.clientRepository = clientRepository;
         this.inventorySupport = inventorySupport;
+        this.labelContentRepository = labelContentRepository;
     }
 
     @Override
@@ -118,16 +129,27 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public ProjetDto findById(UUID id) {
         Projet projet = projetRepository.findByIdAndIsDeletedFalse(id)
                 .orElseThrow(() -> new EntityNotFoundException("Projet non trouve : " + id));
+
+        if (projet.getStatut() != null && STATUT_FAILED.equalsIgnoreCase(projet.getStatut().trim())) {
+            calculateAndSetReservations(projet);
+            projet = projetRepository.save(projet);
+        }
+
         return toDto(projet);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional
     public void ensureNotFailed(UUID id) {
         Projet projet = findByIdOrThrow(id);
+        if (projet.getStatut() != null && STATUT_FAILED.equalsIgnoreCase(projet.getStatut().trim())) {
+            calculateAndSetReservations(projet);
+            projet = projetRepository.save(projet);
+        }
+
         if (projet.getStatut() != null && STATUT_FAILED.equalsIgnoreCase(projet.getStatut().trim())) {
             throw new IllegalStateException("Projet bloque: reservations de stock insuffisantes. Nouvelle verification requise.");
         }
@@ -210,6 +232,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
         projet.setClient(client);
 
         applyBusinessFields(projet, dto);
+        ensureProjectProductsHaveFinalLabels(projet);
         calculateAndSetReservations(projet);
 
         UUID tenantId = TenantContext.getCurrentTenant();
@@ -249,6 +272,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
         projet.setClient(client);
 
         applyBusinessFields(projet, dto);
+        ensureProjectProductsHaveFinalLabels(projet);
         calculateAndSetReservations(projet);
 
         Projet saved = projetRepository.save(projet);
@@ -367,6 +391,9 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
         if (dto.getProduits() != null) {
             projet.getProduits().clear();
             for (ProjetProduitDto ppDto : dto.getProduits()) {
+                if (dto.getTypeEmballage() != TypeEmballage.VRAC && ppDto.getBomId() == null) {
+                    throw new IllegalArgumentException("La BOM est obligatoire pour un projet non VRAC");
+                }
                 ProjetProduit pp = new ProjetProduit();
                 pp.setProjet(projet);
                 pp.setProductId(ppDto.getProductId());
@@ -378,7 +405,6 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
     }
 
     private void calculateAndSetReservations(Projet projet) {
-        // 1. Release previous reservations if they exist
         releaseConfirmedReservations(projet);
 
         projet.getReservations().clear();
@@ -387,15 +413,21 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
         }
 
         Map<UUID, Double> aggregatedNeeds = new HashMap<>();
+        Map<UUID, ArticleSecDto> articleCache = new HashMap<>();
+        Map<UUID, ProduitFinalDto> productCache = new HashMap<>();
 
         for (ProjetProduit pp : projet.getProduits()) {
             if (pp.getBomId() != null) {
                 try {
                     BOMDto bom = inventorySupport.getBomById(pp.getBomId());
                     if (bom != null && bom.getLines() != null) {
+                        double productionQuantity =
+                                calculateReservationProductionQuantity(pp, projet.getUnite(), productCache);
                         for (BomLineDto line : bom.getLines()) {
                             UUID articleId = line.getArticle().getId();
-                            double needed = line.getQuantity() * pp.getQuantiteCible();
+                            ArticleSecDto article = getArticleForReservation(articleId, articleCache);
+                            double needed =
+                                    calculateReservationNeed(line, productionQuantity, article, articleCache);
                             aggregatedNeeds.put(articleId, aggregatedNeeds.getOrDefault(articleId, 0.0) + needed);
                         }
                     }
@@ -414,15 +446,18 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
             pr.setArticleId(entry.getKey());
             pr.setQuantiteReservee(entry.getValue());
 
-            int quantiteArrondie = com.xdev.ooms.conditioning.util.InventoryQuantityUtil.ceilToInt(entry.getValue());
+            int quantiteArrondie = InventoryQuantityUtil.ceilToInt(entry.getValue());
             try {
-                Map<String, Object> payload = new HashMap<>();
-                payload.put("quantite", quantiteArrondie);
-                inventorySupport.reserverStock(entry.getKey(), payload);
+                reserveProjectStock(entry.getKey(), quantiteArrondie, articleCache);
                 pr.setStatut("CONFIRMED");
                 confirmedReservations.put(entry.getKey(), quantiteArrondie);
             } catch (Exception e) {
-                System.err.println("Failed to reserve stock for article: " + entry.getKey() + " - " + e.getMessage());
+                System.err.println(
+                        "Failed to reserve stock for article "
+                                + describeArticle(entry.getKey(), articleCache)
+                                + " - "
+                                + resolveReservationErrorMessage(e)
+                );
                 pr.setStatut("FAILED");
                 hasFailure = true;
             }
@@ -438,7 +473,232 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 }
             }
             projet.setStatut(STATUT_FAILED);
+        } else if (projet.getStatut() == null || STATUT_FAILED.equalsIgnoreCase(projet.getStatut())) {
+            projet.setStatut(STATUT_BROUILLON);
         }
+    }
+
+    private void ensureProjectProductsHaveFinalLabels(Projet projet) {
+        if (projet.getProduits() == null || projet.getProduits().isEmpty()) {
+            throw new IllegalArgumentException("Au moins un produit est obligatoire pour creer un projet");
+        }
+
+        for (ProjetProduit produit : projet.getProduits()) {
+            UUID productId = produit.getProductId();
+            if (productId == null) {
+                throw new IllegalArgumentException("Le produit est obligatoire pour chaque ligne projet");
+            }
+            if (!hasFinalLabel(productId)) {
+                throw new IllegalStateException(
+                        "Etiquette finalisee obligatoire avant creation du projet pour le produit : " + productId
+                );
+            }
+        }
+    }
+
+    private boolean hasFinalLabel(UUID productId) {
+        return labelContentRepository.findAllByProductIdAndIsDeletedFalse(productId).stream()
+                .anyMatch(this::isFinalLabel)
+                || labelContentRepository.findAllByPackagingIdAndIsDeletedFalse(productId).stream()
+                .anyMatch(this::isFinalLabel);
+    }
+
+    private boolean isFinalLabel(LabelContent labelContent) {
+        return labelContent.getStatus() == LabelContentStatus.FINALIZED
+                && labelContent.getFinalPayloadJson() != null
+                && !labelContent.getFinalPayloadJson().isBlank();
+    }
+
+    private double calculateReservationProductionQuantity(
+            ProjetProduit projetProduit,
+            String projectUnit,
+            Map<UUID, ProduitFinalDto> productCache
+    ) {
+        double targetQuantity = projetProduit.getQuantiteCible() != null ? projetProduit.getQuantiteCible() : 0.0;
+        if (targetQuantity <= 0) {
+            return 0.0;
+        }
+
+        if (isLiterUnit(projectUnit)) {
+            ProduitFinalDto product = getProductForReservation(projetProduit.getProductId(), productCache);
+            Float volumeMl = product != null ? product.getVolume() : null;
+            if (volumeMl != null && volumeMl > 0) {
+                return Math.ceil(targetQuantity / (volumeMl / 1000.0));
+            }
+        }
+
+        return Math.ceil(targetQuantity);
+    }
+
+    private boolean isLiterUnit(String unit) {
+        if (unit == null) {
+            return false;
+        }
+        String normalized = unit.trim().toUpperCase(Locale.ROOT);
+        return "L".equals(normalized) || "LITRE".equals(normalized) || "LITRES".equals(normalized);
+    }
+
+    private ProduitFinalDto getProductForReservation(
+            UUID productId,
+            Map<UUID, ProduitFinalDto> productCache
+    ) {
+        if (productId == null) {
+            return null;
+        }
+        if (productCache.containsKey(productId)) {
+            return productCache.get(productId);
+        }
+        try {
+            ProduitFinalDto product = inventorySupport.getProduitFinalById(productId);
+            productCache.put(productId, product);
+            return product;
+        } catch (Exception e) {
+            productCache.put(productId, null);
+            return null;
+        }
+    }
+
+    private ArticleSecDto getArticleForReservation(
+            UUID articleId,
+            Map<UUID, ArticleSecDto> articleCache
+    ) {
+        if (articleId == null) {
+            return null;
+        }
+        if (articleCache.containsKey(articleId)) {
+            return articleCache.get(articleId);
+        }
+        try {
+            ArticleSecDto article = inventorySupport.getArticleById(articleId);
+            articleCache.put(articleId, article);
+            return article;
+        } catch (Exception e) {
+            articleCache.put(articleId, null);
+            return null;
+        }
+    }
+
+    private double calculateReservationNeed(
+            BomLineDto line,
+            double productionQuantity,
+            ArticleSecDto article,
+            Map<UUID, ArticleSecDto> articleCache
+    ) {
+        double rawNeed = line.getQuantity() * productionQuantity;
+        if (article == null || article.getCategorie() == null || article.getConfiguration() == null) {
+            return rawNeed;
+        }
+
+        if ("COLIS".equalsIgnoreCase(article.getCategorie())) {
+            int unitsPerColis = intFromConfig(article.getConfiguration(), "unitsPerColis");
+            if (unitsPerColis > 0) {
+                return Math.ceil((productionQuantity / unitsPerColis) * line.getQuantity());
+            }
+        }
+
+        if ("PALETTE".equalsIgnoreCase(article.getCategorie())) {
+            int unitsPerPalette = calculateUnitsPerPalette(article, articleCache);
+            if (unitsPerPalette > 0) {
+                return Math.ceil((productionQuantity / unitsPerPalette) * line.getQuantity());
+            }
+        }
+
+        return rawNeed;
+    }
+
+    private int calculateUnitsPerPalette(
+            ArticleSecDto paletteArticle,
+            Map<UUID, ArticleSecDto> articleCache
+    ) {
+        Map<String, Object> config = paletteArticle.getConfiguration();
+        UUID colisId = uuidFromConfig(config, "colisId");
+        int colisPerLayer = intFromConfig(config, "colisPerLayer");
+        int numberOfLayers = intFromConfig(config, "numberOfLayers");
+        if (colisId == null || colisPerLayer <= 0 || numberOfLayers <= 0) {
+            return 0;
+        }
+
+        ArticleSecDto colisArticle = getArticleForReservation(colisId, articleCache);
+        if (colisArticle == null || colisArticle.getConfiguration() == null) {
+            return 0;
+        }
+
+        int unitsPerColis = intFromConfig(colisArticle.getConfiguration(), "unitsPerColis");
+        return unitsPerColis > 0 ? colisPerLayer * numberOfLayers * unitsPerColis : 0;
+    }
+
+    private int intFromConfig(Map<String, Object> config, String key) {
+        Object value = config != null ? config.get(key) : null;
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return Integer.parseInt(text.trim());
+            } catch (NumberFormatException ignored) {
+                return 0;
+            }
+        }
+        return 0;
+    }
+
+    private UUID uuidFromConfig(Map<String, Object> config, String key) {
+        Object value = config != null ? config.get(key) : null;
+        if (value instanceof UUID uuid) {
+            return uuid;
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            try {
+                return UUID.fromString(text.trim());
+            } catch (IllegalArgumentException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private void reserveProjectStock(
+            UUID articleId,
+            int quantite,
+            Map<UUID, ArticleSecDto> articleCache
+    ) {
+        StockSecDto stock = inventorySupport.getStockByArticle(articleId);
+        int disponible = stock != null && stock.getQuantiteDisponible() != null
+                ? stock.getQuantiteDisponible()
+                : 0;
+        if (disponible < quantite) {
+            throw new IllegalStateException(
+                    "Stock disponible insuffisant pour "
+                            + describeArticle(articleId, articleCache)
+                            + ". Disponible: "
+                            + disponible
+                            + ", requis: "
+                            + quantite
+            );
+        }
+
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("quantite", quantite);
+        inventorySupport.reserverStock(articleId, payload);
+    }
+
+    private String describeArticle(UUID articleId, Map<UUID, ArticleSecDto> articleCache) {
+        ArticleSecDto article = getArticleForReservation(articleId, articleCache);
+        if (article != null && article.getNom() != null && !article.getNom().isBlank()) {
+            return article.getNom() + " (" + articleId + ")";
+        }
+        return String.valueOf(articleId);
+    }
+
+    private String resolveReservationErrorMessage(Exception error) {
+        Throwable current = error;
+        while (current != null) {
+            if (current.getMessage() != null && !current.getMessage().isBlank()) {
+                return current.getMessage();
+            }
+            current = current.getCause();
+        }
+        return "Erreur de reservation inconnue";
     }
 
     private void rollbackReservations(Map<UUID, Integer> confirmedReservations) {
@@ -465,7 +725,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
 
             try {
                 Map<String, Object> payload = new HashMap<>();
-                payload.put("quantite", com.xdev.ooms.conditioning.util.InventoryQuantityUtil.ceilToInt(reservation.getQuantiteReservee()));
+                payload.put("quantite", InventoryQuantityUtil.ceilToInt(reservation.getQuantiteReservee()));
                 inventorySupport.annulerReservation(reservation.getArticleId(), payload);
                 reservation.setStatut("RELEASED");
             } catch (Exception e) {

@@ -34,16 +34,18 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
     private final ArticleSecService articleSecService;
     private final EmplacementStockRepository emplacementRepository;
     private final ModelMapper modelMapper;
+    private final InventoryDeleteGuardService deleteGuard;
 
     @Lazy
     @Autowired
-    public StockSecService(BaseRepository<StockSec> repository, StockSecRepository stockRepository, MouvementStockSecRepository mouvementStockSecRepository, ArticleSecService articleSecService, EmplacementStockRepository emplacementRepository, ModelMapper modelMapper) {
+    public StockSecService(BaseRepository<StockSec> repository, StockSecRepository stockRepository, MouvementStockSecRepository mouvementStockSecRepository, ArticleSecService articleSecService, EmplacementStockRepository emplacementRepository, ModelMapper modelMapper, InventoryDeleteGuardService deleteGuard) {
         super(repository, modelMapper);
         this.stockRepository = stockRepository;
         this.mouvementStockSecRepository = mouvementStockSecRepository;
         this.articleSecService = articleSecService;
         this.emplacementRepository = emplacementRepository;
         this.modelMapper = modelMapper;
+        this.deleteGuard = deleteGuard;
     }
 
     private int safe(Integer value) {
@@ -506,6 +508,28 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
         created.setQuantiteActuelle(0);
         created.setQuantiteReservee(0);
         return convertToDto(saveWithValidation(created, "get-or-create"));
+    }
+
+    @Transactional
+    public void supprimerStock(UUID id) {
+        StockSec stock = getStockEntityById(id);
+        deleteGuard.assertStockCanBeRemoved(stock);
+        stock.setDeleted(true);
+        stockRepository.save(stock);
+    }
+
+    @Override
+    @Transactional
+    public StockSecDto delete(UUID id) {
+        StockSecDto dto = getStockById(id);
+        supprimerStock(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        supprimerStock(id);
     }
 
     @Override

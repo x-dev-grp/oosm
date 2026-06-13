@@ -28,8 +28,9 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
         this.emplacementRepository = emplacementRepository;
         this.modelMapper = modelMapper;
     }
+    @Transactional(readOnly = true)
     public List<EmplacementStockDto> getAllEmplacements() {
-        return emplacementRepository.findAll().stream()
+        return emplacementRepository.findAllByIsDeletedFalse().stream()
                 .map(emp -> modelMapper.map(emp, EmplacementStockDto.class))
                 .collect(Collectors.toList());
     }

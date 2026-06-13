@@ -23,6 +23,8 @@ DB_PASS=<password>
 HIBERNATE_DDL_AUTO=update
 ```
 
+Keep `HIBERNATE_DDL_AUTO=update` for Railway. Do not use `create` or `create-drop` on a persistent database.
+
 Railway PostgreSQL variables can also be used directly:
 
 ```text
@@ -54,6 +56,8 @@ Railway injects `PORT`; `application.yml` now reads it automatically.
 Keep `OAUTH2_CLIENT_SECRET` equal to the frontend Basic auth header unless the frontend is rebuilt with a matching header.
 
 Railway healthcheck uses `/actuator/health/liveness`; this confirms the service process is alive without failing deployment because PostgreSQL readiness is still warming up.
+
+After the first backend deploy creates the base schema, run the manual database scripts in `RAILWAY_DATABASE_BOOTSTRAP.md`, then restart the backend service.
 
 ## Local Build
 

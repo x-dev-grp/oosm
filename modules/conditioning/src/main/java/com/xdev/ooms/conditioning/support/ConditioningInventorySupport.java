@@ -54,12 +54,12 @@ public class ConditioningInventorySupport {
     public BOMDto getBomById(UUID id) {
         BOM bom = bomRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("BOM non trouvee avec id: " + id));
-        return ConditioningInventoryMappers.toBomDto(bom);
+        return ConditioningInventoryMappers.toBomDto(bom, modelMapper);
     }
 
     public BOMDto getActiveBomForProduct(UUID productId) {
         return bomRepository.findFirstByProduitFinalIdAndActiveTrue(productId)
-                .map(ConditioningInventoryMappers::toBomDto)
+                .map(bom -> ConditioningInventoryMappers.toBomDto(bom, modelMapper))
                 .orElse(null);
     }
 

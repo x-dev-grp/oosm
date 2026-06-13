@@ -30,6 +30,7 @@ public class CorsConfig {
                 "http://127.0.0.1:*",
                 "https://*.up.railway.app",
                 "https://*.railway.app",
+                "https://*.onrender.com",
                 "https://www.x-dev.pro",
                 "https://x-dev.pro",
                 frontendBaseUrl

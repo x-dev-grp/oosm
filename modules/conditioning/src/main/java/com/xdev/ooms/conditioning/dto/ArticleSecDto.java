@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Map;
 import java.util.UUID;
 @Data
 @Getter
@@ -15,4 +16,6 @@ public class ArticleSecDto extends BaseDto {
     private UUID id;
     private String nom;
     private UniteMesure um;
+    private String categorie;
+    private Map<String, Object> configuration;
 }

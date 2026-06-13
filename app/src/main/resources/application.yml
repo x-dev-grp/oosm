@@ -50,11 +50,11 @@ spring:
     oauth2:
       resource-server:
         jwt:
-          jwk-set-uri: ${JWK_SET_URI:http://localhost:8084/oauth2/jwks}
+          jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
       resourceserver:
         jwt:
-          issuer-uri: ${JWT_ISSUER_URI:http://localhost:8084}
-          jwk-set-uri: ${JWK_SET_URI:http://localhost:8084/oauth2/jwks}
+          issuer-uri: ${JWT_ISSUER_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}}
+          jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
 
   mail:
     host: ${MAIL_HOST:smtp.gmail.com}

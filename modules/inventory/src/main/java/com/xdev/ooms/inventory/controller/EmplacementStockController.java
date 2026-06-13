@@ -19,6 +19,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
@@ -38,6 +39,7 @@ public class EmplacementStockController extends BaseControllerImpl<EmplacementSt
         this.emplacementService = emplacementService;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseEntity<ApiResponse<EmplacementStock, EmplacementStockDto>> getAllEmplacements() {
         long startTime = System.currentTimeMillis();

@@ -52,7 +52,6 @@ public class TraceabilityLot extends BaseEntity {
     @Column(name = "active", nullable = false)
     private Boolean active = true;
 
-    @Lob
     @Column(name = "source_snapshot_json", columnDefinition = "TEXT")
     private String sourceSnapshotJson;
 }

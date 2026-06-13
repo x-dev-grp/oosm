@@ -10,6 +10,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,6 +31,7 @@ public class ProduitFinalController extends BaseControllerImpl<ProduitFinal, Pro
         this.produitFinalService = produitFinalService;
     }
 
+    @Transactional(readOnly = true)
     @GetMapping
     public ResponseEntity<?> getAllProduitsFinaux() {
         try {
@@ -85,6 +87,7 @@ public class ProduitFinalController extends BaseControllerImpl<ProduitFinal, Pro
         }
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/type/{type}")
     public ResponseEntity<?> getProduitsFinauxByType(@PathVariable ProduitFinalType type) {
         try {

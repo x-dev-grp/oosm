@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: oosm-api
+    runtime: docker
+    repo: https://github.com/x-dev-grp/oosm
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /actuator/health/liveness
+    envVars:
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASS
+        sync: false
+      - key: HIBERNATE_DDL_AUTO
+        value: update
+      - key: SHOW_SQL
+        value: false
+      - key: APP_CORS_ALLOWED_ORIGIN_PATTERNS
+        value: https://*.onrender.com
+      - key: OAUTH2_CLIENT_SECRET
+        value: X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9
+      - key: MAIL_USER
+        sync: false
+      - key: MAIL_PASS
+        sync: false
+      - key: ONESIGNAL_APP_ID
+        sync: false
+      - key: ONESIGNAL_API_KEY
+        sync: false
+
+  - type: web
+    name: oosm-web
+    runtime: docker
+    repo: https://github.com/x-dev-grp/osm-ms-fe
+    branch: main
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
+    envVars:
+      - key: BACKEND_HOSTPORT
+        fromService:
+          name: oosm-api
+          type: web
+          property: hostport

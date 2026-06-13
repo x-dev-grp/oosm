@@ -13,5 +13,6 @@ public interface FournisseurRepository extends BaseRepository<Fournisseur> {
     boolean existsByTelephone(String telephone);
     boolean existsByNumeroTva(String numeroTva);
     List<Fournisseur> findByActifTrue();
+    List<Fournisseur> findByActifTrueAndIsDeletedFalse();
 
 }

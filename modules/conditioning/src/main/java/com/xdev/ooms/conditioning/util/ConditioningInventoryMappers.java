@@ -17,13 +17,9 @@ import org.modelmapper.ModelMapper;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import org.modelmapper.ModelMapper;
 
 public final class ConditioningInventoryMappers {
-    private static ModelMapper modelMapper;
-
-    private ConditioningInventoryMappers(ModelMapper modelMapper) {
-        this.modelMapper = modelMapper;
+    private ConditioningInventoryMappers() {
     }
 
     public static ProduitFinalDto toProduitFinalDto(ProduitFinal entity, ModelMapper modelMapper) {
@@ -35,14 +31,19 @@ public final class ConditioningInventoryMappers {
     }
 
     public static ArticleSecDto toArticleSecDto(ArticleSec entity, ModelMapper modelMapper) {
-        return modelMapper.map(entity, ArticleSecDto.class);
+        ArticleSecDto dto = modelMapper.map(entity, ArticleSecDto.class);
+        dto.setCategorie(entity.getCategorie() != null ? entity.getCategorie().name() : null);
+        dto.setConfiguration(entity.getConfiguration() != null
+                ? modelMapper.map(entity.getConfiguration(), Map.class)
+                : null);
+        return dto;
     }
 
     public static LigneConditionnementDto toLigneDto(LigneConditionnement entity, ModelMapper modelMapper) {
         return modelMapper.map(entity, LigneConditionnementDto.class);
     }
 
-    public static BOMDto toBomDto(BOM bom) {
+    public static BOMDto toBomDto(BOM bom, ModelMapper modelMapper) {
         BOMDto dto = new BOMDto();
         dto.setId(bom.getId());
         if (bom.getProduitFinal() != null) {
@@ -53,14 +54,16 @@ public final class ConditioningInventoryMappers {
         }
         dto.setVersion(bom.getVersion());
         dto.setActive(bom.isActive());
-        dto.setLines(bom.getLines().stream().map(ConditioningInventoryMappers::toBomLineDto).collect(Collectors.toList()));
+        dto.setLines(bom.getLines().stream()
+                .map(line -> toBomLineDto(line, modelMapper))
+                .collect(Collectors.toList()));
         return dto;
     }
 
-    private static BomLineDto toBomLineDto(BomLine line) {
+    private static BomLineDto toBomLineDto(BomLine line, ModelMapper modelMapper) {
         BomLineDto lineDto = new BomLineDto();
         lineDto.setId(line.getId());
-            lineDto.setArticle(modelMapper.map(line.getArticle(), com.xdev.ooms.inventory.dto.ArticleSecDto.class));
+        lineDto.setArticle(modelMapper.map(line.getArticle(), com.xdev.ooms.inventory.dto.ArticleSecDto.class));
 
         lineDto.setQuantity(line.getQuantity());
         lineDto.setUnitOfMeasure(line.getUnitOfMeasure());

@@ -40,6 +40,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
     private final StockSecService stockSecService;
     private final StockSecRepository stockSecRepository;
     private final BomLineRepository bomLineRepository;
+    private final InventoryDeleteGuardService deleteGuard;
     private final ObjectMapper objectMapper;
 
     @Lazy
@@ -51,6 +52,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
                              StockSecService stockSecService,
                              StockSecRepository stockSecRepository,
                              BomLineRepository bomLineRepository,
+                             InventoryDeleteGuardService deleteGuard,
                              ObjectMapper objectMapper) {
         super(repository, modelMapper);
         this.articleRepository = articleRepository;
@@ -59,6 +61,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         this.stockSecService = stockSecService;
         this.stockSecRepository = stockSecRepository;
         this.bomLineRepository = bomLineRepository;
+        this.deleteGuard = deleteGuard;
         this.objectMapper = objectMapper;
     }
 
@@ -169,28 +172,38 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
     @Transactional
     public ArticleSecDto desactiverArticle(UUID id) {
         ArticleSec article = getArticleEntityById(id);
-
-        stockSecRepository.findByArticleId(id).ifPresent(stock -> {
-            int actuelle = stock.getQuantiteActuelle() != null ? stock.getQuantiteActuelle() : 0;
-            int reservee = stock.getQuantiteReservee() != null ? stock.getQuantiteReservee() : 0;
-            if (actuelle > 0 || reservee > 0) {
-                throw new InventoryBusinessException(
-                        "ARTICLE_STOCK_NOT_EMPTY",
-                        "Impossible de desactiver l'article : stock actuel=" + actuelle + ", reserve=" + reservee
-                );
-            }
-        });
-
-        if (bomLineRepository.countByArticle_Id(id) > 0) {
-            throw new InventoryBusinessException(
-                    "ARTICLE_USED_IN_BOM",
-                    "Impossible de desactiver l'article : il est utilise dans une ou plusieurs nomenclatures"
-            );
-        }
+        deleteGuard.assertArticleCanBeRemoved(id);
 
         article.setActif(false);
         ArticleSec updatedArticle = articleRepository.save(article);
         return convertToDto(updatedArticle);
+    }
+
+    @Transactional
+    public void supprimerArticle(UUID id) {
+        ArticleSec article = getArticleEntityById(id);
+        deleteGuard.assertArticleCanBeRemoved(id);
+        stockSecRepository.findByArticleIdAndIsDeletedFalse(id).ifPresent(stock -> {
+            stock.setDeleted(true);
+            stockSecRepository.save(stock);
+        });
+        article.setDeleted(true);
+        article.setActif(false);
+        articleRepository.save(article);
+    }
+
+    @Override
+    @Transactional
+    public ArticleSecDto delete(UUID id) {
+        ArticleSecDto dto = getArticleById(id);
+        supprimerArticle(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        supprimerArticle(id);
     }
 
     @Override

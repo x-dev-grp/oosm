@@ -17,10 +17,14 @@ import com.xdev.ooms.conditioning.expedition.model.Expedition;
 import com.xdev.ooms.conditioning.expedition.model.ExpeditionArticle;
 import com.xdev.ooms.conditioning.expedition.repository.ExpeditionArticleRepository;
 import com.xdev.ooms.conditioning.expedition.repository.ExpeditionRepository;
+import com.xdev.ooms.conditioning.model.LabelContent;
 import com.xdev.ooms.conditioning.model.OrdreFabrication;
 import com.xdev.ooms.conditioning.projet.entity.Projet;
+import com.xdev.ooms.conditioning.projet.entity.ProjetProduit;
 import com.xdev.ooms.conditioning.projet.repository.ProjetRepository;
+import com.xdev.ooms.conditioning.repository.LabelContentRepository;
 import com.xdev.ooms.conditioning.repository.OrdreFabricationRepository;
+import com.xdev.ooms.sharedkernel.Enum.LabelContentStatus;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.qr.CodeGenerator;
 import com.xdev.ooms.sharedkernel.qr.model.QrCodeInfo;
@@ -51,6 +55,7 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
     private final ConditioningInventorySupport inventorySupport;
     private final OrdreFabricationRepository ofRepository;
     private final TraceabilityService traceabilityService;
+    private final LabelContentRepository labelContentRepository;
 
     public ExpeditionService(
             BaseRepository<Expedition> repository,
@@ -60,7 +65,8 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
             ExpeditionArticleRepository expeditionArticleRepository,
             ProjetRepository projetRepository,
             ConditioningInventorySupport inventorySupport, OrdreFabricationRepository ofRepository,
-            TraceabilityService traceabilityService
+            TraceabilityService traceabilityService,
+            LabelContentRepository labelContentRepository
     ) {
         super(repository, codeGenerator, modelMapper);
         this.expeditionRepository = expeditionRepository;
@@ -69,6 +75,7 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
         this.inventorySupport = inventorySupport;
         this.ofRepository = ofRepository;
         this.traceabilityService = traceabilityService;
+        this.labelContentRepository = labelContentRepository;
     }
 
     /* ──────────────────────── READ ──────────────────────── */
@@ -145,6 +152,8 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
     public ExpeditionDto create(ExpeditionCreationRequest request) {
         Projet projet = projetRepository.findByIdAndIsDeletedFalse(request.getProjetId())
                 .orElseThrow(() -> new EntityNotFoundException("Projet introuvable : " + request.getProjetId()));
+
+        ensureProjectProductsHaveFinalLabels(projet);
 
         if (projet.getClient() == null || projet.getClient().getId() == null) {
             throw new IllegalStateException("Le projet n'a pas de client exploitable pour l'expedition");
@@ -265,6 +274,7 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
         if (expedition.getLines().isEmpty()) {
             throw new IllegalStateException("Impossible de passer READY sans lignes");
         }
+        ensureProjectProductsHaveFinalLabels(expedition.getProjet());
 
         // Validate cumulative stock for all lines
         validateExpeditionStock(expedition);
@@ -284,6 +294,7 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
         }
 
         traceabilityService.assertTraceabilityComplete(expedition);
+        ensureProjectProductsHaveFinalLabels(expedition.getProjet());
 
         expedition.setStatus(ExpeditionStatus.VALIDATED);
         expedition.setValidatedAt(LocalDateTime.now());
@@ -302,6 +313,7 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
         if (expedition.getStatus() != ExpeditionStatus.VALIDATED) {
             throw new IllegalStateException("Le shipping exige une expedition VALIDATED");
         }
+        ensureProjectProductsHaveFinalLabels(expedition.getProjet());
 
         expedition.setStatus(ExpeditionStatus.SHIPPED);
         expedition.setShippedAt(LocalDateTime.now());
@@ -766,6 +778,34 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
         dto.setLotNumber(line.getLotNumber());
         dto.setUnit(line.getUnit());
         return dto;
+    }
+
+    private void ensureProjectProductsHaveFinalLabels(Projet projet) {
+        if (projet == null || projet.getProduits() == null || projet.getProduits().isEmpty()) {
+            throw new IllegalStateException("Projet sans produit: expedition impossible.");
+        }
+
+        for (ProjetProduit produit : projet.getProduits()) {
+            UUID productId = produit.getProductId();
+            if (productId == null || !hasFinalLabel(productId)) {
+                throw new IllegalStateException(
+                        "Etiquette finalisee obligatoire avant expedition pour le produit : " + productId
+                );
+            }
+        }
+    }
+
+    private boolean hasFinalLabel(UUID productId) {
+        return labelContentRepository.findAllByProductIdAndIsDeletedFalse(productId).stream()
+                .anyMatch(this::isFinalLabel)
+                || labelContentRepository.findAllByPackagingIdAndIsDeletedFalse(productId).stream()
+                .anyMatch(this::isFinalLabel);
+    }
+
+    private boolean isFinalLabel(LabelContent labelContent) {
+        return labelContent.getStatus() == LabelContentStatus.FINALIZED
+                && labelContent.getFinalPayloadJson() != null
+                && !labelContent.getFinalPayloadJson().isBlank();
     }
 
     private String generateExpeditionNumber() {

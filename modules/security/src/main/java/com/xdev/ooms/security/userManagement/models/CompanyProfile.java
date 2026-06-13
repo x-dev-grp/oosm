@@ -65,8 +65,6 @@ public class CompanyProfile extends BaseEntity implements Serializable {
     /**
      * Logo binary data, max ~200KB enforced by service/controller
      */
-    @Lob
-    @Basic(fetch = FetchType.EAGER)
     @Column(columnDefinition = "TEXT")
     private String logoData;
 

@@ -118,7 +118,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/entree")
     public ResponseEntity<?> entreeStock(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer quantite = (Integer) payload.get("quantite");
+            Integer quantite = readInteger(payload, "quantite");
             String motif = (String) payload.get("motif");
             StockSecDto result = stockService.entreeStock(articleId, quantite, motif);
             return ResponseEntity.ok(attachPermittedActions(result));
@@ -131,7 +131,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/sortie")
     public ResponseEntity<?> sortieStock(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer quantite = (Integer) payload.get("quantite");
+            Integer quantite = readInteger(payload, "quantite");
             String motif = (String) payload.get("motif");
             StockSecDto result = stockService.sortieStock(articleId, quantite, motif);
             return ResponseEntity.ok(attachPermittedActions(result));
@@ -144,7 +144,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/ajuster")
     public ResponseEntity<?> ajusterStock(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer nouvelleQuantite = (Integer) payload.get("quantite");
+            Integer nouvelleQuantite = readInteger(payload, "quantite");
             String motif = (String) payload.get("motif");
             StockSecDto result = stockService.ajusterStock(articleId, nouvelleQuantite, motif);
             return ResponseEntity.ok(attachPermittedActions(result));
@@ -157,7 +157,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/reserver")
     public ResponseEntity<?> reserverStock(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer quantite = (Integer) payload.get("quantite");
+            Integer quantite = readInteger(payload, "quantite");
             StockSecDto result = stockService.reserverStock(articleId, quantite);
             return ResponseEntity.ok(attachPermittedActions(result));
         } catch (RuntimeException e) {
@@ -169,7 +169,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/annuler-reservation")
     public ResponseEntity<?> annulerReservation(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer quantite = (Integer) payload.get("quantite");
+            Integer quantite = readInteger(payload, "quantite");
             StockSecDto result = stockService.annulerReservation(articleId, quantite);
             return ResponseEntity.ok(attachPermittedActions(result));
         } catch (RuntimeException e) {
@@ -181,7 +181,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @PutMapping("/{articleId}/consommer-reservation")
     public ResponseEntity<?> consommerReservation(@PathVariable UUID articleId, @RequestBody Map<String, Object> payload) {
         try {
-            Integer quantite = (Integer) payload.get("quantite");
+            Integer quantite = readInteger(payload, "quantite");
             String motif = (String) payload.get("motif");
             String referenceType = payload.get("referenceType") != null ? payload.get("referenceType").toString() : null;
             UUID referenceId = payload.get("referenceId") != null
@@ -258,5 +258,16 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     @Override
     public ResponseEntity<?> resolve(String publicCode) {
         return null;
+    }
+
+    private Integer readInteger(Map<String, Object> payload, String key) {
+        Object value = payload.get(key);
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return Integer.valueOf(value.toString());
     }
 }
