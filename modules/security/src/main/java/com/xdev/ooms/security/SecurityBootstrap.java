@@ -1,18 +1,18 @@
 package com.xdev.ooms.security;
 
-import com.xdev.ooms.security.userManagement.data.RoleRepository;
-import com.xdev.ooms.security.userManagement.data.UserRepository;
-import com.xdev.ooms.security.userManagement.dtos.OUTDTO.OSMUserDTO;
-import com.xdev.ooms.security.userManagement.dtos.OUTDTO.RoleDTO;
-import com.xdev.ooms.security.userManagement.models.OSMUser;
-import com.xdev.ooms.security.userManagement.models.Role;
-import com.xdev.ooms.security.userManagement.service.RoleService;
-import com.xdev.ooms.security.userManagement.service.UserService;
+import com.xdev.ooms.security.role.dto.RoleDTO;
+import com.xdev.ooms.security.role.entity.Role;
+import com.xdev.ooms.security.role.repository.RoleRepository;
+import com.xdev.ooms.security.role.service.RoleService;
+import com.xdev.ooms.security.user.dto.OSMUserDTO;
+import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.repository.UserRepository;
+import com.xdev.ooms.security.user.service.UserService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.password.PasswordEncoder;

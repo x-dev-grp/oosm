@@ -1,7 +1,7 @@
 /*package com.xdev.ooms.inventory.service;
 
-import com.xdev.ooms.inventory.entity.BonCommande;
-import com.xdev.ooms.inventory.entity.LigneBonCommande;
+import com.xdev.ooms.inventory.boncommande.entity.BonCommande;
+import com.xdev.ooms.inventory.boncommande.entity.LigneBonCommande;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.font.PdfFont;
 import com.itextpdf.kernel.font.PdfFontFactory;

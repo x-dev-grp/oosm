@@ -6,7 +6,6 @@ import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializat
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
 import org.springframework.security.oauth2.core.oidc.OidcScopes;
@@ -22,14 +21,10 @@ import java.util.UUID;
 
 @Configuration
 public class ClientRegistry {
-    private final PasswordEncoder passwordEncoder;
     @Value("${oauth2.client.id}")
     private String clientId;
-    @Value("${oauth2.client.secret}")
-    private String clientSecret;
 
-    public ClientRegistry(PasswordEncoder passwordEncoder) {
-        this.passwordEncoder = passwordEncoder;
+    public ClientRegistry() {
     }
 
 //    @Bean
@@ -65,13 +60,10 @@ public class ClientRegistry {
         if (existingClient == null) {
             RegisteredClient client = RegisteredClient.withId(UUID.randomUUID().toString())
                     .clientId(clientId)
-                    .clientSecret(passwordEncoder.encode(clientSecret))
                     .scope(OidcScopes.OPENID)
-                    .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                    .clientAuthenticationMethod(ClientAuthenticationMethod.NONE)
                     .authorizationGrantType(new AuthorizationGrantType("TOKEN"))
-                    .authorizationGrantType(AuthorizationGrantType.CLIENT_CREDENTIALS)
                     .authorizationGrantType(AuthorizationGrantType.REFRESH_TOKEN)
-                    .authorizationGrantType(AuthorizationGrantType.JWT_BEARER)
                     .tokenSettings(TokenSettings.builder()
                             .accessTokenFormat(OAuth2TokenFormat.SELF_CONTAINED)
                             .accessTokenTimeToLive(Duration.ofMinutes(5))
@@ -84,12 +76,14 @@ public class ClientRegistry {
                     .build();
 
             repository.save(client);
-        } else if (!passwordEncoder.matches(clientSecret, existingClient.getClientSecret())) {
+        } else {
             jdbcTemplate.update(
                     "UPDATE oauth2_registered_client " +
-                            "SET client_secret = ?, client_secret_expires_at = NULL " +
+                            "SET client_secret = NULL, client_secret_expires_at = NULL, " +
+                            "client_authentication_methods = ?, authorization_grant_types = ? " +
                             "WHERE client_id = ?",
-                    passwordEncoder.encode(clientSecret),
+                    ClientAuthenticationMethod.NONE.getValue(),
+                    "TOKEN," + AuthorizationGrantType.REFRESH_TOKEN.getValue(),
                     clientId
             );
         }

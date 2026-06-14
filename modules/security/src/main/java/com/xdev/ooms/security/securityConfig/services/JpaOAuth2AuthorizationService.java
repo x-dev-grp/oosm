@@ -2,8 +2,8 @@ package com.xdev.ooms.security.securityConfig.services;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xdev.ooms.security.securityConfig.data.AuthorizationRepository;
-import com.xdev.ooms.security.securityConfig.entities.Authorization;
+import com.xdev.ooms.security.authorization.entity.Authorization;
+import com.xdev.ooms.security.authorization.repository.AuthorizationRepository;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;

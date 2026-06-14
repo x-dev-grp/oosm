@@ -1,11 +1,11 @@
 package com.xdev.ooms.conditioning.support;
 
 import com.xdev.ooms.conditioning.expedition.dto.GenealogyDto;
-import com.xdev.ooms.production.model.FiltrationOperation;
-import com.xdev.ooms.production.model.StorageUnit;
-import com.xdev.ooms.production.repository.FiltrationOperationRepo;
-import com.xdev.ooms.production.repository.StorageUnitRepo;
-import com.xdev.ooms.production.service.GenealogyService;
+import com.xdev.ooms.production.filtration.entity.FiltrationOperation;
+import com.xdev.ooms.production.filtration.repository.FiltrationOperationRepo;
+import com.xdev.ooms.production.genealogy.service.GenealogyService;
+import com.xdev.ooms.production.storageunit.entity.StorageUnit;
+import com.xdev.ooms.production.storageunit.repository.StorageUnitRepo;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.StorageUnitDto;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -29,7 +29,7 @@ public class ConditioningProductionSupport {
     }
 
     public GenealogyDto getGenealogy(UUID storageUnitId) {
-        com.xdev.ooms.production.dto.GenealogyDto genealogy =
+        com.xdev.ooms.production.genealogy.dto.GenealogyDto genealogy =
                 genealogyService.getFullGenealogy(storageUnitId);
         return modelMapper.map(genealogy, GenealogyDto.class);
     }

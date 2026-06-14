@@ -3,6 +3,11 @@ SET category = 'PRODUCTION'
 WHERE code IN ('OLIVE_UNIT_PRICE', 'DAILY_OIL_METRIC')
   AND category <> 'PRODUCTION';
 
+UPDATE parameter
+SET category = 'FINANCE'
+WHERE code = 'PRIX_TRITURATION_KG'
+  AND category <> 'FINANCE';
+
 WITH tenant_ids AS (
     SELECT DISTINCT tenant_id
     FROM parameter
@@ -58,3 +63,27 @@ WHERE NOT EXISTS (
     WHERE p.tenant_id = t.tenant_id
       AND p.code = 'DAILY_OIL_METRIC'
 );
+
+WITH tenant_ids AS (SELECT DISTINCT tenant_id
+                    FROM parameter
+                    WHERE tenant_id IS NOT NULL
+                    UNION
+                    SELECT '4b322fea-6825-4c4c-9534-021cd150d112'::uuid)
+INSERT
+INTO parameter
+(id, created_by, created_date, tenant_id, category, code, description, is_active, type, value)
+SELECT gen_random_uuid(),
+       'system',
+       NOW(),
+       tenant_id,
+       'FINANCE',
+       'PRIX_TRITURATION_KG',
+       'Milling price per kg (TND)',
+       TRUE,
+       'DOUBLE',
+       '0'
+FROM tenant_ids t
+WHERE NOT EXISTS (SELECT 1
+                  FROM parameter p
+                  WHERE p.tenant_id = t.tenant_id
+                    AND p.code = 'PRIX_TRITURATION_KG');

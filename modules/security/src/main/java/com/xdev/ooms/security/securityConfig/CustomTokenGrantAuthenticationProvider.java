@@ -1,10 +1,9 @@
 package com.xdev.ooms.security.securityConfig;
 
-import com.xdev.ooms.security.userManagement.data.CompanyProfileRepository;
-import com.xdev.ooms.security.userManagement.models.CompanyProfile;
-import com.xdev.ooms.security.userManagement.models.OSMUser;
-import com.xdev.ooms.security.userManagement.service.CompanyProfileService;
-import com.xdev.ooms.security.userManagement.service.UserService;
+import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
+import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
+import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -96,14 +95,6 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                 }
             }
 
-            if (user.isNewUser()) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_NEW_USER_ACCESS_DENIED",
-                    "Authentication failed - New user access denied: " + username);
-                throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED, user.getUsername(), user.getId().toString()));
-            }
-
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "User validation passed for: {}", username);
-
             // Authenticate user with username and password
             Authentication userAuth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(tokenAuth.getUsername(), tokenAuth.getPassword())
@@ -111,6 +102,15 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
 
             OSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_AUTHENTICATED",
                 "User authenticated successfully: " + username);
+
+            if (user.isNewUser()) {
+                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_NEW_USER_ACCESS_DENIED",
+                        "Authentication failed - Password update required for new user: " + username);
+                throw new OAuth2AuthenticationException(
+                        new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED, user.getUsername(), user.getId().toString()));
+            }
+
+            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "User validation passed for: {}", username);
 
             // Validate client
             RegisteredClient client = registeredClientRepository.findByClientId(clientId);

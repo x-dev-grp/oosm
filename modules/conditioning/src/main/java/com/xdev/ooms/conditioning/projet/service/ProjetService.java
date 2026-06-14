@@ -1,11 +1,8 @@
 package com.xdev.ooms.conditioning.projet.service;
 
-import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
-import com.xdev.ooms.conditioning.dto.ArticleSecDto;
-import com.xdev.ooms.conditioning.dto.BOMDto;
-import com.xdev.ooms.conditioning.dto.BomLineDto;
-import com.xdev.ooms.conditioning.dto.ProduitFinalDto;
-import com.xdev.ooms.conditioning.dto.StockSecDto;
+import com.xdev.ooms.conditioning.inventoryusage.dto.*;
+import com.xdev.ooms.conditioning.label.entity.LabelContent;
+import com.xdev.ooms.conditioning.label.repository.LabelContentRepository;
 import com.xdev.ooms.conditioning.projet.dto.ClientDto;
 import com.xdev.ooms.conditioning.projet.dto.ProjetDto;
 import com.xdev.ooms.conditioning.projet.dto.ProjetProduitDto;
@@ -16,17 +13,15 @@ import com.xdev.ooms.conditioning.projet.entity.ProjetReservation;
 import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.repository.ClientRepository;
 import com.xdev.ooms.conditioning.projet.repository.ProjetRepository;
-import com.xdev.ooms.conditioning.model.LabelContent;
-import com.xdev.ooms.conditioning.repository.LabelContentRepository;
 import com.xdev.ooms.conditioning.shipping.service.ShippingInfoService;
+import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
 import com.xdev.ooms.conditioning.util.InventoryQuantityUtil;
-
 import com.xdev.ooms.sharedkernel.Enum.LabelContentStatus;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.qr.CodeGenerator;
 import com.xdev.ooms.sharedkernel.qr.model.QrCodeInfo;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
-import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import jakarta.persistence.EntityNotFoundException;
@@ -36,10 +31,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service

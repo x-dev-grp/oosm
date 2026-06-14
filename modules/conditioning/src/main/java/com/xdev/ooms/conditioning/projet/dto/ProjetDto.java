@@ -1,14 +1,12 @@
 package com.xdev.ooms.conditioning.projet.dto;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.xdev.ooms.conditioning.model.OrdreFabrication;
 import com.xdev.ooms.conditioning.projet.entity.Projet;
 import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.enums.TypeProduit;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
-import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 

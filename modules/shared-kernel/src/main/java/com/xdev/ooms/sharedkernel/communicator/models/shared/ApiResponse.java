@@ -1,5 +1,9 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
+/**
+ * Simple API wrapper for payloads that are not bound to {@link com.xdev.ooms.sharedkernel.entities.BaseEntity}.
+ * Entity CRUD controllers should use {@link com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse} instead.
+ */
 public class ApiResponse<T> {
 
     private boolean success;
@@ -14,8 +18,6 @@ public class ApiResponse<T> {
         this.message = message;
         this.data = data;
     }
-
-    // Getters and setters
 
     public boolean isSuccess() {
         return success;

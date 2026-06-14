@@ -1,7 +1,7 @@
 package com.xdev.ooms.conditioning.projet.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.xdev.ooms.conditioning.model.OrdreFabrication;
+import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
 import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.enums.TypeProduit;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
@@ -10,7 +10,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;

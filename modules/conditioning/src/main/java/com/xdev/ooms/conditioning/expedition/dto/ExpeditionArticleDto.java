@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.expedition.dto;
 
-import com.xdev.ooms.conditioning.expedition.model.ExpeditionArticle;
+import com.xdev.ooms.conditioning.expedition.entity.ExpeditionArticle;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import lombok.Data;
 

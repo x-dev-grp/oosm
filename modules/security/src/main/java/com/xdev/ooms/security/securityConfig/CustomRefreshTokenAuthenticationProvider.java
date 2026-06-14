@@ -1,10 +1,10 @@
 package com.xdev.ooms.security.securityConfig;
 
 
-import com.xdev.ooms.security.userManagement.data.CompanyProfileRepository;
-import com.xdev.ooms.security.userManagement.models.CompanyProfile;
-import com.xdev.ooms.security.userManagement.models.OSMUser;
-import com.xdev.ooms.security.userManagement.service.UserService;
+import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
+import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
+import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;

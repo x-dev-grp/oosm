@@ -1,7 +1,7 @@
 package com.xdev.ooms.conditioning.shipping.dto;
 
+import com.xdev.ooms.conditioning.shipping.entity.ShippingInfo;
 import com.xdev.ooms.conditioning.shipping.enums.ShippingStatus;
-import com.xdev.ooms.conditioning.shipping.model.ShippingInfo;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import lombok.Data;
 

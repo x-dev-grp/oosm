@@ -1,10 +1,11 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.Enum.DeliveryType;
 import com.xdev.ooms.sharedkernel.Enum.OliveLotStatus;
 import com.xdev.ooms.sharedkernel.Enum.OperationType;
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDateTime;

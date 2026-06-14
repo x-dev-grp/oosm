@@ -22,12 +22,14 @@ RUN apt-get update \
 COPY --from=build --chown=osm:osm /workspace/app/target/osm-monolith.jar /app/osm-monolith.jar
 
 ENV SERVER_PORT=8084 \
+    JWT_KEY_PATH=/app/data/osm-jwt-key \
     JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError" \
     JAVA_OPTS=""
 
 USER osm
 
 EXPOSE 8084
+VOLUME ["/app/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
     CMD curl --fail --silent "http://localhost:${PORT:-${SERVER_PORT}}/actuator/health/liveness" > /dev/null || exit 1

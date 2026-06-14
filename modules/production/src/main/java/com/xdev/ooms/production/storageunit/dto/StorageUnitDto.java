@@ -1,0 +1,59 @@
+package com.xdev.ooms.production.storageunit.dto;
+
+import com.xdev.ooms.sharedkernel.basetype.entity.BaseType;
+
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
+import com.xdev.ooms.production.supplier.entity.Supplier;
+
+import com.xdev.ooms.production.storageunit.entity.StorageUnit;
+import com.xdev.ooms.sharedkernel.Enum.QualityGrades;
+import com.xdev.ooms.sharedkernel.Enum.StorageStatus;
+import com.xdev.ooms.production.supplier.dto.SupplierDto;
+import com.xdev.ooms.sharedkernel.dtos.BaseDto;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.time.LocalDateTime;
+
+@Setter
+@Getter
+public class StorageUnitDto extends BaseDto<StorageUnit> {
+
+    private String name;
+    private String location;
+    private String description;
+
+    private Double maxCapacity = 0.0;
+    private Double currentVolume = 0.0;
+
+    private LocalDateTime nextMaintenanceDate;
+    private LocalDateTime lastInspectionDate;
+
+    private Double avgCost = 0.0;
+    private Double totalCost = 0.0;
+
+    private BaseTypeDto oilVariety; // OIL_VARIETY
+    private StorageStatus status = StorageStatus.AVAILABLE;
+    private Boolean paidStorage;
+    private Boolean filteredOil;
+    private Double monthlyRentalPrice;
+    private QualityGrades qualityGrade;
+    private String lotNumber;
+    private LocalDateTime lastFillDate;
+    private LocalDateTime lastEmptyDate;
+    private SupplierDto supplier;
+    private String qrHex;
+    private String publicCode;
+    private String qrUrl;
+    private String qrImageBase64;
+
+    public StorageUnitDto() {
+    }
+
+    // Optional helper for client-side rendering
+    public double getFillPercentage() {
+        return maxCapacity != null && maxCapacity > 0 ? (currentVolume / maxCapacity) * 100.0 : 0.0;
+    }
+
+
+}

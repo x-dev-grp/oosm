@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.expedition.repository;
 
-import com.xdev.ooms.conditioning.expedition.model.Expedition;
+import com.xdev.ooms.conditioning.expedition.entity.Expedition;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import org.springframework.stereotype.Repository;
 

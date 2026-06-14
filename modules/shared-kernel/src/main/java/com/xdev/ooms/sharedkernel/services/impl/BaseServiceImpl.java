@@ -17,7 +17,7 @@ import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
-import com.xdev.ooms.sharedkernel.apiDTOs.SearchResponse;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
@@ -1672,19 +1672,22 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         }
     }
     protected Object buildQrPayload(E entity) {
-
         ObjectMapper mapper = getQrObjectMapper().copy();
 
         // remove null fields
         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-        ObjectNode root = mapper.valueToTree(entity);
+        // Serialize the DTO graph instead of JPA entities to avoid Hibernate proxy errors.
+        OUTDTO dto = modelMapper.map(entity, outDTOClass);
+        ObjectNode root = mapper.valueToTree(dto);
 
+        root.remove("qrImageBase64");
         cleanRootEntity(root);
 
         return root;
     }
     private void cleanRootEntity(ObjectNode root) {
+        root.remove("qrImageBase64");
 
         Iterator<Map.Entry<String, JsonNode>> fields = root.fields();
 
@@ -1763,12 +1766,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     //transforme une entite metier e n image QR
     protected byte[] generateQrImageBytesFromEntity(E entity) {
-        try {
-            String json = getQrObjectMapper().writeValueAsString(entity);
-            return renderQrContent(json);
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to serialize QR payload", e);
-        }
+        return generateQrImageBytes(buildQrPayload(entity));
     }
 
 
@@ -1793,7 +1791,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     }
 
     @Override
-
+    @Transactional(readOnly = true)
     public QrResolveResponse resolve(String publicCode) {
         String normalizedCode = normalizeSearchCode(publicCode);
         E entity = findByCodeGeneric(normalizedCode)
@@ -1822,6 +1820,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     //Recherche par code
     @Override
+    @Transactional(readOnly = true)
     public Optional<QrResolveResponse> searchByCode(String code) {
         if (code == null || code.isBlank()) {
             return Optional.empty();

@@ -1,9 +1,9 @@
 /*package com.xdev.ooms.inventory.service;
 
 import com.xdev.ooms.inventory.entity.*;
-import com.xdev.ooms.inventory.repository.ArticleSecRepository;
-import com.xdev.ooms.inventory.repository.BonCommandeRepository;
-import com.xdev.ooms.inventory.repository.StockSecRepository;
+import com.xdev.ooms.inventory.articlesec.repository.ArticleSecRepository;
+import com.xdev.ooms.inventory.boncommande.repository.BonCommandeRepository;
+import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;

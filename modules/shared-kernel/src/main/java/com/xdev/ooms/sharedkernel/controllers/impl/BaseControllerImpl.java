@@ -2,7 +2,7 @@ package com.xdev.ooms.sharedkernel.controllers.impl;
 
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
-import com.xdev.ooms.sharedkernel.apiDTOs.SearchResponse;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
 import com.xdev.ooms.sharedkernel.controllers.BaseController;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.dtos.RevisionDto;

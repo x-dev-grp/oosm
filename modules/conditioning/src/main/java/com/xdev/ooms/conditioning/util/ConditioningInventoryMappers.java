@@ -1,17 +1,12 @@
 package com.xdev.ooms.conditioning.util;
 
 import com.xdev.ooms.conditioning.Enum.ProductType;
-import com.xdev.ooms.conditioning.dto.ArticleSecDto;
-import com.xdev.ooms.conditioning.dto.BOMDto;
-import com.xdev.ooms.conditioning.dto.BomLineDto;
-import com.xdev.ooms.conditioning.dto.LigneConditionnementDto;
-import com.xdev.ooms.conditioning.dto.ProduitFinalDto;
-import com.xdev.ooms.conditioning.dto.StockSecDto;
-import com.xdev.ooms.inventory.entity.ArticleSec;
-import com.xdev.ooms.inventory.entity.BOM;
-import com.xdev.ooms.inventory.entity.BomLine;
-import com.xdev.ooms.inventory.entity.LigneConditionnement;
-import com.xdev.ooms.inventory.entity.ProduitFinal;
+import com.xdev.ooms.conditioning.inventoryusage.dto.*;
+import com.xdev.ooms.inventory.articlesec.entity.ArticleSec;
+import com.xdev.ooms.inventory.bom.entity.BOM;
+import com.xdev.ooms.inventory.bom.entity.BomLine;
+import com.xdev.ooms.inventory.ligneconditionnement.entity.LigneConditionnement;
+import com.xdev.ooms.inventory.produitfinal.entity.ProduitFinal;
 import org.modelmapper.ModelMapper;
 
 import java.util.Map;
@@ -63,14 +58,14 @@ public final class ConditioningInventoryMappers {
     private static BomLineDto toBomLineDto(BomLine line, ModelMapper modelMapper) {
         BomLineDto lineDto = new BomLineDto();
         lineDto.setId(line.getId());
-        lineDto.setArticle(modelMapper.map(line.getArticle(), com.xdev.ooms.inventory.dto.ArticleSecDto.class));
+        lineDto.setArticle(modelMapper.map(line.getArticle(), com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto.class));
 
         lineDto.setQuantity(line.getQuantity());
         lineDto.setUnitOfMeasure(line.getUnitOfMeasure());
         return lineDto;
     }
 
-    public static StockSecDto toStockSecDto(com.xdev.ooms.inventory.dto.StockSecDto stock, ModelMapper modelMapper) {
+    public static StockSecDto toStockSecDto(com.xdev.ooms.inventory.stocksec.dto.StockSecDto stock, ModelMapper modelMapper) {
         return modelMapper.map(stock, StockSecDto.class);
     }
 

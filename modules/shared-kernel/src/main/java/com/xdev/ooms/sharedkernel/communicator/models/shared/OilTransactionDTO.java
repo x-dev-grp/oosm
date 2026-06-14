@@ -1,9 +1,9 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
-
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.Enum.TransactionState;
 import com.xdev.ooms.sharedkernel.Enum.TransactionType;
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 
 public class OilTransactionDTO extends BaseDto {
     private StorageUnitDto storageUnitDestination;

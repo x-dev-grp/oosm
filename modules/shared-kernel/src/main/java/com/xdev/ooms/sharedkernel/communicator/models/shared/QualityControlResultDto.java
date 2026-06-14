@@ -1,8 +1,8 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
-
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
 
 import java.util.UUID;
 

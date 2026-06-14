@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.shipping.repository;
 
-import com.xdev.ooms.conditioning.shipping.model.ShippingLine;
+import com.xdev.ooms.conditioning.shipping.entity.ShippingLine;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import org.springframework.stereotype.Repository;
 

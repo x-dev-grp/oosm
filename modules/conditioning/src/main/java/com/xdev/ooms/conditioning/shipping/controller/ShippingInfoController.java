@@ -1,7 +1,7 @@
 package com.xdev.ooms.conditioning.shipping.controller;
 
 import com.xdev.ooms.conditioning.shipping.dto.*;
-import com.xdev.ooms.conditioning.shipping.model.ShippingInfo;
+import com.xdev.ooms.conditioning.shipping.entity.ShippingInfo;
 import com.xdev.ooms.conditioning.shipping.service.ShippingInfoService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;

@@ -1,9 +1,8 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
 
-
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.Enum.*;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -36,6 +35,9 @@ public class FinancialTransactionDto   extends BaseDto {
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
     private OperationType operationType;
+    private ResourceName resourceName;
+    private String vendorName;
+    private Boolean syncProductionState = true;
 
     public ResourceName getResourceName() {
         return resourceName;
@@ -45,7 +47,21 @@ public class FinancialTransactionDto   extends BaseDto {
         this.resourceName = resourceName;
     }
 
-    private ResourceName resourceName;
+    public String getVendorName() {
+        return vendorName;
+    }
+
+    public void setVendorName(String vendorName) {
+        this.vendorName = vendorName;
+    }
+
+    public Boolean getSyncProductionState() {
+        return syncProductionState;
+    }
+
+    public void setSyncProductionState(Boolean syncProductionState) {
+        this.syncProductionState = syncProductionState;
+    }
 
     @Override
     public String toString() {

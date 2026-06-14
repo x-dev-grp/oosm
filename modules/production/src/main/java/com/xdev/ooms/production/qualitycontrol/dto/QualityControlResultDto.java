@@ -1,0 +1,68 @@
+package com.xdev.ooms.production.qualitycontrol.dto;
+
+
+import com.xdev.ooms.production.qualitycontrol.dto.QualityControlRuleDto;
+
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.xdev.ooms.production.qualitycontrol.entity.QualityControlResult;
+import com.xdev.ooms.sharedkernel.dtos.BaseDto;
+
+import java.io.Serializable;
+import java.util.UUID;
+
+/**
+ * DTO for {@link com.xdev.ooms.production.qualitycontrol.entity.QualityControlResult}
+ */
+@JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, ignoreUnknown = true)
+@JsonInclude(JsonInclude.Include.NON_NULL)
+public class QualityControlResultDto extends BaseDto<QualityControlResult> implements Serializable {
+
+    QualityControlRuleDto rule;
+    String measuredValue;
+    private UUID deliveryId;
+    private UUID filtrationOperationId;
+    private UUID traceabilityLotId;
+
+
+    public QualityControlRuleDto getRule() {
+        return rule;
+    }
+
+    public void setRule(QualityControlRuleDto rule) {
+        this.rule = rule;
+    }
+
+    public String getMeasuredValue() {
+        return measuredValue;
+    }
+
+    public void setMeasuredValue(String measuredValue) {
+        this.measuredValue = measuredValue;
+    }
+
+    public UUID getDeliveryId() {
+        return deliveryId;
+    }
+
+    public void setDeliveryId(UUID deliveryId) {
+        this.deliveryId = deliveryId;
+    }
+
+    public UUID getFiltrationOperationId() {
+        return filtrationOperationId;
+    }
+
+    public void setFiltrationOperationId(UUID filtrationOperationId) {
+        this.filtrationOperationId = filtrationOperationId;
+    }
+
+    public UUID getTraceabilityLotId() {
+        return traceabilityLotId;
+    }
+
+    public void setTraceabilityLotId(UUID traceabilityLotId) {
+        this.traceabilityLotId = traceabilityLotId;
+    }
+}

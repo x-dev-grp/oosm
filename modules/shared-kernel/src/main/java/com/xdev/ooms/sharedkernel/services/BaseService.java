@@ -1,6 +1,6 @@
 package com.xdev.ooms.sharedkernel.services;
 
-import com.xdev.ooms.sharedkernel.apiDTOs.SearchResponse;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import com.xdev.ooms.sharedkernel.models.Action;

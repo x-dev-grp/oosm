@@ -18,9 +18,6 @@ public class ApiSingleResponse<E extends BaseEntity, OUTDTO extends BaseDto<E>> 
         this.data = data;
     }
 
-    // Getters and setters
-
-
     public boolean isSuccess() {
         return success;
     }

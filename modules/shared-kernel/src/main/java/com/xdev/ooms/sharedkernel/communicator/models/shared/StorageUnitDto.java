@@ -1,8 +1,9 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.Enum.QualityGrades;
 import com.xdev.ooms.sharedkernel.Enum.StorageStatus;
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
 
 import java.time.LocalDateTime;
 

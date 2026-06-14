@@ -1,32 +1,24 @@
 package com.xdev.ooms.conditioning.expedition.service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.xdev.ooms.conditioning.expedition.dto.GenealogyDto;
+import com.xdev.ooms.conditioning.expedition.entity.Expedition;
+import com.xdev.ooms.conditioning.expedition.entity.ExpeditionArticle;
+import com.xdev.ooms.conditioning.expedition.repository.ExpeditionRepository;
+import com.xdev.ooms.conditioning.inventoryusage.dto.ProduitFinalDto;
+import com.xdev.ooms.conditioning.label.entity.LabelContent;
+import com.xdev.ooms.conditioning.label.repository.LabelContentRepository;
+import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
+import com.xdev.ooms.conditioning.ordrefabrication.repository.OrdreFabricationRepository;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
 import com.xdev.ooms.conditioning.support.ConditioningProductionSupport;
-import com.xdev.ooms.conditioning.dto.ProduitFinalDto;
-import com.xdev.ooms.conditioning.expedition.dto.GenealogyDto;
-import com.xdev.ooms.conditioning.expedition.model.Expedition;
-import com.xdev.ooms.conditioning.expedition.model.ExpeditionArticle;
-import com.xdev.ooms.conditioning.expedition.repository.ExpeditionRepository;
-import com.xdev.ooms.conditioning.model.LabelContent;
-import com.xdev.ooms.conditioning.model.OrdreFabrication;
-import com.xdev.ooms.conditioning.repository.LabelContentRepository;
-import com.xdev.ooms.conditioning.repository.OrdreFabricationRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service

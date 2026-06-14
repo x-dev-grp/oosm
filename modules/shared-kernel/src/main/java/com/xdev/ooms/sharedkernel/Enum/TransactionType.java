@@ -40,6 +40,9 @@ public enum TransactionType {
     SUPPLIER_PAYMENT,
     SUPPLIER_CREDIT,
 
+    // ==================== STORAGE TRANSACTIONS ====================
+    STORAGE_RENTAL,
+
     // ==================== BANKING TRANSACTIONS ====================
     DEPOSIT,
     WITHDRAWAL,

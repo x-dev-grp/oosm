@@ -1,13 +1,12 @@
 package com.xdev.ooms.sharedkernel.entities;
 
- import com.xdev.ooms.sharedkernel.config.TenantContext;
- import com.xdev.ooms.sharedkernel.utils.AuditEntityListener;
- import jakarta.persistence.*;
+import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.utils.AuditEntityListener;
+import jakarta.persistence.*;
 import org.hibernate.annotations.NaturalId;
 import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
-import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -113,7 +112,6 @@ public class BaseEntity implements Serializable {
     @Column(name = "qr_hex", length = 6)
     private String qrHex;
 
-    @Lob
     @Column(name = "qr_image_base64", columnDefinition = "TEXT")
     private String qrImageBase64;
 

@@ -1,7 +1,7 @@
 package com.xdev.ooms.conditioning.expedition.controller;
 
 import com.xdev.ooms.conditioning.expedition.dto.*;
-import com.xdev.ooms.conditioning.expedition.model.Expedition;
+import com.xdev.ooms.conditioning.expedition.entity.Expedition;
 import com.xdev.ooms.conditioning.expedition.service.ExpeditionService;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
