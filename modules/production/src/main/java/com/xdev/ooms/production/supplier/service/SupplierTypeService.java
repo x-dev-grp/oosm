@@ -1,13 +1,9 @@
 package com.xdev.ooms.production.supplier.service;
 
 
+import com.xdev.ooms.production.supplier.entity.Supplier;
 import com.xdev.ooms.sharedkernel.basetype.entity.BaseType;
 import com.xdev.ooms.production.supplier.dto.SupplierDto;
-import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
-
-
-
-import com.xdev.ooms.production.supplier.entity.Supplier;
 import com.xdev.ooms.production.unifieddelivery.repository.DeliveryRepository;
 import com.xdev.ooms.sharedkernel.basetype.repository.GenericRepository;
 import com.xdev.ooms.sharedkernel.models.Action;
@@ -24,12 +20,9 @@ import java.util.UUID;
 @Service
 public class SupplierTypeService extends BaseServiceImpl<Supplier, SupplierDto, SupplierDto> {
 
-    // Repository to reattach BaseType entities (for region and supplier type)
     private final GenericRepository baseTypeRepository;
     private final DeliveryRepository deliveryRepository;
 
-    // Constructor injection: in addition to Supplier repository and ModelMapper,
-    // inject the BaseType repository.
     public SupplierTypeService(BaseRepository<Supplier> repository,
                                ModelMapper modelMapper,
                                GenericRepository baseTypeRepository,
@@ -39,7 +32,6 @@ public class SupplierTypeService extends BaseServiceImpl<Supplier, SupplierDto, 
         this.deliveryRepository = deliveryRepository;
     }
 
-    // Get count of paid payments for a supplier
     public long getPaidPaymentsCount(UUID supplierId) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
@@ -61,7 +53,6 @@ public class SupplierTypeService extends BaseServiceImpl<Supplier, SupplierDto, 
         }
     }
 
-    // Get count of unpaid payments for a supplier
     public long getUnpaidPaymentsCount(UUID supplierId) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);

@@ -24,5 +24,9 @@
             <groupId>com.xdev.ooms</groupId>
             <artifactId>production</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+        </dependency>
     </dependencies>
 </project>

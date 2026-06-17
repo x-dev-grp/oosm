@@ -9,15 +9,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class OilTransactionPortImpl implements OilTransactionPort {
 
-    private final OilTransactionPortImpl oilTransactionService;
+    private final OilTransactionService oilTransactionService;
+    private final ProductionModuleDtoMapper dtoMapper;
 
-    public OilTransactionPortImpl(OilTransactionPortImpl oilTransactionService) {
+    public OilTransactionPortImpl(OilTransactionService oilTransactionService, ProductionModuleDtoMapper dtoMapper) {
         this.oilTransactionService = oilTransactionService;
+        this.dtoMapper = dtoMapper;
     }
 
     @Override
     public OilTransactionDTO create(OilTransactionDTO request) {
-        return oilTransactionService.create(request);
+        return dtoMapper.toShared(oilTransactionService.save(dtoMapper.fromShared(request)));
     }
 
 

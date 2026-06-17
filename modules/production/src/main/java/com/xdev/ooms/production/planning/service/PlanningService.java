@@ -326,7 +326,7 @@ public class PlanningService {
     }
 
     @Transactional
-    public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree) {
+    public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "markLotCompleted", lotNumber, oilQuantity, rendement);
         try {
@@ -340,6 +340,7 @@ public class PlanningService {
             lot.setOilQuantity((oilQuantity).doubleValue());
             lot.setRendement(round(rendement, 3) );
             lot.setTrtDuration(duree);
+            applyCompletionMetadata(lot, trtDateIso, finalObservation);
 
             lot.setOilType(lot.getOilType());
             lot.setOilVariety(lot.getOliveVariety());
@@ -398,6 +399,8 @@ public class PlanningService {
         Double oilQuantity = getDouble(body, OIL_QUANTITY);
         Double rendement = getDouble(body, RENDEMENT);
         int duree = (int) body.get("triturationDurationInMinutes");
+        String trtDateIso = body.get("trtDate") instanceof String s ? s : null;
+        String finalObservation = body.get("finalObservation") instanceof String s ? s : null;
         // ✅ Convert raw List<LinkedHashMap> → List<ChildLotCompletionDto>
         List<ChildLotCompletionDto> childLots = new ObjectMapper().convertValue(body.get("childLots"), new TypeReference<>() {
                 }
@@ -411,7 +414,7 @@ public class PlanningService {
                 throw new EntityNotFoundException("Global lot not found: " + globalLotNumber);
             }
             // delegate each child
-            childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree));
+            childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree, trtDateIso, finalObservation));
             log.info("Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
             if (existing.getFirst().getOperationType() == OperationType.BASE || existing.getFirst().getOperationType() == OperationType.OLIVE_PURCHASE) {
                 createGlobalOilReception(globalLotNumber, oilQuantity, rendement);
@@ -431,6 +434,24 @@ public class PlanningService {
     private Double getDouble(Map<String, Object> body, String key) {
         Object v = body.get(key);
         return (v instanceof Number) ? round(((Number) v).doubleValue(),3) : null;
+    }
+
+    private void applyCompletionMetadata(UnifiedDelivery lot, String trtDateIso, String finalObservation) {
+        if (trtDateIso != null && !trtDateIso.isBlank()) {
+            try {
+                lot.setTrtDate(java.time.Instant.parse(trtDateIso).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+            } catch (Exception ignored) {
+                // keep existing trtDate when payload is invalid
+            }
+        }
+        if (finalObservation != null && !finalObservation.isBlank()) {
+            String existing = lot.getDescription();
+            if (existing == null || existing.isBlank()) {
+                lot.setDescription(finalObservation.trim());
+            } else if (!existing.contains(finalObservation.trim())) {
+                lot.setDescription(existing + " | " + finalObservation.trim());
+            }
+        }
     }
 
     // ---- drop-in replacement ----

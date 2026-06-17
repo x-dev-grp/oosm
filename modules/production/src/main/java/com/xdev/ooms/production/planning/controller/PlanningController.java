@@ -31,6 +31,8 @@ public class PlanningController {
     public static final String UNPAID_PRICE = "unpaidPrice";
     public static final String AUTO_SET_STORAGE = "autoSetStorage";
     public static final String TRT_DURATION = "triturationDurationInMinutes";
+    public static final String TRT_DATE = "trtDate";
+    public static final String FINAL_OBSERVATION = "finalObservation";
 
     private final PlanningService planningService;
 
@@ -90,7 +92,9 @@ public class PlanningController {
             if(body.get(AUTO_SET_STORAGE)!=null && body.get(AUTO_SET_STORAGE) instanceof Boolean b) {
                autoSetStorage= b;
             }
-            planningService.markLotCompleted(lotNumber, "0" , oilQuantity, rendement, unpaidPrice,autoSetStorage,duree);
+            String trtDate = body.get(TRT_DATE) instanceof String s ? s : null;
+            String finalObservation = body.get(FINAL_OBSERVATION) instanceof String s ? s : null;
+            planningService.markLotCompleted(lotNumber, "0" , oilQuantity, rendement, unpaidPrice,autoSetStorage,duree, trtDate, finalObservation);
             return ResponseEntity
                     .ok("Lot completed successfully");
 

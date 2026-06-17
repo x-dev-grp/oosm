@@ -9,11 +9,10 @@ import com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto;
 import com.xdev.ooms.inventory.fournisseur.dto.FournisseurDto;
 import com.xdev.ooms.inventory.articlesec.entity.ArticleSec;
 import com.xdev.ooms.inventory.fournisseur.entity.Fournisseur;
-import com.xdev.ooms.inventory.exception.InventoryBusinessException;
-import com.xdev.ooms.inventory.stocksec.entity.StockSec;
 import com.xdev.ooms.inventory.articlesec.repository.ArticleSecRepository;
 import com.xdev.ooms.inventory.bom.repository.BomLineRepository;
 import com.xdev.ooms.inventory.fournisseur.repository.FournisseurRepository;
+import com.xdev.ooms.inventory.stocksec.entity.StockSec;
 import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
 import com.xdev.ooms.inventory.stocksec.service.StockSecService;
 import com.xdev.ooms.sharedkernel.models.Action;
@@ -25,8 +24,6 @@ import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -145,13 +142,10 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
             }
         }
 
-        if (articleDto.getFournisseur() != null) {
-            if (existingArticle.getFournisseur() == null ||
-                    !articleDto.getFournisseur().getId().equals(existingArticle.getFournisseur().getId())) {
-                Fournisseur fournisseur = fournisseurRepository.findById(articleDto.getFournisseur().getId())
-                        .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé"));
-                existingArticle.setFournisseur(fournisseur);
-            }
+        if (articleDto.getFournisseur() != null && articleDto.getFournisseur().getId() != null) {
+            Fournisseur fournisseur = fournisseurRepository.findById(articleDto.getFournisseur().getId())
+                    .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec ID: " + articleDto.getFournisseur().getId()));
+            existingArticle.setFournisseur(fournisseur);
         } else {
             existingArticle.setFournisseur(null);
         }
@@ -160,12 +154,14 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         ArticleSec updatedArticle = articleRepository.save(existingArticle);
         return convertToDto(updatedArticle);
     }
+
     @Transactional(readOnly = true)
     public List<ArticleSecDto> getAllActiveArticles() {
         return articleRepository.findByActifTrue().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
     @Transactional(readOnly = true)
     public List<ArticleSecDto> getArticlesByCategorie(CategorieArticle categorie) {
         return articleRepository.findByCategorie(categorie).stream()
@@ -224,14 +220,13 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.CREATE, Action.ENTREE_STOCK, Action.SORTIE_STOCK));
         return actions;
     }
+
     private ArticleSec convertToEntity(ArticleSecDto dto) {
         ArticleSec article = modelMapper.map(dto, ArticleSec.class);
         if (dto.getFournisseur() != null && dto.getFournisseur().getId() != null) {
             Fournisseur fournisseur = fournisseurRepository.findById(dto.getFournisseur().getId())
                     .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec ID: " + dto.getFournisseur().getId()));
             article.setFournisseur(fournisseur);
-        } else {
-            article.setFournisseur(null);
         }
         if (dto.getConfiguration() != null) {
             try {
@@ -243,6 +238,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         }
         return article;
     }
+
     private ArticleSecDto convertToDto(ArticleSec article) {
         ArticleSecDto dto = modelMapper.map(article, ArticleSecDto.class);
         if (article.getFournisseur() != null) {
@@ -260,6 +256,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
 
         return dto;
     }
+
     @Override
     protected String getEntityType() {
         return "ARTICLE";
