@@ -32,21 +32,25 @@ public class FournisseurService extends BaseServiceImpl<Fournisseur, Fournisseur
         this.deleteGuard = deleteGuard;
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public List<FournisseurDto> getAllFournisseurs() {
+    public List<FournisseurDto> findAll() {
         return fournisseurRepository.findAllByIsDeletedFalse().stream()
                 .map(f -> modelMapper.map(f, FournisseurDto.class))
                 .collect(Collectors.toList());
     }
 
-    public FournisseurDto getFournisseurById(UUID id) {
+    @Override
+    @Transactional(readOnly = true)
+    public FournisseurDto findById(UUID id) {
         Fournisseur fournisseur = fournisseurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec id: " + id));
         return modelMapper.map(fournisseur, FournisseurDto.class);
     }
 
+    @Override
     @Transactional
-    public FournisseurDto createFournisseur(FournisseurDto fournisseurDto) {
+    public FournisseurDto save(FournisseurDto fournisseurDto) {
         if (!StringUtils.hasText(fournisseurDto.getNom())) {
             throw new RuntimeException("Le nom du fournisseur est obligatoire");
         }
@@ -76,8 +80,13 @@ public class FournisseurService extends BaseServiceImpl<Fournisseur, Fournisseur
         return modelMapper.map(savedFournisseur, FournisseurDto.class);
     }
 
+    @Override
     @Transactional
-    public FournisseurDto updateFournisseur(UUID id, FournisseurDto fournisseurDto) {
+    public FournisseurDto update(FournisseurDto fournisseurDto) {
+        if (fournisseurDto == null || fournisseurDto.getId() == null) {
+            throw new RuntimeException("L'identifiant du fournisseur est obligatoire");
+        }
+        UUID id = fournisseurDto.getId();
         Fournisseur existingFournisseur = fournisseurRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec id: " + id));
         if (!StringUtils.hasText(fournisseurDto.getNom())) {
@@ -168,7 +177,7 @@ public class FournisseurService extends BaseServiceImpl<Fournisseur, Fournisseur
     @Override
     @Transactional
     public FournisseurDto delete(UUID id) {
-        FournisseurDto dto = getFournisseurById(id);
+        FournisseurDto dto = findById(id);
         supprimerFournisseur(id);
         return dto;
     }

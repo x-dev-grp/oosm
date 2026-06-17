@@ -10,6 +10,7 @@ import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.permission.entity.Permission;
 import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.security.user.service.UserService;
+import com.xdev.ooms.sharedkernel.events.TenantCreatedEvent;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
@@ -23,6 +24,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.*;
 
@@ -33,13 +35,15 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     private final RoleRepository roleRepository;
     private final PermissionRepository permissionRepository;
     private final SearchSpecificationBuilder<CompanyProfile> specificationBuilder;
+    private final ApplicationEventPublisher eventPublisher;
 
-    public CompanyProfileService(BaseRepository<CompanyProfile> repository, ModelMapper modelMapper, UserService userService, RoleRepository roleRepository, PermissionRepository permissionRepository, SearchSpecificationBuilder<CompanyProfile> specificationBuilder) {
+    public CompanyProfileService(BaseRepository<CompanyProfile> repository, ModelMapper modelMapper, UserService userService, RoleRepository roleRepository, PermissionRepository permissionRepository, SearchSpecificationBuilder<CompanyProfile> specificationBuilder, ApplicationEventPublisher eventPublisher) {
         super(repository, modelMapper);
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.specificationBuilder = specificationBuilder;
+        this.eventPublisher = eventPublisher;
     }
 
 
@@ -84,6 +88,8 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         userDto.setRole(modelMapper.map(adminRole, RoleDTO.class));
         userDto.setTenantId(companyProfile.getId());
         userDto = userService.addUser(userDto);
+
+        eventPublisher.publishEvent(new TenantCreatedEvent(companyProfile.getId()));
 
         CompanyUserDTO companyUserDTO = new CompanyUserDTO();
         companyUserDTO.setLegalName(companyProfile.getLegalForm());

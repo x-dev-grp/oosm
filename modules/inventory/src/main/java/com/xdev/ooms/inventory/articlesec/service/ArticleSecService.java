@@ -72,19 +72,24 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
                 .orElseThrow(() -> new RuntimeException("Article non trouvé avec ID: " + id));
     }
 
-    public List<ArticleSecDto> getAllArticles() {
+    @Override
+    @Transactional(readOnly = true)
+    public List<ArticleSecDto> findAll() {
         return articleRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
 
-    public ArticleSecDto getArticleById(UUID id) {
+    @Override
+    @Transactional(readOnly = true)
+    public ArticleSecDto findById(UUID id) {
         ArticleSec article = getArticleEntityById(id);
         return convertToDto(article);
     }
 
+    @Override
     @Transactional
-    public ArticleSecDto createArticle(ArticleSecDto articleDto) {
+    public ArticleSecDto save(ArticleSecDto articleDto) {
         ArticleSec article = convertToEntity(articleDto);
         article.setActif(true);
         if (article.getStockMinimum() == null) {
@@ -110,8 +115,13 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         return convertToDto(savedArticle);
     }
 
+    @Override
     @Transactional
-    public ArticleSecDto updateArticle(UUID id, ArticleSecDto articleDto) {
+    public ArticleSecDto update(ArticleSecDto articleDto) {
+        if (articleDto == null || articleDto.getId() == null) {
+            throw new RuntimeException("L'identifiant de l'article est obligatoire");
+        }
+        UUID id = articleDto.getId();
         ArticleSec existingArticle = getArticleEntityById(id);
         if (!existingArticle.getNom().equals(articleDto.getNom()) && articleDto.getFournisseur() != null) {
             Fournisseur fournisseur = fournisseurRepository.findById(articleDto.getFournisseur().getId()).orElse(null);
@@ -197,7 +207,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
     @Override
     @Transactional
     public ArticleSecDto delete(UUID id) {
-        ArticleSecDto dto = getArticleById(id);
+        ArticleSecDto dto = findById(id);
         supprimerArticle(id);
         return dto;
     }

@@ -27,21 +27,25 @@ public class LigneConditionnementService extends BaseServiceImpl<LigneConditionn
         this.modelMapper = modelMapper;
     }
 
-    public List<LigneConditionnementDto> getAllLignes() {
+    @Override
+    @Transactional(readOnly = true)
+    public List<LigneConditionnementDto> findAll() {
         return ligneRepository.findAll().stream()
                 .map(ligne -> modelMapper.map(ligne, LigneConditionnementDto.class))
                 .collect(Collectors.toList());
     }
 
-
-    public LigneConditionnementDto getLigneById(UUID id) {
+    @Override
+    @Transactional(readOnly = true)
+    public LigneConditionnementDto findById(UUID id) {
         LigneConditionnement ligne = ligneRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ligne non trouvée avec id: " + id));
         return modelMapper.map(ligne, LigneConditionnementDto.class);
     }
 
+    @Override
     @Transactional
-    public LigneConditionnementDto createLigne(LigneConditionnementDto ligneDto) {
+    public LigneConditionnementDto save(LigneConditionnementDto ligneDto) {
 
         LigneConditionnement ligne = modelMapper.map(ligneDto, LigneConditionnement.class);
         ligne.setCode(genererCodeLigne());
@@ -53,8 +57,13 @@ public class LigneConditionnementService extends BaseServiceImpl<LigneConditionn
 
         return modelMapper.map(savedLigne, LigneConditionnementDto.class);
     }
+    @Override
     @Transactional
-    public LigneConditionnementDto updateLigne(UUID id, LigneConditionnementDto ligneDto) {
+    public LigneConditionnementDto update(LigneConditionnementDto ligneDto) {
+        if (ligneDto == null || ligneDto.getId() == null) {
+            throw new RuntimeException("L'identifiant de la ligne est obligatoire");
+        }
+        UUID id = ligneDto.getId();
         LigneConditionnement existingLigne = ligneRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ligne non trouvée avec id: " + id));
         if (!existingLigne.getCode().equals(ligneDto.getCode())) {

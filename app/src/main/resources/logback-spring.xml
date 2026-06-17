@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true">
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="osm-monolith"/>
+
+    <property name="OSM_CONSOLE_LOG_PATTERN"
+              value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-36.36logger{35}){cyan} %clr(:){faint} %msg %clr(%X{correlationId:-}){yellow}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+
+    <property name="JSON_LOG_PATTERN"
+              value="{&quot;timestamp&quot;:&quot;%d{yyyy-MM-dd HH:mm:ss.SSS}&quot;,&quot;level&quot;:&quot;%-5level&quot;,&quot;pid&quot;:&quot;${PID:-}&quot;,&quot;thread&quot;:&quot;%thread&quot;,&quot;logger&quot;:&quot;%logger{48}&quot;,&quot;correlationId&quot;:&quot;%X{correlationId:-}&quot;,&quot;application&quot;:&quot;${APP_NAME}&quot;,&quot;message&quot;:&quot;%msg&quot;,&quot;service&quot;:&quot;osm-monolith&quot;}%n"/>
+
+    <appender name="OSM_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${OSM_CONSOLE_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <appender name="OSM_JSON" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${JSON_LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <springProfile name="!prod &amp; !production">
+        <logger name="com.xdev.ooms" level="INFO"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.springframework.web" level="INFO"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="WARN"/>
+        <root level="INFO">
+            <appender-ref ref="OSM_CONSOLE"/>
+        </root>
+    </springProfile>
+
+    <springProfile name="prod,production">
+        <logger name="com.xdev.ooms" level="INFO"/>
+        <logger name="org.springframework.security" level="WARN"/>
+        <logger name="org.springframework.web" level="WARN"/>
+        <logger name="org.hibernate.SQL" level="WARN"/>
+        <root level="INFO">
+            <appender-ref ref="OSM_JSON"/>
+        </root>
+    </springProfile>
+
+</configuration>

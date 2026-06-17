@@ -143,6 +143,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         // Save entity
         UnifiedDelivery savedDelivery = deliveryRepository.saveAndFlush(delivery);
+        savedDelivery = ensureQrCodeIfSupported(savedDelivery);
 
         // Map back to DTO and return
         OSMLogger.logMethodExit(this.getClass(), "save", savedDelivery);
@@ -869,6 +870,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     // Create oil transaction
                     OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Creating oil transaction for delivery " + delivery.getLotNumber());
                     oilTransactionService.createSingleOilTransactionIn(delivery);
+                    recordOilPurchaseFinancialTransaction(delivery, totalPrice);
                 }
                 case OLIVE -> {
                     if (delivery.getPoidsNet() == null || delivery.getPoidsNet() <= 0) {
@@ -975,11 +977,15 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             // Save the updated oilDelivery
             UnifiedDelivery savedDelivery = deliveryRepository.save(oilDelivery);
+            if (originalOliveDelivery != null) {
+                deliveryRepository.save(originalOliveDelivery);
+            }
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully saved oilDelivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
 
             // Create oil transaction
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Creating oil transaction for oilDelivery " + oilDelivery.getLotNumber());
             oilTransactionService.createSingleOilTransactionIn(savedDelivery);
+            recordOilPurchaseFinancialTransaction(savedDelivery, dto.getPrice());
 
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully completed payment reception processing for oilDelivery %s", oilDelivery.getLotNumber());
 
@@ -1124,6 +1130,8 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             }
             case SIMPLE_RECEPTION ->
                     prepareFinanacalTransaction(paymentDTO, amount, delivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.SIMPLE_RECEPTION);
+            case PAYMENT ->
+                    prepareFinanacalTransaction(paymentDTO, amount, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, OperationType.PAYMENT);
         }
 
     }
@@ -1161,6 +1169,40 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         d.setPaid(fullyPaid);
 
         deliveryRepository.save(d);
+    }
+
+    /**
+     * Records an outbound purchase financial transaction when the tenant buys oil from a supplier.
+     */
+    private void recordOilPurchaseFinancialTransaction(UnifiedDelivery delivery, double amount) {
+        if (delivery == null || amount <= 0) {
+            return;
+        }
+
+        PaymentDTO paymentDTO = new PaymentDTO();
+        paymentDTO.setAmount(amount);
+        paymentDTO.setCurrency(Currency.TND);
+        paymentDTO.setPaymentMethod(PaymentMethod.OIL);
+        if (delivery.getSupplier() != null) {
+            paymentDTO.setSupplier(modelMapper.map(delivery.getSupplier(), SupplierDto.class));
+        }
+
+        OperationType operationType = resolveOilPurchaseOperationType(delivery);
+        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                "[recordOilPurchaseFinancialTransaction] Recording outbound purchase for delivery %s, amount=%.2f, operation=%s",
+                delivery.getLotNumber(), amount, operationType);
+        prepareFinanacalTransaction(paymentDTO, amount, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, operationType);
+    }
+
+    private OperationType resolveOilPurchaseOperationType(UnifiedDelivery delivery) {
+        OperationType operationType = delivery.getOperationType();
+        if (operationType == null) {
+            return OperationType.OIL_PURCHASE;
+        }
+        return switch (operationType) {
+            case OIL_PURCHASE, OLIVE_PURCHASE, BASE, EXCHANGE, PAYMENT -> operationType;
+            default -> OperationType.OIL_PURCHASE;
+        };
     }
 
     private void prepareFinanacalTransaction(PaymentDTO paymentDTO, double amount, UnifiedDelivery delivery, TransactionDirection direction, TransactionType transactionType, OperationType simpleReception) {

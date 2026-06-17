@@ -71,6 +71,20 @@ public class LabelContent extends BaseEntity {
     private String extractionMethod;
     private String sensoryProfile;
 
+    @Column(length = 500)
+    private String ingredientDeclaration;
+
+    @Lob
+    @Column(name = "nutrition_declaration_json", columnDefinition = "TEXT")
+    private String nutritionDeclarationJson;
+
+    @Column(length = 13)
+    private String ean13;
+
+    private String harvestYear;
+    private String acidityLevel;
+    private String brandName;
+
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "label_content_certifications", joinColumns = @JoinColumn(name = "label_content_id"))
     @Column(name = "certification")

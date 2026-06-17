@@ -4,16 +4,13 @@ import com.xdev.ooms.inventory.fournisseur.dto.FournisseurDto;
 import com.xdev.ooms.inventory.fournisseur.entity.Fournisseur;
 import com.xdev.ooms.inventory.fournisseur.service.FournisseurService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
-import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -23,57 +20,44 @@ public class FournisseurController extends BaseControllerImpl<Fournisseur, Fourn
     private final FournisseurService fournisseurService;
 
     @Autowired
-    public FournisseurController(BaseService<Fournisseur, FournisseurDto, FournisseurDto> baseService,
-                                 ModelMapper modelMapper,
-                                 FournisseurService fournisseurService) {
-        super(baseService, modelMapper);
+    public FournisseurController(FournisseurService fournisseurService, ModelMapper modelMapper) {
+        super(fournisseurService, modelMapper);
         this.fournisseurService = fournisseurService;
     }
 
     @Transactional(readOnly = true)
-    @GetMapping
-    public ResponseEntity<List<FournisseurDto>> getAllFournisseurs() {
-        return ResponseEntity.ok(attachPermittedActions(fournisseurService.getAllFournisseurs()));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<FournisseurDto> getFournisseurById(@PathVariable UUID id) {
-        return ResponseEntity.ok(attachPermittedActions(fournisseurService.getFournisseurById(id)));
-    }
     @GetMapping("/actifs")
-    public ResponseEntity<List<FournisseurDto>> getActiveFournisseurs() {
-        return ResponseEntity.ok(attachPermittedActions(fournisseurService.getActiveFournisseurs()));
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<FournisseurDto> createFournisseur(@RequestBody FournisseurDto fournisseurDto) {
-        return new ResponseEntity<>(attachPermittedActions(fournisseurService.createFournisseur(fournisseurDto)), HttpStatus.CREATED);
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateFournisseur(@PathVariable UUID id, @RequestBody FournisseurDto fournisseurDto) {
+    public ResponseEntity<?> getActiveFournisseurs() {
         try {
-            FournisseurDto updated = fournisseurService.updateFournisseur(id, fournisseurDto);
-            return ResponseEntity.ok(attachPermittedActions(updated));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(fournisseurService.getActiveFournisseurs()));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "getActiveFournisseurs", e);
         }
     }
 
     @PutMapping("/{id}/activer")
-    public ResponseEntity<FournisseurDto> activerFournisseur(@PathVariable UUID id) {
-        return ResponseEntity.ok(attachPermittedActions(fournisseurService.activerFournisseur(id)));
+    public ResponseEntity<?> activerFournisseur(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(attachPermittedActions(fournisseurService.activerFournisseur(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "activerFournisseur", e);
+        }
     }
 
     @PutMapping("/{id}/desactiver")
-    public ResponseEntity<FournisseurDto> desactiverFournisseur(@PathVariable UUID id) {
-        return ResponseEntity.ok(attachPermittedActions(fournisseurService.desactiverFournisseur(id)));
+    public ResponseEntity<?> desactiverFournisseur(@PathVariable UUID id) {
+        try {
+            return ResponseEntity.ok(attachPermittedActions(fournisseurService.desactiverFournisseur(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "desactiverFournisseur", e);
+        }
     }
+
     @Override
     protected String getResourceName() {
-        return "Fournisseur";
+        return "FOURNISSEUR";
     }
+
     @Override
     public ResponseEntity<?> resolve(String publicCode) {
         return null;

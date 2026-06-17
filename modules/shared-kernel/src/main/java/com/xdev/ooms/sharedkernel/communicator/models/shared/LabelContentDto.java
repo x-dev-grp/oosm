@@ -40,6 +40,12 @@ public class LabelContentDto extends BaseDto {
     private String qualityGrade;
     private String extractionMethod;
     private String sensoryProfile;
+    private String ingredientDeclaration;
+    private String nutritionDeclarationJson;
+    private String ean13;
+    private String harvestYear;
+    private String acidityLevel;
+    private String brandName;
     private List<String> certifications = new ArrayList<>();
     private Set<LabelClaimType> claimTypes = new LinkedHashSet<>();
     private List<String> marketingClaims = new ArrayList<>();
@@ -224,6 +230,54 @@ public class LabelContentDto extends BaseDto {
 
     public void setSensoryProfile(String sensoryProfile) {
         this.sensoryProfile = sensoryProfile;
+    }
+
+    public String getIngredientDeclaration() {
+        return ingredientDeclaration;
+    }
+
+    public void setIngredientDeclaration(String ingredientDeclaration) {
+        this.ingredientDeclaration = ingredientDeclaration;
+    }
+
+    public String getNutritionDeclarationJson() {
+        return nutritionDeclarationJson;
+    }
+
+    public void setNutritionDeclarationJson(String nutritionDeclarationJson) {
+        this.nutritionDeclarationJson = nutritionDeclarationJson;
+    }
+
+    public String getEan13() {
+        return ean13;
+    }
+
+    public void setEan13(String ean13) {
+        this.ean13 = ean13;
+    }
+
+    public String getHarvestYear() {
+        return harvestYear;
+    }
+
+    public void setHarvestYear(String harvestYear) {
+        this.harvestYear = harvestYear;
+    }
+
+    public String getAcidityLevel() {
+        return acidityLevel;
+    }
+
+    public void setAcidityLevel(String acidityLevel) {
+        this.acidityLevel = acidityLevel;
+    }
+
+    public String getBrandName() {
+        return brandName;
+    }
+
+    public void setBrandName(String brandName) {
+        this.brandName = brandName;
     }
 
     public List<String> getCertifications() {

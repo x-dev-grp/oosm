@@ -146,14 +146,13 @@ public class FinancialTransactionDto extends BaseDto<FinancialTransaction> {
         this.lotNumber = lotNumber;
     }
 
-    public SupplierDto getsupplier() {
+    public SupplierDto getSupplier() {
         return supplier;
     }
 
-    public void setsupplier(SupplierDto supplier) {
+    public void setSupplier(SupplierDto supplier) {
         this.supplier = supplier;
     }
-
 
     public ExpenseDto getExpense() {
         return expense;

@@ -17,7 +17,9 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --uid 10001 --create-home osm
+    && useradd --system --uid 10001 --create-home osm \
+    && mkdir -p /app/data \
+    && chown osm:osm /app/data
 
 COPY --from=build --chown=osm:osm /workspace/app/target/osm-monolith.jar /app/osm-monolith.jar
 

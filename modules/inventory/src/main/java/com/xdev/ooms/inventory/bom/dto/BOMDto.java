@@ -17,25 +17,41 @@ import java.util.UUID;
 
 public class BOMDto  extends BaseDto<BOM> implements Serializable {
     private List<BomLineDto> lines;
-    private UUID productId;
-    private String productName;
+    private UUID finalProductId;
+    private String finalProductName;
     private ProduitFinal produitFinal;
     private String version;
     private Boolean active;
 
+    public UUID getProductId() {
+        return finalProductId;
+    }
+
+    public void setProductId(UUID productId) {
+        this.finalProductId = productId;
+    }
+
+    public String getProductName() {
+        return finalProductName;
+    }
+
+    public void setProductName(String productName) {
+        this.finalProductName = productName;
+    }
+
     public UUID getSkuId() {
-        return productId;
+        return finalProductId;
     }
 
     public void setSkuId(UUID skuId) {
-        this.productId = skuId;
+        this.finalProductId = skuId;
     }
 
     public String getSkuCode() {
-        return productName;
+        return finalProductName;
     }
 
     public void setSkuCode(String skuCode) {
-        this.productName = skuCode;
+        this.finalProductName = skuCode;
     }
 }

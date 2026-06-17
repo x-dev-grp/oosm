@@ -51,20 +51,34 @@ public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
         return BOM.class;
     }
 
+    @Override
     @Transactional(readOnly = true)
-    public BOMDto getBomById(UUID id) {
+    public BOMDto findById(UUID id) {
         BOM bom = bomRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
         return convertToDto(bom);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<BOMDto> findAll() {
+        return bomRepository.findAllByIsDeletedFalse().stream().map(this::convertToDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public BOMDto save(BOMDto bomDto) {
+        return createBom(bomDto);
+    }
+
     @Transactional(readOnly = true)
     public List<BOMDto> getBomsByProduct(UUID productId) {
-        return bomRepository.findByProduitFinalId(productId).stream().map(this::convertToDto).collect(Collectors.toList());
+        return bomRepository.findByProduitFinalIdAndIsDeletedFalse(productId).stream().map(this::convertToDto).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public BOMDto getActiveBomForProduct(UUID productId) {
-        return bomRepository.findFirstByProduitFinalIdAndActiveTrue(productId)
+        return bomRepository.findFirstByProduitFinalIdAndActiveTrueAndIsDeletedFalse(productId)
+                .or(() -> bomRepository.findFirstByProduitFinalIdAndIsDeletedFalse(productId))
                 .map(this::convertToDto)
                 .orElse(null);
     }
@@ -91,32 +105,43 @@ public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
     public BOMDto createBom(BOMDto bomDto) {
         validateBomDto(bomDto, true);
 
-        ProduitFinal produitFinal = produitFinalRepository.findById(bomDto.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + bomDto.getProductId()));
+        UUID finalProductId = resolveFinalProductId(bomDto);
+        ProduitFinal produitFinal = produitFinalRepository.findById(finalProductId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + finalProductId));
         if (produitFinal.getType() == ProduitFinalType.VRAC) {
             throw new InventoryBusinessException("BOM_VRAC_NOT_ALLOWED", "Une nomenclature emballage n'est pas applicable aux produits VRAC");
         }
 
-        int count = bomRepository.findByProduitFinalId(bomDto.getProductId()).size();
-        String version = "V" + (count + 1);
-
-        BOM bom = new BOM();
+        List<BOM> existingBoms = bomRepository.findByProduitFinalIdAndIsDeletedFalse(finalProductId);
+        BOM bom = existingBoms.stream().findFirst().orElseGet(BOM::new);
         bom.setProduitFinal(produitFinal);
-        bom.setVersion(version);
+        bom.setVersion("V1");
+        bom.setDeleted(false);
+        bom.setActive(true);
+        bom.getLines().clear();
         bom.setLines(buildLines(bom, bomDto.getLines()));
 
-        boolean shouldActivate = Boolean.TRUE.equals(bomDto.getActive()) || count == 0;
-        if (shouldActivate) {
-            List<BOM> existing = bomRepository.findByProduitFinalId(produitFinal.getId());
-            existing.forEach(other -> other.setActive(false));
-            if (!existing.isEmpty()) {
-                bomRepository.saveAll(existing);
+        for (BOM duplicate : existingBoms) {
+            if (duplicate.getId() != null && !duplicate.getId().equals(bom.getId())) {
+                duplicate.setActive(false);
+                duplicate.setDeleted(true);
             }
-            bom.setActive(true);
+        }
+        if (existingBoms.size() > 1) {
+            bomRepository.saveAll(existingBoms);
         }
 
         BOM saved = bomRepository.save(bom);
         return convertToDto(saved);
+    }
+
+    @Override
+    @Transactional
+    public BOMDto update(BOMDto bomDto) {
+        if (bomDto == null || bomDto.getId() == null) {
+            throw new InventoryBusinessException("BOM_ID_REQUIRED", "L'identifiant de la nomenclature est obligatoire");
+        }
+        return updateBom(bomDto.getId(), bomDto);
     }
 
     @Transactional
@@ -124,60 +149,63 @@ public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
         BOM bom = bomRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
         validateBomDto(bomDto, false);
 
-        if (bomDto.getProductId() == null) {
+        UUID finalProductId = resolveFinalProductId(bomDto);
+        if (finalProductId == null) {
             throw new InventoryBusinessException("BOM_PRODUCT_REQUIRED", "Le produit fini est obligatoire");
         }
 
-        ProduitFinal produitFinal = produitFinalRepository.findById(bomDto.getProductId())
-                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + bomDto.getProductId()));
+        ProduitFinal produitFinal = produitFinalRepository.findById(finalProductId)
+                .orElseThrow(() -> new ResourceNotFoundException("Produit non trouve avec l'id : " + finalProductId));
         if (produitFinal.getType() == ProduitFinalType.VRAC) {
             throw new InventoryBusinessException("BOM_VRAC_NOT_ALLOWED", "Une nomenclature emballage n'est pas applicable aux produits VRAC");
         }
 
         bom.setProduitFinal(produitFinal);
-        if (bomDto.getVersion() != null && !bomDto.getVersion().isBlank()) {
-            bom.setVersion(bomDto.getVersion());
-        }
+        bom.setVersion("V1");
         bom.getLines().clear();
         bom.getLines().addAll(buildLines(bom, bomDto.getLines()));
+        bom.setActive(true);
 
-        if (Boolean.TRUE.equals(bomDto.getActive())) {
-            List<BOM> siblings = bomRepository.findByProduitFinalId(produitFinal.getId());
-            for (BOM other : siblings) {
-                other.setActive(other.getId().equals(bom.getId()));
+        List<BOM> siblings = bomRepository.findByProduitFinalIdAndIsDeletedFalse(produitFinal.getId());
+        for (BOM other : siblings) {
+            if (!other.getId().equals(bom.getId())) {
+                other.setActive(false);
+                other.setDeleted(true);
             }
-            if (!siblings.isEmpty()) {
-                return convertToDto(bomRepository.saveAll(siblings).stream()
-                        .filter(b -> b.getId().equals(bom.getId()))
-                        .findFirst()
-                        .orElse(bom));
-            }
-            bom.setActive(true);
-        } else if (Boolean.FALSE.equals(bomDto.getActive())) {
-            bom.setActive(false);
+        }
+        if (!siblings.isEmpty()) {
+            bomRepository.saveAll(siblings);
         }
 
         BOM updated = bomRepository.save(bom);
         return convertToDto(updated);
     }
 
-    @Transactional(readOnly = true)
-    public List<BOMDto> getAllBoms() {
-        return bomRepository.findAll().stream().map(this::convertToDto).collect(Collectors.toList());
+    @Override
+    @Transactional
+    public BOMDto delete(UUID id) {
+        BOMDto dto = findById(id);
+        deleteBom(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        deleteBom(id);
     }
 
     @Transactional
     public void deleteBom(UUID id) {
         BOM bom = bomRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("BOM non trouvee avec l'id : " + id));
-        if (bom.isActive()) {
-            throw new InventoryBusinessException("BOM_ACTIVE_DELETE", "Desactivez la nomenclature avant de la supprimer");
-        }
-        bomRepository.deleteById(id);
+        bom.setActive(false);
+        bom.setDeleted(true);
+        bomRepository.save(bom);
     }
 
     private void validateBomDto(BOMDto bomDto, boolean creating) {
-        if (bomDto.getProductId() == null) {
+        if (resolveFinalProductId(bomDto) == null) {
             throw new InventoryBusinessException("BOM_PRODUCT_REQUIRED", "Le produit fini est obligatoire");
         }
         if (bomDto.getLines() == null || bomDto.getLines().isEmpty()) {
@@ -206,6 +234,10 @@ public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
         }
     }
 
+    private UUID resolveFinalProductId(BOMDto bomDto) {
+        return bomDto.getFinalProductId() != null ? bomDto.getFinalProductId() : bomDto.getProductId();
+    }
+
     private List<BomLine> buildLines(BOM bom, List<BomLineDto> lineDtos) {
         return lineDtos.stream().map(lineDto -> {
             ArticleSec article = articleRepository.findById(lineDto.getArticleId())
@@ -223,13 +255,13 @@ public class BomService extends BaseServiceImpl<BOM, BOMDto, BOMDto> {
         BOMDto dto = new BOMDto();
         dto.setId(bom.getId());
         if (bom.getProduitFinal() != null) {
-            dto.setProductId(bom.getProduitFinal().getId());
-            dto.setProductName(bom.getProduitFinal().getName());
+            dto.setFinalProductId(bom.getProduitFinal().getId());
+            dto.setFinalProductName(bom.getProduitFinal().getName());
         } else {
-            dto.setProductName("Produit non assigne");
+            dto.setFinalProductName("Produit non assigne");
         }
-        dto.setVersion(bom.getVersion());
-        dto.setActive(bom.isActive());
+        dto.setVersion("V1");
+        dto.setActive(true);
 
         List<BomLineDto> lineDtos = bom.getLines().stream().map(line -> {
             BomLineDto lineDto = new BomLineDto();

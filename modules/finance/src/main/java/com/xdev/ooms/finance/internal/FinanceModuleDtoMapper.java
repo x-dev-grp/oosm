@@ -51,7 +51,7 @@ public class FinanceModuleDtoMapper {
         target.setVendorName(source.getVendorName());
         target.setSyncProductionState(
                 source.getSyncProductionState() != null ? source.getSyncProductionState() : Boolean.TRUE);
-        target.setsupplier(FinanceSharedDtoMapper.copySupplier(source.getsupplier()));
+        target.setSupplier(FinanceSharedDtoMapper.copySupplier(source.getsupplier()));
         target.setBankAccount(FinanceSharedDtoMapper.copyBankAccount(source.getBankAccount()));
         target.setExpense(FinanceSharedDtoMapper.copyExpense(source.getExpense()));
         target.setCreatedBy(source.getCreatedBy());
@@ -91,7 +91,7 @@ public class FinanceModuleDtoMapper {
         target.setResourceName(source.getResourceName());
         target.setVendorName(source.getVendorName());
         target.setSyncProductionState(source.getSyncProductionState());
-        target.setsupplier(FinanceSharedDtoMapper.copySupplier(source.getsupplier()));
+        target.setsupplier(FinanceSharedDtoMapper.copySupplier(source.getSupplier()));
         target.setBankAccount(FinanceSharedDtoMapper.copyBankAccount(source.getBankAccount()));
         target.setExpense(FinanceSharedDtoMapper.copyExpense(source.getExpense()));
         target.setCreatedBy(source.getCreatedBy());

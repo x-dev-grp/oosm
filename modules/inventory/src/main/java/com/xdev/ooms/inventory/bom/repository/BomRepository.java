@@ -14,6 +14,8 @@ public interface BomRepository extends BaseRepository<BOM> {
 
     List<BOM> findByProduitFinalIdAndIsDeletedFalse(UUID productId);
 
+    Optional<BOM> findFirstByProduitFinalIdAndIsDeletedFalse(UUID productId);
+
     Optional<BOM> findFirstByProduitFinalIdAndActiveTrue(UUID productId);
 
     Optional<BOM> findFirstByProduitFinalIdAndActiveTrueAndIsDeletedFalse(UUID productId);

@@ -28,13 +28,17 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
         this.emplacementRepository = emplacementRepository;
         this.modelMapper = modelMapper;
     }
+    @Override
     @Transactional(readOnly = true)
-    public List<EmplacementStockDto> getAllEmplacements() {
+    public List<EmplacementStockDto> findAll() {
         return emplacementRepository.findAllByIsDeletedFalse().stream()
                 .map(emp -> modelMapper.map(emp, EmplacementStockDto.class))
                 .collect(Collectors.toList());
     }
-    public EmplacementStockDto getEmplacementById(UUID id) {
+
+    @Override
+    @Transactional(readOnly = true)
+    public EmplacementStockDto findById(UUID id) {
         EmplacementStock emplacement = emplacementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Emplacement non trouvé avec id: " + id));
         return modelMapper.map(emplacement, EmplacementStockDto.class);
@@ -46,8 +50,9 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
                 .collect(Collectors.toList());
     }
 
+    @Override
     @Transactional
-    public EmplacementStockDto createEmplacement(EmplacementStockDto emplacementDto) {
+    public EmplacementStockDto save(EmplacementStockDto emplacementDto) {
         if (emplacementDto.getNom() == null || emplacementDto.getNom().trim().isEmpty()) {
             throw new ValidationException("Le nom de l'emplacement est obligatoire");
         }
@@ -107,8 +112,13 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
         return modelMapper.map(updated, EmplacementStockDto.class);
     }
 
+    @Override
     @Transactional
-    public EmplacementStockDto updateEmplacement(UUID id, EmplacementStockDto emplacementDto) {
+    public EmplacementStockDto update(EmplacementStockDto emplacementDto) {
+        if (emplacementDto == null || emplacementDto.getId() == null) {
+            throw new RuntimeException("L'identifiant de l'emplacement est obligatoire");
+        }
+        UUID id = emplacementDto.getId();
         EmplacementStock existingEmplacement = emplacementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Emplacement non trouvé avec id: " + id));
 
@@ -171,8 +181,21 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
         return modelMapper.map(updatedEmplacement, EmplacementStockDto.class);
     }
 
+    @Override
     @Transactional
-    public void deleteEmplacement(UUID id) {
+    public EmplacementStockDto delete(UUID id) {
+        EmplacementStockDto dto = findById(id);
+        softDeleteEmplacement(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        softDeleteEmplacement(id);
+    }
+
+    private void softDeleteEmplacement(UUID id) {
         EmplacementStock emplacement = emplacementRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Emplacement non trouvé avec id: " + id));
         emplacementRepository.delete(emplacement);

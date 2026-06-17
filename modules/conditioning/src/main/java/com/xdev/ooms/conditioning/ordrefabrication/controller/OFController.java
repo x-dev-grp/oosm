@@ -5,10 +5,9 @@ import com.xdev.ooms.conditioning.ordrefabrication.dto.OrdreFabricationDto;
 import com.xdev.ooms.conditioning.ordrefabrication.dto.SaisieProductionDto;
 import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
 import com.xdev.ooms.conditioning.ordrefabrication.service.OFService;
-import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
-import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,36 +24,12 @@ import java.util.UUID;
 @RequestMapping("/api/ordreConditionement/of")
 public class OFController extends BaseControllerImpl<OrdreFabrication, OrdreFabricationDto, OrdreFabricationDto> {
 
+    private final OFService ofService;
+
     @Autowired
-    private OFService ofService;
-
-    public OFController(BaseService<OrdreFabrication, OrdreFabricationDto, OrdreFabricationDto> baseService,
-                        ModelMapper modelMapper) {
-        super(baseService, modelMapper);
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getOFById(@PathVariable UUID id) {
-        try {
-            OrdreFabricationDto of = ofService.findById(id);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-
-
-    @GetMapping("/all")
-    public ResponseEntity<?> getAllOF() {
-        try {
-            List<OrdreFabricationDto> list = ofService.findAll();
-            return ResponseEntity.ok(attachPermittedActions(list));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
+    public OFController(OFService ofService, ModelMapper modelMapper) {
+        super(ofService, modelMapper);
+        this.ofService = ofService;
     }
 
     @GetMapping("/project/{projectId}")
@@ -62,88 +37,60 @@ public class OFController extends BaseControllerImpl<OrdreFabrication, OrdreFabr
         return ResponseEntity.ok(attachPermittedActions(ofService.getByProject(projectId)));
     }
 
-    @PostMapping("/create")
-    public ResponseEntity<ApiSingleResponse<OrdreFabrication, OrdreFabricationDto>> creerOF(@RequestBody OrdreFabricationDto dto) {
-        try {
-            OrdreFabricationDto created = ofService.creerOF(dto);
-            return ResponseEntity.ok(new ApiSingleResponse<>(true, "OF créé avec succès", attachPermittedActions(created)));
-        } catch (RuntimeException e) {
-            return ResponseEntity.badRequest()
-                    .body(new ApiSingleResponse<>(false, e.getMessage(), null));
-        }
-    }
-
     @PutMapping("/{id}/demarrer")
     public ResponseEntity<?> demarrerOF(@PathVariable UUID id) {
         try {
-            OrdreFabricationDto of = ofService.demarrerOF(id);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.demarrerOF(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "demarrerOF", e);
         }
     }
 
     @PutMapping("/{id}/pause")
     public ResponseEntity<?> pauseOF(@PathVariable UUID id) {
         try {
-            OrdreFabricationDto of = ofService.mettreEnPause(id);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.mettreEnPause(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "pauseOF", e);
         }
-    }
-    @Override
-    protected String getResourceName() {
-        return "OF";
     }
 
     @PutMapping("/{id}/reprise")
     public ResponseEntity<?> reprendreOF(@PathVariable UUID id) {
         try {
-            OrdreFabricationDto of = ofService.reprendreOF(id);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.reprendreOF(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "reprendreOF", e);
         }
     }
 
     @PutMapping("/{id}/cloturer")
     public ResponseEntity<?> cloturerOF(@PathVariable UUID id) {
         try {
-            OrdreFabricationDto of = ofService.cloturerOF(id);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.cloturerOF(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "cloturerOF", e);
         }
     }
 
     @PutMapping("/{id}/production")
     public ResponseEntity<?> saisirProduction(@PathVariable UUID id, @RequestBody SaisieProductionDto dto) {
         try {
-            OrdreFabricationDto of = ofService.saisirProduction(id, dto);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.saisirProduction(id, dto)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "saisirProduction", e);
         }
     }
 
     @PutMapping("/{id}/ajustements")
     public ResponseEntity<?> ajusterConsommation(@PathVariable UUID id, @RequestBody AjustementConsommationDto ajustement) {
         try {
-            OrdreFabricationDto of = ofService.ajusterConsommation(id, ajustement);
-            return ResponseEntity.ok(attachPermittedActions(of));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(ofService.ajusterConsommation(id, ajustement)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "ajusterConsommation", e);
         }
     }
 
- //-------------QRCode---------//
     @GetMapping("/{id}/qr-image")
     public ResponseEntity<byte[]> getQrImage(@PathVariable UUID id) {
         OrdreFabrication entity = ofService.getEntityById(id);
@@ -160,7 +107,6 @@ public class OFController extends BaseControllerImpl<OrdreFabrication, OrdreFabr
                 .body(image);
     }
 
-
     @Override
     public ResponseEntity<?> resolve(@PathVariable String publicCode) {
         try {
@@ -173,11 +119,13 @@ public class OFController extends BaseControllerImpl<OrdreFabrication, OrdreFabr
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of("error", e.getMessage(), "code", "INVALID_FORMAT"));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", "Erreur interne: " + e.getMessage()));
         }
     }
 
-
+    @Override
+    protected String getResourceName() {
+        return "OF";
+    }
 }

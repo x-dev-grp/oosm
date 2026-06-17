@@ -3,6 +3,7 @@ package com.xdev.ooms.conditioning.label.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.conditioning.common.service.UserContext;
+import com.xdev.ooms.conditioning.label.repository.LabelContentRepository;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
 import com.xdev.ooms.conditioning.support.ConditioningProductionSupport;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
@@ -10,7 +11,7 @@ import com.xdev.ooms.conditioning.inventoryusage.dto.ProduitFinalDto;
 import com.xdev.ooms.conditioning.expedition.dto.GenealogyDto;
 import com.xdev.ooms.conditioning.label.entity.LabelContent;
 import com.xdev.ooms.conditioning.label.entity.LabelSource;
-import com.xdev.ooms.conditioning.label.repository.LabelContentRepository;
+import com.xdev.ooms.conditioning.label.support.LabelComplianceSupport;
 import com.xdev.ooms.conditioning.certification.repository.CertificationRepository;
 import com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
@@ -33,14 +34,14 @@ import java.util.*;
 public class LabelContentService {
 
     private static final int DEFAULT_SHELF_LIFE_MONTHS = 12;
-    private static final String DEFAULT_ORIGIN_COUNTRY = "Tunisie";
-    private static final String DEFAULT_STORAGE_CONDITIONS = "A conserver a l'abri de la lumiere et de la chaleur";
+    private static final String DEFAULT_ORIGIN_COUNTRY = LabelComplianceSupport.DEFAULT_ORIGIN;
+    private static final String DEFAULT_STORAGE_CONDITIONS = LabelComplianceSupport.DEFAULT_STORAGE_FR;
     private static final DateTimeFormatter BEST_BEFORE_FORMATTER = DateTimeFormatter.ofPattern("MM/yyyy");
 
     private static final Map<QualityGrades, String> OFFICIAL_NAMES = Map.of(
             QualityGrades.EXTRA_VIRGIN, "Huile d'olive vierge extra",
             QualityGrades.VIRGIN, "Huile d'olive vierge",
-            QualityGrades.REFINED, "Huile d'olive raffinee",
+            QualityGrades.REFINED, "Huile d'olive",
             QualityGrades.LAMPANTE, "Huile d'olive lampante",
             QualityGrades.OTHER, "Huile d'olive");
 
@@ -108,6 +109,24 @@ public class LabelContentService {
     }
 
     @Transactional
+    public void linkLabelsToProduct(UUID productId, List<UUID> labelIds) {
+        if (productId == null || labelIds == null || labelIds.isEmpty()) {
+            return;
+        }
+
+        for (UUID labelId : labelIds) {
+            if (labelId == null) {
+                continue;
+            }
+            LabelContent labelContent = labelContentRepository.findByIdAndIsDeletedFalse(labelId)
+                    .orElseThrow(() -> new EntityNotFoundException("Label ticket not found: " + labelId));
+            labelContent.setProductId(productId);
+            labelContent.setPackagingId(productId);
+            labelContentRepository.save(labelContent);
+        }
+    }
+
+    @Transactional
     public LabelContentDto generate(LabelGenerateRequestDto request) {
         UserContext currentUser = fetchCurrentUser();
 
@@ -139,6 +158,7 @@ public class LabelContentService {
         labelContent.setStatus(LabelContentStatus.DRAFT);
 
         prepareLabelContent(labelContent, storageUnit, packaging, companyProfile);
+        LabelComplianceSupport.applyComplianceDefaults(labelContent);
         applyReusableDefaultsFromExistingLabel(labelContent, latestProductLabel);
         applyCompanyIdentity(labelContent, companyProfile);
 
@@ -175,6 +195,8 @@ public class LabelContentService {
         }
 
         boolean updated = applyUpdate(labelContent, request);
+
+        LabelComplianceSupport.applyComplianceDefaults(labelContent);
 
         if (updated && labelContent.getStatus() == LabelContentStatus.VALIDATED) {
             labelContent.setStatus(LabelContentStatus.DRAFT);
@@ -334,6 +356,10 @@ public class LabelContentService {
         labelContent.setClaimTypes(new LinkedHashSet<>());
         labelContent.setMarketingClaims(new ArrayList<>());
         labelContent.setCertifications(new ArrayList<>());
+
+        if (storageUnit.getQualityGrade() != null) {
+            labelContent.setQualityGrade(storageUnit.getQualityGrade().name());
+        }
     }
 
     private void applyCompanyIdentity(LabelContent labelContent, CompanyProfileDto companyProfile) {
@@ -681,17 +707,8 @@ public class LabelContentService {
         validateNotNull(issues, labelContent.getTraceabilityLotId(), "traceabilityLotId", "Traceabilite lot absente");
         validateNotNull(issues, labelContent.getPackagingId(), "packagingId", "Packaging absent");
         validateNotNull(issues, labelContent.getOperatorId(), "operatorId", "Utilisateur courant introuvable");
-        validateNotBlank(issues, labelContent.getLotNumber(), "lotNumber", "Numero de lot indisponible");
-        validateNotBlank(issues, labelContent.getLegalDenomination(), "legalDenomination",
-                "Denomination legale non mappee");
-        validateNotBlank(issues, labelContent.getNetQuantity(), "netQuantity", "Quantite packaging absente");
-        validateNotBlank(issues, labelContent.getBestBeforeDate(), "bestBeforeDate", "DDM non calculable");
-        validateNotBlank(issues, labelContent.getResponsibleName(), "responsibleName", "Responsable non resolu");
-        validateNotBlank(issues, labelContent.getResponsibleAddress(), "responsibleAddress",
-                "Adresse responsable indisponible");
 
-        // Proof validation for marketing claims removed as per user request
-
+        issues.addAll(LabelComplianceSupport.validate(labelContent));
         return issues;
     }
 
@@ -822,21 +839,78 @@ public class LabelContentService {
             }
         }
 
+        if (request.getIngredientDeclaration() != null) {
+            String value = clean(request.getIngredientDeclaration());
+            if (!Objects.equals(value, labelContent.getIngredientDeclaration())) {
+                labelContent.setIngredientDeclaration(value);
+                updated = true;
+            }
+        }
+
+        if (request.getNutritionDeclarationJson() != null) {
+            String value = clean(request.getNutritionDeclarationJson());
+            if (!Objects.equals(value, labelContent.getNutritionDeclarationJson())) {
+                labelContent.setNutritionDeclarationJson(value);
+                updated = true;
+            }
+        }
+
+        if (request.getEan13() != null) {
+            String value = clean(request.getEan13());
+            if (!Objects.equals(value, labelContent.getEan13())) {
+                labelContent.setEan13(value);
+                updated = true;
+            }
+        }
+
+        if (request.getHarvestYear() != null) {
+            String value = clean(request.getHarvestYear());
+            if (!Objects.equals(value, labelContent.getHarvestYear())) {
+                labelContent.setHarvestYear(value);
+                updated = true;
+            }
+        }
+
+        if (request.getAcidityLevel() != null) {
+            String value = clean(request.getAcidityLevel());
+            if (!Objects.equals(value, labelContent.getAcidityLevel())) {
+                labelContent.setAcidityLevel(value);
+                updated = true;
+            }
+        }
+
+        if (request.getBrandName() != null) {
+            String value = clean(request.getBrandName());
+            if (!Objects.equals(value, labelContent.getBrandName())) {
+                labelContent.setBrandName(value);
+                updated = true;
+            }
+        }
+
         return updated;
     }
 
     private String exportJson(LabelContent labelContent) {
         Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("brandName", labelContent.getBrandName());
         payload.put("legalDenomination", labelContent.getLegalDenomination());
+        payload.put("productName", labelContent.getLegalDenomination());
+        payload.put("qualityGrade", labelContent.getQualityGrade());
         payload.put("originCountry", labelContent.getOriginCountry());
+        payload.put("originLabel", "Origin: " + labelContent.getOriginCountry());
         payload.put("netQuantity", labelContent.getNetQuantity());
         payload.put("bestBeforeDate", labelContent.getBestBeforeDate());
         payload.put("storageConditions", labelContent.getStorageConditions());
         payload.put("responsibleName", labelContent.getResponsibleName());
         payload.put("responsibleAddress", labelContent.getResponsibleAddress());
+        payload.put("producerLabel", "Produced and bottled by:");
         payload.put("lotNumber", labelContent.getLotNumber());
+        payload.put("ingredientDeclaration", LabelComplianceSupport.resolveIngredientDeclaration(labelContent));
+        payload.put("nutritionDeclaration", labelContent.getNutritionDeclarationJson());
+        payload.put("harvestYear", labelContent.getHarvestYear());
+        payload.put("acidityLevel", labelContent.getAcidityLevel());
+        payload.put("ean13", labelContent.getEan13());
         payload.put("variety", labelContent.getVariety());
-        payload.put("qualityGrade", labelContent.getQualityGrade());
         payload.put("extractionMethod", labelContent.getExtractionMethod());
         payload.put("sensoryProfile", labelContent.getSensoryProfile());
         payload.put("postFiltrationQualityControls", resolvePostFiltrationQualityControls(labelContent));
@@ -850,6 +924,10 @@ public class LabelContentService {
         payload.put("certifications", new ArrayList<>(allCerts));
 
         payload.put("marketingClaims", labelContent.getMarketingClaims());
+        if (QualityGrades.EXTRA_VIRGIN.name().equalsIgnoreCase(
+                Optional.ofNullable(labelContent.getQualityGrade()).orElse(""))) {
+            payload.put("evooLegalStatement", LabelComplianceSupport.EVOO_LEGAL_STATEMENT);
+        }
         payload.put("status", labelContent.getStatus().name());
         payload.put("publicCode", labelContent.getQrHex());
 
@@ -1161,6 +1239,12 @@ public class LabelContentService {
         dto.setQualityGrade(labelContent.getQualityGrade());
         dto.setExtractionMethod(labelContent.getExtractionMethod());
         dto.setSensoryProfile(labelContent.getSensoryProfile());
+        dto.setIngredientDeclaration(labelContent.getIngredientDeclaration());
+        dto.setNutritionDeclarationJson(labelContent.getNutritionDeclarationJson());
+        dto.setEan13(labelContent.getEan13());
+        dto.setHarvestYear(labelContent.getHarvestYear());
+        dto.setAcidityLevel(labelContent.getAcidityLevel());
+        dto.setBrandName(labelContent.getBrandName());
         dto.setCertifications(new ArrayList<>(safeList(labelContent.getCertifications())));
         dto.setClaimTypes(new LinkedHashSet<>(safeSet(labelContent.getClaimTypes())));
         dto.setMarketingClaims(new ArrayList<>(safeList(labelContent.getMarketingClaims())));

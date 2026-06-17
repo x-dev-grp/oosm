@@ -77,7 +77,7 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
                         if (ligne.getArticle() != null) {
                             ligneDto.setArticleId(ligne.getArticle().getId());
                             try {
-                                ArticleSecDto articleDto = articleSecService.getArticleById(ligne.getArticle().getId());
+                                ArticleSecDto articleDto = articleSecService.findById(ligne.getArticle().getId());
                                 ligneDto.setArticle(articleDto);
                             } catch (Exception e) {
                                 logger.error("Impossible de charger l'article {}");
@@ -101,21 +101,25 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
     private String genererNumeroBC() {
         return generateBusinessCode("numeroBC", "BO");
     }
+    @Override
     @Transactional(readOnly = true)
-    public List<BonCommandeDto> getAllBonsCommande() {
+    public List<BonCommandeDto> findAll() {
         return bonCommandeRepository.findAll().stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
     }
+
+    @Override
     @Transactional(readOnly = true)
-    public BonCommandeDto getBonCommandeById(UUID id) {
+    public BonCommandeDto findById(UUID id) {
         BonCommande bonCommande = bonCommandeRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Bon de commande non trouvé avec id: " + id));
         return convertToDto(bonCommande);
     }
 
+    @Override
     @Transactional
-    public BonCommandeDto createBonCommande(BonCommandeDto bonCommandeDto) {
+    public BonCommandeDto save(BonCommandeDto bonCommandeDto) {
         if (bonCommandeDto == null) {
             throw new RuntimeException("Le bon de commande ne peut pas être null");
         }

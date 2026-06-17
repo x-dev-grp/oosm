@@ -6,7 +6,7 @@ import com.xdev.ooms.conditioning.expedition.service.ExpeditionService;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
-import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
@@ -25,47 +25,30 @@ public class ExpeditionController extends BaseControllerImpl<Expedition, Expedit
 
     private final ExpeditionService expeditionService;
 
-    public ExpeditionController(
-            BaseService<Expedition, ExpeditionDto, ExpeditionDto> baseService,
-            ModelMapper modelMapper,
-            ExpeditionService expeditionService
-    ) {
-        super(baseService, modelMapper);
+    public ExpeditionController(ExpeditionService expeditionService, ModelMapper modelMapper) {
+        super(expeditionService, modelMapper);
         this.expeditionService = expeditionService;
-    }
-
-    @GetMapping
-    public ResponseEntity<List<ExpeditionDto>> getAll() {
-        return ResponseEntity.ok(attachPermittedActions(expeditionService.findAll()));
     }
 
     @Override
     @PostMapping
     public ResponseEntity<ApiSingleResponse<Expedition, ExpeditionDto>> create(@RequestBody ExpeditionDto dto) {
-        ExpeditionCreationRequest request = new ExpeditionCreationRequest();
-        request.setProjetId(dto.getProjetId());
-        request.setDestination(dto.getDestination());
-        request.setPlannedShipDate(dto.getPlannedShipDate());
-        request.setNotes(dto.getNotes());
-        if (dto.getLines() != null) {
-            request.setLines(dto.getLines().stream().map(line -> {
-                ExpeditionLineCreateRequest lineRequest = new ExpeditionLineCreateRequest();
-                lineRequest.setOfId(line.getOfId());
-                lineRequest.setArticleId(line.getArticleId());
-                lineRequest.setQuantity(line.getQuantity());
-                lineRequest.setVolume(line.getVolume());
-                lineRequest.setLotNumber(line.getLotNumber());
-                lineRequest.setUnit(line.getUnit());
-                return lineRequest;
-            }).toList());
-        }
-        
+        ExpeditionCreationRequest request = toCreationRequest(dto);
         ExpeditionDto created = expeditionService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(new ApiSingleResponse<>(true, "Expedition created successfully", attachPermittedActions(created)));
     }
 
-
+    @Override
+    public ResponseEntity<ApiSingleResponse<Expedition, ExpeditionDto>> update(@RequestBody ExpeditionDto dto) {
+        if (dto == null || dto.getId() == null) {
+            return ResponseEntity.badRequest()
+                    .body(new ApiSingleResponse<>(false, "L'identifiant de l'expedition est obligatoire", null));
+        }
+        ExpeditionUpdateRequest request = toUpdateRequest(dto);
+        ExpeditionDto updated = expeditionService.update(dto.getId(), request);
+        return ResponseEntity.ok(new ApiSingleResponse<>(true, "Expedition updated successfully", attachPermittedActions(updated)));
+    }
 
     @GetMapping("/project/{projectId}")
     public ResponseEntity<List<ExpeditionDto>> getByProject(@PathVariable UUID projectId) {
@@ -80,27 +63,6 @@ public class ExpeditionController extends BaseControllerImpl<Expedition, Expedit
     @GetMapping("/{id}/traceability")
     public ResponseEntity<Map<String, Object>> getExpeditionTraceability(@PathVariable UUID id) {
         return ResponseEntity.ok(expeditionService.getExpeditionTraceability(id));
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<ExpeditionDto> getById(@PathVariable UUID id) {
-        return ResponseEntity.ok(attachPermittedActions(expeditionService.getById(id)));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiSingleResponse<Expedition, ExpeditionDto>> update(@PathVariable UUID id, @RequestBody ExpeditionDto dto) {
-        ExpeditionUpdateRequest request = new ExpeditionUpdateRequest();
-        request.setDestination(dto.getDestination());
-        request.setPlannedShipDate(dto.getPlannedShipDate());
-        request.setNotes(dto.getNotes());
-        request.setCarrierName(dto.getCarrierName());
-        request.setDriverName(dto.getDriverName());
-        request.setTruckNumber(dto.getTruckNumber());
-        request.setTrackingNumber(dto.getTrackingNumber());
-        request.setIncoterm(dto.getIncoterm());
-        
-        ExpeditionDto updated = expeditionService.update(id, request);
-        return ResponseEntity.ok(new ApiSingleResponse<>(true, "Expedition updated successfully", attachPermittedActions(updated)));
     }
 
     @PostMapping("/{id}/lines")
@@ -215,5 +177,39 @@ public class ExpeditionController extends BaseControllerImpl<Expedition, Expedit
     @Override
     protected String getResourceName() {
         return "EXPEDITION";
+    }
+
+    private ExpeditionCreationRequest toCreationRequest(ExpeditionDto dto) {
+        ExpeditionCreationRequest request = new ExpeditionCreationRequest();
+        request.setProjetId(dto.getProjetId());
+        request.setDestination(dto.getDestination());
+        request.setPlannedShipDate(dto.getPlannedShipDate());
+        request.setNotes(dto.getNotes());
+        if (dto.getLines() != null) {
+            request.setLines(dto.getLines().stream().map(line -> {
+                ExpeditionLineCreateRequest lineRequest = new ExpeditionLineCreateRequest();
+                lineRequest.setOfId(line.getOfId());
+                lineRequest.setArticleId(line.getArticleId());
+                lineRequest.setQuantity(line.getQuantity());
+                lineRequest.setVolume(line.getVolume());
+                lineRequest.setLotNumber(line.getLotNumber());
+                lineRequest.setUnit(line.getUnit());
+                return lineRequest;
+            }).toList());
+        }
+        return request;
+    }
+
+    private ExpeditionUpdateRequest toUpdateRequest(ExpeditionDto dto) {
+        ExpeditionUpdateRequest request = new ExpeditionUpdateRequest();
+        request.setDestination(dto.getDestination());
+        request.setPlannedShipDate(dto.getPlannedShipDate());
+        request.setNotes(dto.getNotes());
+        request.setCarrierName(dto.getCarrierName());
+        request.setDriverName(dto.getDriverName());
+        request.setTruckNumber(dto.getTruckNumber());
+        request.setTrackingNumber(dto.getTrackingNumber());
+        request.setIncoterm(dto.getIncoterm());
+        return request;
     }
 }

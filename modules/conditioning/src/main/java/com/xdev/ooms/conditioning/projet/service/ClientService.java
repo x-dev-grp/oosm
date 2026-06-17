@@ -29,25 +29,30 @@ public class ClientService extends BaseServiceImpl<Client, ClientDto, ClientDto>
     }
 
 
-    public List<ClientDto> getAllClients() {
+    @Override
+    @Transactional(readOnly = true)
+    public List<ClientDto> findAll() {
         return clientRepository.findAll().stream()
                 .map(client -> modelMapper.map(client, ClientDto.class))
                 .collect(Collectors.toList());
     }
-    public Client findClientEntityById(UUID id) {
-        return clientRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Client non trouvé avec id: " + id));
-    }
 
-
-    public ClientDto getClientById(UUID id) {
+    @Override
+    @Transactional(readOnly = true)
+    public ClientDto findById(UUID id) {
         Client client = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec id: " + id));
         return modelMapper.map(client, ClientDto.class);
     }
 
+    public Client findClientEntityById(UUID id) {
+        return clientRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Client non trouvé avec id: " + id));
+    }
+
+    @Override
     @Transactional
-    public ClientDto createClient(ClientDto clientDto) {
+    public ClientDto save(ClientDto clientDto) {
         if (!StringUtils.hasText(clientDto.getNom())) {
             throw new RuntimeException("Le nom du client est obligatoire");
         }
@@ -80,8 +85,13 @@ public class ClientService extends BaseServiceImpl<Client, ClientDto, ClientDto>
         return modelMapper.map(savedClient, ClientDto.class);
     }
 
+    @Override
     @Transactional
-    public ClientDto updateClient(UUID id, ClientDto clientDto) {
+    public ClientDto update(ClientDto clientDto) {
+        if (clientDto == null || clientDto.getId() == null) {
+            throw new RuntimeException("L'identifiant du client est obligatoire");
+        }
+        UUID id = clientDto.getId();
         Client existingClient = clientRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Client non trouvé avec id: " + id));
 
@@ -158,6 +168,20 @@ public class ClientService extends BaseServiceImpl<Client, ClientDto, ClientDto>
         clientRepository.save(client);
     }
 
+
+    @Override
+    @Transactional
+    public ClientDto delete(UUID id) {
+        ClientDto dto = findById(id);
+        deleteClient(id);
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        deleteClient(id);
+    }
 
     @Transactional
     public void deleteClient(UUID id) {

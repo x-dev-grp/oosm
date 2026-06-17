@@ -6,17 +6,15 @@ import com.xdev.ooms.inventory.articlesec.entity.ArticleSec;
 import com.xdev.ooms.inventory.articlesec.service.ArticleSecService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
-import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -26,98 +24,61 @@ public class ArticleSecController extends BaseControllerImpl<ArticleSec, Article
     private final ArticleSecService articleService;
 
     @Autowired
-    public ArticleSecController(BaseService<ArticleSec, ArticleSecDto, ArticleSecDto> baseService,
-                                ModelMapper modelMapper,
-                                ArticleSecService articleService) {
-        super(baseService, modelMapper);
+    public ArticleSecController(ArticleSecService articleService, ModelMapper modelMapper) {
+        super(articleService, modelMapper);
         this.articleService = articleService;
     }
 
-    @GetMapping
-    public ResponseEntity<?> getAllArticles(@RequestParam(required = false) CategorieArticle categorie) {
+    @Transactional(readOnly = true)
+    @GetMapping("/categorie/{categorie}")
+    public ResponseEntity<?> getArticlesByCategorie(@PathVariable CategorieArticle categorie) {
         try {
-            List<ArticleSecDto> articles;
-            if (categorie != null) {
-                articles = articleService.getArticlesByCategorie(categorie);
-            } else {
-                articles = articleService.getAllArticles();
-            }
-            return ResponseEntity.ok(attachPermittedActions(articles));
+            return ResponseEntity.ok(attachPermittedActions(articleService.getArticlesByCategorie(categorie)));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", e.getMessage()));
+            return ExceptionHandler.handleException(this.getClass(), "getArticlesByCategorie", e);
         }
     }
 
+    @Transactional(readOnly = true)
     @GetMapping("/actifs")
     public ResponseEntity<?> getActiveArticles() {
         try {
-            List<ArticleSecDto> activeArticles = articleService.getAllActiveArticles();
-            return ResponseEntity.ok(attachPermittedActions(activeArticles));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getArticleById(@PathVariable UUID id) {
-        try {
-            ArticleSecDto article = articleService.getArticleById(id);
-            return ResponseEntity.ok(attachPermittedActions(article));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<?> createArticle(@RequestBody ArticleSecDto articleDto) {
-        try {
-            ArticleSecDto created = articleService.createArticle(articleDto);
-            return new ResponseEntity<>(attachPermittedActions(created), HttpStatus.CREATED);
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> updateArticle(@PathVariable UUID id, @RequestBody ArticleSecDto articleDto) {
-        try {
-            ArticleSecDto updated = articleService.updateArticle(id, articleDto);
-            return ResponseEntity.ok(attachPermittedActions(updated));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(articleService.getAllActiveArticles()));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "getActiveArticles", e);
         }
     }
 
     @PutMapping("/{id}/activer")
     public ResponseEntity<?> activerArticle(@PathVariable UUID id) {
         try {
-            ArticleSecDto activated = articleService.activerArticle(id);
-            return ResponseEntity.ok(attachPermittedActions(activated));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(articleService.activerArticle(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "activerArticle", e);
         }
     }
 
     @PutMapping("/{id}/desactiver")
     public ResponseEntity<?> desactiverArticle(@PathVariable UUID id) {
         try {
-            ArticleSecDto deactivated = articleService.desactiverArticle(id);
-            return ResponseEntity.ok(attachPermittedActions(deactivated));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
+            return ResponseEntity.ok(attachPermittedActions(articleService.desactiverArticle(id)));
+        } catch (Exception e) {
+            return ExceptionHandler.handleException(this.getClass(), "desactiverArticle", e);
         }
+    }
+
+    @GetMapping("/{id}/qr-image")
+    public ResponseEntity<byte[]> getQrImage(@PathVariable UUID id) {
+        ArticleSec entity = articleService.getArticleEntityById(id);
+        byte[] image = articleService.generateQrImage(entity.getQrHex());
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_PNG)
+                .body(image);
     }
 
     @Override
     protected String getResourceName() {
-        return "ArticleSec";
+        return "ARTICLE";
     }
 
     @Override
@@ -126,20 +87,7 @@ public class ArticleSecController extends BaseControllerImpl<ArticleSec, Article
             QrResolveResponse response = getBaseService().resolve(publicCode);
             return ResponseEntity.ok(response);
         } catch (EntityNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
+            return ExceptionHandler.handleException(this.getClass(), "resolve", e);
         }
     }
-
-    @GetMapping("/{id}/qr-image")
-    public ResponseEntity<byte[]> getQrImage(@PathVariable UUID id) {
-        ArticleSec entity = articleService.getArticleEntityById(id);
-        byte[]  image = articleService.generateQrImage(entity.getQrHex());
-        return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_PNG)
-                .body(image);
-    }
-
-
-
 }

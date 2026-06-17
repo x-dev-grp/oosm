@@ -18,6 +18,10 @@ spring:
     name: ${SPRING_APP_NAME:osm-monolith}
   main:
     lazy-initialization: ${SPRING_MAIN_LAZY_INITIALIZATION:true}
+    banner-mode: console
+  output:
+    ansi:
+      enabled: detect
   jmx:
     enabled: ${SPRING_JMX_ENABLED:false}
 
@@ -123,7 +127,7 @@ app:
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
   security:
     jwt:
-      key-path: ${JWT_KEY_PATH:./data/osm-jwt-key}
+      key-path: ${JWT_KEY_PATH:./app/src/main/resources/keys/osm-jwt-key}
     bootstrap:
       enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
       username: ${SECURITY_BOOTSTRAP_USERNAME:osmAdmin}
@@ -162,7 +166,9 @@ management:
         enabled: true
 
 logging:
+  config: classpath:logback-spring.xml
   level:
+    com.xdev.ooms: INFO
     com.xdev.ooms.security: INFO
     org.springframework.security: INFO
     org.springframework.security.oauth2: INFO

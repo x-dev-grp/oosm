@@ -1,6 +1,7 @@
 package com.xdev.ooms.finance.financialtransaction.service;
 
 import com.xdev.ooms.finance.financialtransaction.dto.FinancialTransactionDto;
+import com.xdev.ooms.finance.financialtransaction.dto.SupplierFinancialSummaryDto;
 import com.xdev.ooms.finance.internal.FinanceModuleDtoMapper;
 import com.xdev.ooms.finance.expense.entity.Expense;
 import com.xdev.ooms.finance.financialtransaction.entity.FinancialTransaction;
@@ -21,9 +22,13 @@ import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class FinancialTransactionService extends BaseServiceImpl<FinancialTransaction, FinancialTransactionDto, FinancialTransactionDto> {
@@ -57,6 +62,8 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
     @Override
     @Transactional
     public FinancialTransactionDto save(FinancialTransactionDto request) {
+        validateRequest(request);
+
         if (request.getInvoiceReference() == null || request.getInvoiceReference().isBlank()) {
             request.setInvoiceReference(generateNextInvoiceRef());
         }
@@ -83,6 +90,58 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         }
 
         return modelMapper.map(savedTx, FinancialTransactionDto.class);
+    }
+
+    @Override
+    @Transactional
+    public FinancialTransactionDto update(FinancialTransactionDto request) {
+        validateRequest(request);
+        FinancialTransactionDto updated = super.update(request);
+        if (updated == null) {
+            throw new jakarta.persistence.EntityNotFoundException("Financial transaction not found with id " + request.getId());
+        }
+        return updated;
+    }
+
+    @Transactional
+    public FinancialTransactionDto approve(UUID id, String approvedBy) {
+        FinancialTransaction tx = financialTransactionRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Financial transaction not found with id " + id));
+        tx.setApproved(Boolean.TRUE);
+        tx.setApprovalDate(LocalDateTime.now());
+        tx.setApprovedBy(approvedBy == null || approvedBy.isBlank() ? "System" : approvedBy);
+        return modelMapper.map(financialTransactionRepository.save(tx), FinancialTransactionDto.class);
+    }
+
+    @Transactional
+    public FinancialTransactionDto reject(UUID id, String rejectedBy, String reason) {
+        FinancialTransaction tx = financialTransactionRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException("Financial transaction not found with id " + id));
+        tx.setApproved(Boolean.FALSE);
+        tx.setApprovalDate(LocalDateTime.now());
+        tx.setApprovedBy(rejectedBy == null || rejectedBy.isBlank() ? "System" : rejectedBy);
+        if (reason != null && !reason.isBlank()) {
+            String prefix = tx.getDescription() == null || tx.getDescription().isBlank()
+                    ? ""
+                    : tx.getDescription() + System.lineSeparator();
+            tx.setDescription(prefix + "Rejection reason: " + reason);
+        }
+        return modelMapper.map(financialTransactionRepository.save(tx), FinancialTransactionDto.class);
+    }
+
+    private void validateRequest(FinancialTransactionDto request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Financial transaction payload is required");
+        }
+        if (request.getAmount() == null || request.getAmount().signum() <= 0) {
+            throw new IllegalArgumentException("Invalid amount: must be greater than 0");
+        }
+        if (request.getPaymentMethod() == null) {
+            throw new IllegalArgumentException("Payment method is required");
+        }
+        if (request.getTransactionType() == null) {
+            throw new IllegalArgumentException("Transaction type is required");
+        }
     }
 
     private void applyPostSaveEffects(FinancialTransaction savedTx) {
@@ -173,10 +232,63 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
                 tx.getLotNumber());
     }
 
+    public List<FinancialTransactionDto> findBySupplierId(UUID supplierId) {
+        return financialTransactionRepository.findBySupplier_IdAndIsDeletedFalseOrderByTransactionDateDesc(supplierId)
+                .stream()
+                .map(tx -> modelMapper.map(tx, FinancialTransactionDto.class))
+                .collect(Collectors.toList());
+    }
+
+    public SupplierFinancialSummaryDto getSupplierFinancialSummary(UUID supplierId) {
+        List<FinancialTransaction> transactions =
+                financialTransactionRepository.findBySupplier_IdAndIsDeletedFalseOrderByTransactionDateDesc(supplierId);
+
+        SupplierFinancialSummaryDto summary = new SupplierFinancialSummaryDto();
+        summary.setSupplierId(supplierId);
+        summary.setTransactionCount(transactions.size());
+
+        BigDecimal totalAmount = BigDecimal.ZERO;
+        BigDecimal totalPaid = BigDecimal.ZERO;
+        BigDecimal totalUnpaid = BigDecimal.ZERO;
+        BigDecimal inboundAmount = BigDecimal.ZERO;
+        BigDecimal outboundAmount = BigDecimal.ZERO;
+        long inboundCount = 0;
+        long outboundCount = 0;
+
+        for (FinancialTransaction tx : transactions) {
+            BigDecimal amount = tx.getAmount() != null ? tx.getAmount() : BigDecimal.ZERO;
+            totalAmount = totalAmount.add(amount);
+
+            if (tx.getPaidAmount() != null) {
+                totalPaid = totalPaid.add(BigDecimal.valueOf(tx.getPaidAmount()));
+            }
+            if (tx.getUnpaidAmount() != null) {
+                totalUnpaid = totalUnpaid.add(BigDecimal.valueOf(tx.getUnpaidAmount()));
+            }
+
+            if (tx.getDirection() == TransactionDirection.INBOUND) {
+                inboundAmount = inboundAmount.add(amount);
+                inboundCount++;
+            } else if (tx.getDirection() == TransactionDirection.OUTBOUND) {
+                outboundAmount = outboundAmount.add(amount);
+                outboundCount++;
+            }
+        }
+
+        summary.setTotalAmount(totalAmount);
+        summary.setTotalPaidAmount(totalPaid);
+        summary.setTotalUnpaidAmount(totalUnpaid);
+        summary.setInboundAmount(inboundAmount);
+        summary.setOutboundAmount(outboundAmount);
+        summary.setInboundCount(inboundCount);
+        summary.setOutboundCount(outboundCount);
+        return summary;
+    }
+
     @Override
     public Set<Action> actionsMapping(FinancialTransaction financialTransaction) {
         Set<Action> actions = new HashSet<>();
-        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ));
+        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.APPROVE, Action.REJECT));
         return actions;
     }
 }

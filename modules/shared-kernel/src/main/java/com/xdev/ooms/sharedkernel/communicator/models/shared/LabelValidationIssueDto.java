@@ -1,8 +1,13 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
-import java.io.Serializable;
+import lombok.Getter;
+import lombok.Setter;
 
+import java.io.Serializable;
+@Setter
+@Getter
 public class LabelValidationIssueDto implements Serializable {
+
     private String field;
     private String message;
     private boolean blocking;
@@ -15,6 +20,9 @@ public class LabelValidationIssueDto implements Serializable {
         this.blocking = blocking;
     }
 
+    public LabelValidationIssueDto() {
+
+    }
 
 
     public String getMessage() {

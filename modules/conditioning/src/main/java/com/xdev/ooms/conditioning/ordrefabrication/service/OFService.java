@@ -129,6 +129,12 @@ public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricatio
                 .collect(Collectors.toList());
     }
 
+    @Override
+    @Transactional
+    public OrdreFabricationDto save(OrdreFabricationDto dto) {
+        return creerOF(dto);
+    }
+
     @Transactional
     public OrdreFabricationDto creerOF(OrdreFabricationDto dto) {
         Projet projet = null;

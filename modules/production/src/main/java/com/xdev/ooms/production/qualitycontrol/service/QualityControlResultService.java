@@ -3,6 +3,7 @@ package com.xdev.ooms.production.qualitycontrol.service;
 
 import com.xdev.ooms.production.genealogy.entity.TraceabilityLot;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
+import com.xdev.ooms.production.qualitycontrol.defaults.TunisiaOilGradeUtil;
 import com.xdev.ooms.production.qualitycontrol.dto.QualityControlResultDto;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlResultRepository;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlRuleRepository;
@@ -44,7 +45,12 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     private final TraceabilityLotRepository traceabilityLotRepository;
     private final ModelMapper modelMapper;
     private final UnifiedDeliveryService unifiedDeliveryService;
-      Set<String> allowedSet = new HashSet<>(Arrays.asList("Extra Vierge", "Vierge", "Lampante"));
+      private static final Set<String> allowedSet = Set.of(
+              TunisiaOilGradeUtil.EXTRA_VIERGE,
+              TunisiaOilGradeUtil.VIERGE,
+              TunisiaOilGradeUtil.LAMPANTE,
+              "Vierge Extra", "Extra", "EXTRA_VIRGIN", "VIRGIN", "LAMPANTE"
+      );
 
     public QualityControlResultService(BaseRepository<QualityControlResult> repository, ModelMapper modelMapper, QualityControlResultRepository repository1, QualityControlRuleRepository ruleRepository, DeliveryRepository deliveryRepo, ModelMapper modelMapper1, UnifiedDeliveryService unifiedDeliveryService, DeliveryRepository deliveryRepository, TraceabilityLotRepository traceabilityLotRepository) {
         super(repository, modelMapper);
@@ -115,14 +121,13 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }).toList();
 
         Optional<QualityControlResult> match = entities.stream()
-                // 2) match on measuredValue ∈ allowed
                 .filter(qcr -> allowedSet.contains(qcr.getMeasuredValue()))
-                // 3) grab the first match (or use findAny())
                 .findFirst();
 
         if (match.isPresent()) {
-            QualityControlResult result = match.get();
-            delivery.setCategoryOliveOil(result.getMeasuredValue());
+            delivery.setCategoryOliveOil(TunisiaOilGradeUtil.normalizeCategory(match.get().getMeasuredValue()));
+        } else {
+            suggestCategoryFromMeasurements(entities).ifPresent(delivery::setCategoryOliveOil);
         }
 
         // 6) Persist QC results
@@ -233,6 +238,8 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     }
 
     // ✅ extracted validation
+    private static final double NUMERIC_EPSILON = 1e-6;
+
     private void validateMeasuredValue(String measuredValue, QualityControlRule rule) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "validateMeasuredValue", measuredValue, rule);
@@ -242,10 +249,10 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             case NUMERIC:
                 try {
                     Double value = Double.parseDouble(measuredValue);
-                    if (rule.getMinValue() != null && value < rule.getMinValue()) {
+                    if (rule.getMinValue() != null && value < rule.getMinValue() - NUMERIC_EPSILON) {
                         throw new IllegalArgumentException("Measured value below minValue for rule ID: " + rule.getId());
                     }
-                    if (rule.getMaxValue() != null && value > rule.getMaxValue()) {
+                    if (rule.getMaxValue() != null && value > rule.getMaxValue() + NUMERIC_EPSILON) {
                         throw new IllegalArgumentException("Measured value above maxValue for rule ID: " + rule.getId());
                     }
                 } catch (NumberFormatException e) {
@@ -327,6 +334,39 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             dto.setDeliveryId(entity.getDelivery().getId());
         }
         return dto;
+    }
+
+    private Optional<String> suggestCategoryFromMeasurements(List<QualityControlResult> entities) {
+        Double acidity = null;
+        Double k232 = null;
+        Double k270 = null;
+        Double deltaK = null;
+        Double peroxide = null;
+
+        for (QualityControlResult result : entities) {
+            if (result.getRule() == null || result.getRule().getRuleType() != RuleType.NUMERIC) {
+                continue;
+            }
+            try {
+                double value = Double.parseDouble(result.getMeasuredValue());
+                String key = result.getRule().getRuleKey();
+                if (key == null) {
+                    continue;
+                }
+                switch (key) {
+                    case "Acidite" -> acidity = value;
+                    case "K232" -> k232 = value;
+                    case "K270" -> k270 = value;
+                    case "DeltaK" -> deltaK = value;
+                    case "IndicePreoxyde" -> peroxide = value;
+                    default -> { }
+                }
+            } catch (NumberFormatException ignored) {
+                // skip invalid numeric values
+            }
+        }
+
+        return TunisiaOilGradeUtil.suggestOilGrade(acidity, k232, k270, deltaK, peroxide);
     }
 
 //    @Transactional(readOnly = true)

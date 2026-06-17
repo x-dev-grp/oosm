@@ -20,4 +20,6 @@ public interface ProduitFinalRepository extends BaseRepository<ProduitFinal> {
     List<ProduitFinal> findByActifTrueAndIsDeletedFalse();
     List<ProduitFinal> findByTypeAndIsDeletedFalse(ProduitFinalType type);
 
+    long countByCodeStartingWithAndIsDeletedFalse(String codePrefix);
+
 }

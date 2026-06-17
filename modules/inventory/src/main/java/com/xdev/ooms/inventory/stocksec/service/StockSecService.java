@@ -91,7 +91,7 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
 
         if (stock.getArticle() != null) {
             dto.setArticleId(stock.getArticle().getId());
-            dto.setArticle(articleSecService.getArticleById(stock.getArticle().getId()));
+            dto.setArticle(articleSecService.findById(stock.getArticle().getId()));
         }
 
         if (stock.getEmplacement() != null) {
@@ -218,7 +218,7 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
     }
 
     public StockSecDto getStockByArticle(UUID articleId) {
-        articleSecService.getArticleById(articleId);
+        articleSecService.findById(articleId);
         StockSec stock = stockRepository.findByArticleId(articleId)
                 .orElseThrow(() -> new RuntimeException("Aucun stock trouve pour l'article ID: " + articleId));
         return convertToDto(stock);
@@ -368,7 +368,7 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
     }
 
     public List<MouvementStockSecDto> getMouvementsByArticleDto(UUID articleId) {
-        articleSecService.getArticleById(articleId);
+        articleSecService.findById(articleId);
         return mouvementStockSecRepository.findByArticleId(articleId).stream()
                 .map(mouvement -> modelMapper.map(mouvement, MouvementStockSecDto.class))
                 .collect(Collectors.toList());
@@ -497,7 +497,7 @@ public class StockSecService extends BaseServiceImpl<StockSec, StockSecDto, Stoc
 
     @Transactional
     public StockSecDto getOrCreateStockByArticle(UUID articleId) {
-        articleSecService.getArticleById(articleId);
+        articleSecService.findById(articleId);
 
         Optional<StockSec> existing = stockRepository.findByArticleId(articleId);
         if (existing.isPresent()) {

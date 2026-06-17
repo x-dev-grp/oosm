@@ -36,23 +36,6 @@ public class ProjetController extends BaseControllerImpl<Projet, ProjetDto, Proj
         this.projetService = projetService;
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<ProjetDto> getProjetById(@PathVariable UUID id) {
-        ProjetDto projet = projetService.findById(id);
-        return ResponseEntity.ok(attachPermittedActions(projet));
-    }
-
-    @GetMapping("/all")
-    public ResponseEntity<List<ProjetDto>> getAllProjets() {
-        return ResponseEntity.ok(attachPermittedActions(projetService.findAll()));
-    }
-
-    @PostMapping("/create")
-    public ResponseEntity<ProjetDto> createProjetManual(@Valid @RequestBody ProjetDto dto) {
-        ProjetDto created = projetService.create(dto);
-        return new ResponseEntity<>(attachPermittedActions(created), HttpStatus.CREATED);
-    }
-
     @GetMapping("/code/{code}")
     public ResponseEntity<ProjetDto> getProjetByCode(@PathVariable String code) {
         ProjetDto projet = projetService.findByCode(code);

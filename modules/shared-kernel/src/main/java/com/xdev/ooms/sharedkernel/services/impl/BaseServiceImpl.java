@@ -244,6 +244,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                 AuditHelper.applyAuditOnCreate(entity);
 
                 E savedEntity = this.repository.save(entity);
+                savedEntity = ensureQrCodeIfSupported(savedEntity);
                 OUTDTO result = this.modelMapper.map(savedEntity, this.outDTOClass);
 
                 OSMLogger.logMethodExit(this.getClass(), "save", result);
@@ -1634,12 +1635,54 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         }
     }  //genere un QRCode pour chaque entite (code unique et imag)
 
+    protected boolean supportsQrGeneration() {
+        if (codeGenerator == null || qrConfig == null) {
+            return false;
+        }
+        try {
+            getEntityType();
+            return true;
+        } catch (UnsupportedOperationException ex) {
+            return false;
+        }
+    }
+
+    protected E ensureQrCodeIfSupported(E entity) {
+        if (entity == null || entity.getId() == null || !supportsQrGeneration()) {
+            return entity;
+        }
+        String existingCode = entity.getQrHex();
+        if (existingCode != null && !existingCode.isBlank()) {
+            return entity;
+        }
+        generateQrInfo(getEntityType(), entity.getId());
+        return repository.findById(entity.getId()).orElse(entity);
+    }
+
     @Transactional
     public QrCodeInfo generateQrInfo(String entityType, UUID entityId) {
+        requireQrSupport();
 
         E entity = repository.findById(entityId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity not found with id: " + entityId));
+
+        String existingCode = entity.getQrHex();
+        if (existingCode != null && !existingCode.isBlank()) {
+            String publicCode = existingCode.trim();
+            String qrUrl = buildQrUrl(resolveQrEntityType(entityType), publicCode);
+            String imageBase64 = entity.getQrImageBase64();
+
+            if (imageBase64 == null || imageBase64.isBlank()) {
+                Object payload = buildQrPayload(entity);
+                byte[] imageBytes = generateQrImageBytes(payload);
+                imageBase64 = encodeBase64(imageBytes);
+                entity.setQrImageBase64(imageBase64);
+                repository.save(entity);
+            }
+
+            return new QrCodeInfo(publicCode, qrUrl, imageBase64);
+        }
 
         String publicCode = codeGenerator.generateUnique(repository::existsByQrHex);
 

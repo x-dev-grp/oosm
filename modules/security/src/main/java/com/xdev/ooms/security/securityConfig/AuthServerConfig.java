@@ -161,6 +161,13 @@ public class AuthServerConfig {
         try {
             OAuth2AuthorizationServerConfigurer configurer = new OAuth2AuthorizationServerConfigurer();
             configurer
+                    .clientAuthentication(clientAuthentication -> clientAuthentication
+                            .authenticationConverters(converters ->
+                                    converters.add(0, new PublicClientAuthenticationConverter()))
+                            .authenticationProviders(providers ->
+                                    providers.add(0, new PublicClientAuthenticationProvider(
+                                            registeredClientRepository)))
+                    )
                     .tokenEndpoint(tokenEndpoint -> tokenEndpoint
                             .accessTokenRequestConverter(customTokenRequestConverter)
                             .authenticationProvider(new CustomTokenGrantAuthenticationProvider(

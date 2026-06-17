@@ -19,6 +19,10 @@ logs/
 .env.*
 !.env.render.example
 
+### Local JWT signing keys ###
+app/src/main/resources/keys/*.pk8
+app/src/main/resources/keys/*.pub
+
 ### OS ###
 .DS_Store
 Thumbs.db

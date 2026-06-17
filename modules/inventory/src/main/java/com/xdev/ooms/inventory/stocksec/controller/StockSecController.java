@@ -38,28 +38,6 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
         return ResponseEntity.ok(stockService.getAllStockSummaries());
     }
 
-    @GetMapping
-    public ResponseEntity<?> getAllStocks() {
-        try {
-            List<StockSecDto> stocks = stockService.getAllStocks();
-            return ResponseEntity.ok(attachPermittedActions(stocks));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getStockById(@PathVariable UUID id) {
-        try {
-            StockSecDto stock = stockService.getStockById(id);
-            return ResponseEntity.ok(attachPermittedActions(stock));
-        } catch (RuntimeException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(Map.of("error", e.getMessage()));
-        }
-    }
-
     @GetMapping("/article/{articleId}")
     public ResponseEntity<?> getStockByArticle(@PathVariable UUID articleId) {
         try {

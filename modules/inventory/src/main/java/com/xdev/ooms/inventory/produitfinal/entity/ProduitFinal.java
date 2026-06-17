@@ -9,6 +9,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import org.hibernate.envers.Audited;
 
+import java.time.LocalDate;
+
 @Audited
 @Entity
 @Data
@@ -68,6 +70,75 @@ public class ProduitFinal extends BaseEntity {
     private String storageUnit;
 
     private Boolean actif = true;
+
+    @Column(name = "ingredient_declaration", columnDefinition = "text")
+    private String ingredientDeclaration;
+
+    @Column(name = "storage_conditions", columnDefinition = "text")
+    private String storageConditions;
+
+    @Column(name = "shelf_life_months")
+    private Integer shelfLifeMonths = 24;
+
+    @Column(name = "acidity_level")
+    private String acidityLevel;
+
+    @Column(name = "peroxide_value")
+    private String peroxideValue;
+
+    private String k232;
+
+    private String k270;
+
+    @Column(name = "polyphenol_content")
+    private String polyphenolContent;
+
+    @Column(name = "olive_varieties", columnDefinition = "text")
+    private String oliveVarieties;
+
+    @Column(name = "harvest_region")
+    private String harvestRegion;
+
+    private Boolean organic = false;
+
+    @Column(name = "organic_cert_number")
+    private String organicCertNumber;
+
+    @Column(name = "organic_cert_body")
+    private String organicCertBody;
+
+    @Column(name = "organic_cert_expiry")
+    private LocalDate organicCertExpiry;
+
+    @Column(name = "supplier_name")
+    private String supplierName;
+
+    @Column(name = "supplier_code")
+    private String supplierCode;
+
+    @Column(name = "supplier_contact")
+    private String supplierContact;
+
+    @Column(name = "olive_source_type")
+    private String oliveSourceType;
+
+    @Column(name = "olive_source_reference")
+    private String oliveSourceReference;
+
+    @Column(name = "production_batch_ref")
+    private String productionBatchRef;
+
+    @Column(name = "extraction_batch_ref")
+    private String extractionBatchRef;
+
+    @Column(name = "product_status")
+    private String productStatus = "DRAFT";
+
+    @Column(name = "nutrition_declaration_json", columnDefinition = "text")
+    private String nutritionDeclarationJson;
+
+    @Column(name = "brand_description", columnDefinition = "text")
+    private String brandDescription;
 
     public Integer getUnitesParCols() {
         return unitsPerCarton;
