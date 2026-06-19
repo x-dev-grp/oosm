@@ -7,10 +7,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import lombok.Getter;
+import lombok.Setter;
 import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 
+@Setter
+@Getter
 @Entity
 @Audited
 public class ConfirmationCode extends BaseEntity {
@@ -22,14 +26,6 @@ public class ConfirmationCode extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private OSMUser user;
 
-    public String getCode() {
-        return code;
-    }
-
-    public void setCode(String code) {
-        this.code = code;
-    }
-
     public boolean isExpired() {
         return this.getLastModifiedDate().plusMinutes(10).isBefore(LocalDateTime.now());
     }
@@ -38,35 +34,4 @@ public class ConfirmationCode extends BaseEntity {
         return consumedAt != null;
     }
 
-    public int getFailedAttempts() {
-        return failedAttempts;
-    }
-
-    public void setFailedAttempts(int failedAttempts) {
-        this.failedAttempts = failedAttempts;
-    }
-
-    public LocalDateTime getConsumedAt() {
-        return consumedAt;
-    }
-
-    public void setConsumedAt(LocalDateTime consumedAt) {
-        this.consumedAt = consumedAt;
-    }
-
-    public ConfirmationCodeType getConfirmationCodeType() {
-        return confirmationCodeType;
-    }
-
-    public void setConfirmationCodeType(ConfirmationCodeType confirmationCodeType) {
-        this.confirmationCodeType = confirmationCodeType;
-    }
-
-    public OSMUser getUser() {
-        return user;
-    }
-
-    public void setUser(OSMUser user) {
-        this.user = user;
-    }
 }

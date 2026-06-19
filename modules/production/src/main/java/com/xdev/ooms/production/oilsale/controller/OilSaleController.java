@@ -1,27 +1,20 @@
 package com.xdev.ooms.production.oilsale.controller;
 
-import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
-
 import com.xdev.ooms.production.oilsale.dto.OilSaleCreateRequest;
 import com.xdev.ooms.production.oilsale.dto.OilSaleDTO;
-import com.xdev.ooms.production.unifieddelivery.dto.PaymentDTO;
-
-
-
-
+import com.xdev.ooms.production.oilsale.dto.OilSaleDeliveryRequest;
 import com.xdev.ooms.production.oilsale.entity.OilSale;
 import com.xdev.ooms.production.oilsale.service.OilSaleService;
+import com.xdev.ooms.production.unifieddelivery.dto.PaymentDTO;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * REST controller for managing oil sales
@@ -56,11 +49,44 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
     public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> create(@RequestBody OilSaleCreateRequest request) {
         try {
             OilSaleDTO saved = oilSaleService.createWithContainers(request);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Pricing updated successfully", List.of(saved)));
+            return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale created successfully", List.of(saved)));
         } catch (Exception e) {
             return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
+
+    @PatchMapping("/{id}/confirm")
+    public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> confirm(@PathVariable UUID id) {
+        try {
+            OilSaleDTO saved = oilSaleService.confirmSale(id);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale confirmed", List.of(saved)));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    @PatchMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> cancel(@PathVariable UUID id) {
+        try {
+            OilSaleDTO saved = oilSaleService.cancelSaleAndReturn(id);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale cancelled", List.of(saved)));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
+    @PatchMapping("/{id}/deliver")
+    public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> deliver(
+            @PathVariable UUID id,
+            @RequestBody(required = false) OilSaleDeliveryRequest request) {
+        try {
+            OilSaleDTO saved = oilSaleService.deliverSale(id, request);
+            return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale delivered", List.of(saved)));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
+        }
+    }
+
     @Override
     public ResponseEntity<?> resolve(String publicCode) {
         return null;

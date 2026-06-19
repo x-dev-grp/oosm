@@ -260,7 +260,8 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                             ", Role: " + role + ", Resource: " + resource + ", Permissions: " + actions);
 
             SearchResponse<E, OUTDTO> response = baseService.search(searchData);
-            List<OUTDTO> dtos = response.getData().stream()
+            List<OUTDTO> sourceData = response.getData() != null ? response.getData() : List.of();
+            List<OUTDTO> dtos = sourceData.stream()
                     .peek(element -> attachPermittedActions(element, authentication, role, actions))
                     .toList();
             response.setData(dtos);

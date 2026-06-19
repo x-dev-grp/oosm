@@ -25,8 +25,8 @@
             <artifactId>production</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.itextpdf</groupId>
-            <artifactId>itextpdf</artifactId>
+            <groupId>com.xdev.ooms</groupId>
+            <artifactId>document-generation</artifactId>
         </dependency>
     </dependencies>
 </project>

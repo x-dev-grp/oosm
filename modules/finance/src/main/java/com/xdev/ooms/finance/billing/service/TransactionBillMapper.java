@@ -1,15 +1,21 @@
 package com.xdev.ooms.finance.billing.service;
 
-import com.xdev.ooms.finance.billing.dto.BillBankInfoDto;
-import com.xdev.ooms.finance.billing.dto.BillFooterContactDto;
-import com.xdev.ooms.finance.billing.dto.BillGenerationRequest;
-import com.xdev.ooms.finance.billing.dto.BillLineDto;
-import com.xdev.ooms.finance.billing.dto.BillLogisticsDto;
-import com.xdev.ooms.finance.billing.dto.BillPartyDto;
-import com.xdev.ooms.finance.billing.dto.TransactionBillRequest;
+import com.xdev.ooms.documents.commercial.BillLabelResolver;
+import com.xdev.ooms.documents.commercial.OilSaleBillLineBuilder;
+import com.xdev.ooms.documents.commercial.TunisiaVatDefaults;
+import com.xdev.ooms.documents.commercial.dto.BillBankInfoDto;
+import com.xdev.ooms.documents.commercial.dto.BillFooterContactDto;
+import com.xdev.ooms.documents.commercial.dto.BillGenerationRequest;
+import com.xdev.ooms.documents.commercial.dto.BillLineDto;
+import com.xdev.ooms.documents.commercial.dto.BillLogisticsDto;
+import com.xdev.ooms.documents.commercial.dto.BillPartyDto;
+import com.xdev.ooms.documents.commercial.dto.TransactionBillRequest;
 import com.xdev.ooms.finance.financialtransaction.entity.FinancialTransaction;
+import com.xdev.ooms.production.oilsale.entity.OilSale;
+import com.xdev.ooms.production.oilsale.repository.OilSaleRepository;
 import com.xdev.ooms.production.supplier.entity.Supplier;
 import com.xdev.ooms.production.supplier.repository.SupplierRepository;
+import com.xdev.ooms.sharedkernel.Enum.ResourceName;
 import com.xdev.ooms.sharedkernel.ports.UnifiedDeliveryBillLinePort;
 import com.xdev.ooms.sharedkernel.ports.UnifiedDeliveryBillLineQuery;
 import jakarta.persistence.EntityManagerFactory;
@@ -20,6 +26,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -29,16 +36,22 @@ public class TransactionBillMapper {
     private final EntityManagerFactory entityManagerFactory;
     private final BillLabelResolver billLabelResolver;
     private final UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort;
+    private final OilSaleRepository oilSaleRepository;
+    private final OilSaleBillLineBuilder oilSaleBillLineBuilder;
 
     public TransactionBillMapper(
             SupplierRepository supplierRepository,
             EntityManagerFactory entityManagerFactory,
             BillLabelResolver billLabelResolver,
-            UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort) {
+            UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort,
+            OilSaleRepository oilSaleRepository,
+            OilSaleBillLineBuilder oilSaleBillLineBuilder) {
         this.supplierRepository = supplierRepository;
         this.entityManagerFactory = entityManagerFactory;
         this.billLabelResolver = billLabelResolver;
         this.unifiedDeliveryBillLinePort = unifiedDeliveryBillLinePort;
+        this.oilSaleRepository = oilSaleRepository;
+        this.oilSaleBillLineBuilder = oilSaleBillLineBuilder;
     }
 
     public BillGenerationRequest fromTransaction(FinancialTransaction tx, TransactionBillRequest options) {
@@ -65,9 +78,41 @@ public class TransactionBillMapper {
         request.setIssuerElectronicSeal(safeOptions.getIssuerElectronicSeal());
         request.setNotes(safeOptions.getNotes());
 
+        Optional<OilSale> linkedOilSale = resolveLinkedOilSale(tx);
+        if (linkedOilSale.isPresent()) {
+            OilSale sale = linkedOilSale.get();
+            request.setLines(oilSaleBillLineBuilder.buildLines(sale));
+            request.setInvoiceNumber(firstNonBlank(sale.getInvoiceNumber(), request.getInvoiceNumber()));
+            request.setSourceType("OilSale");
+            request.setSourceId(sale.getId());
+            if (oilSaleBillLineBuilder.containerSummary(sale.getId()).isBlank()) {
+                request.setConditions(firstNonBlank(safeOptions.getConditions(), "Vente huile"));
+            } else {
+                request.setConditions(firstNonBlank(safeOptions.getConditions(), "Vente huile et conteneurs"));
+            }
+            return request;
+        }
+
         BillLineDto line = buildLine(tx, safeOptions);
         request.setLines(List.of(line));
         return request;
+    }
+
+    private Optional<OilSale> resolveLinkedOilSale(FinancialTransaction tx) {
+        if (tx.getResourceName() != ResourceName.OILSALE) {
+            return Optional.empty();
+        }
+        String reference = tx.getExternalTransactionId();
+        if (reference == null || reference.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            UUID saleId = UUID.fromString(reference.trim());
+            return oilSaleRepository.findByIdForPdf(saleId)
+                    .or(() -> oilSaleRepository.findByIdAndIsDeletedFalse(saleId));
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
     }
 
     private BillLineDto buildLine(FinancialTransaction tx, TransactionBillRequest safeOptions) {

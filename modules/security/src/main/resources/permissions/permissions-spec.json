@@ -1,0 +1,726 @@
+{
+  "version": 1,
+  "actionProfiles": {
+    "CRUD": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE"
+    ],
+    "CRUD_PDF": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "GEN_PDF"
+    ],
+    "FINANCE_DOC": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "APPROVE",
+      "REJECT",
+      "VALIDATE",
+      "PAY",
+      "GEN_PDF"
+    ],
+    "FINANCE_SALE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "CANCEL",
+      "VALIDATE",
+      "APPROVE",
+      "REJECT",
+      "PAY",
+      "GEN_PDF",
+      "COMPLETE"
+    ],
+    "FINANCE_TRANSACTION": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "APPROVE",
+      "REJECT",
+      "VALIDATE",
+      "PAY",
+      "GEN_PDF",
+      "COMPLETE_PAYMENT_DETAILS"
+    ],
+    "OIL_CREDIT": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "APPROVE",
+      "REJECT",
+      "VALIDATE",
+      "COMPLETE",
+      "GEN_PDF"
+    ],
+    "OIL_TRANSACTION": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "OIL_IN_TRANSACTION",
+      "OIL_OUT_TRANSACTION",
+      "OIL_PAYMENT",
+      "VALIDATE",
+      "GEN_PDF",
+      "COMPLETE"
+    ],
+    "OIL_CONTAINER": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "GEN_PDF"
+    ],
+    "SUPPLIER_RECEPTION": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ASSIGN_SUPPLIER",
+      "VALIDATE",
+      "GEN_PDF"
+    ],
+    "UNIFIED_DELIVERY": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "COMPLETE",
+      "TO_PROD",
+      "GEN_PDF",
+      "OLIVE_QUALITY",
+      "OIL_QUALITY",
+      "UPDATE_OLIVE_QUALITY",
+      "UPDATE_OIL_QUALITY",
+      "GEN_PDF_QC_OIL",
+      "GEN_PDF_QC_OLIVE",
+      "GEN_PDF_PRODUCTION",
+      "SET_PRICE",
+      "PAY",
+      "OIL_RECEPTION",
+      "COMPLETE_PAYMENT_DETAILS",
+      "PLANNING"
+    ],
+    "QC_RESULT": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "OLIVE_QUALITY",
+      "OIL_QUALITY",
+      "UPDATE_OLIVE_QUALITY",
+      "UPDATE_OIL_QUALITY",
+      "VALIDATE",
+      "GEN_PDF"
+    ],
+    "QC_RULE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "GEN_PDF"
+    ],
+    "STORAGE_UNIT": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "SET_PRICE",
+      "GEN_PDF"
+    ],
+    "MACHINE_PLAN": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "APPROVE",
+      "REJECT",
+      "MAINTENANCE",
+      "GEN_PDF"
+    ],
+    "ARTICLE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ENTREE_STOCK",
+      "SORTIE_STOCK"
+    ],
+    "STOCK_FULL": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ENTREE_STOCK",
+      "SORTIE_STOCK",
+      "AJUSTER_STOCK",
+      "ASSIGN_EMPLACEMENT",
+      "RESERVER_STOCK",
+      "LIBERER_STOCK",
+      "CHECK_STOCK",
+      "TRANSFERER_STOCK"
+    ],
+    "STOCK_LOCATION": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ASSIGN_EMPLACEMENT",
+      "RESERVER_STOCK",
+      "LIBERER_STOCK",
+      "TRANSFERER_STOCK"
+    ],
+    "BON_COMMANDE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_OF": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "START",
+      "PAUSE",
+      "RESUME",
+      "CLOSE",
+      "AJUSTER_STOCK",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_PROJECT": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "CANCEL",
+      "UPDATE_STATUS",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_SHIPPING": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ADD_LINE",
+      "REMOVE_LINE",
+      "UPDATE_STATUS",
+      "SHIP",
+      "DELIVER",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_EXPEDITION": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "ADD_LINE",
+      "REMOVE_LINE",
+      "VALIDATE",
+      "SHIP",
+      "DELIVER",
+      "CLOSE",
+      "CANCEL",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_QUALITY": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "VALIDATE",
+      "UPDATE_STATUS",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_LABEL": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "DRAFT",
+      "VALIDATE",
+      "FINALIZE",
+      "EXPORT",
+      "GEN_PDF"
+    ],
+    "CONDITIONING_ANALYTICS": [
+      "READ",
+      "REPORT",
+      "GEN_PDF",
+      "EXPORT"
+    ],
+    "CONDITIONING_SYNC": [
+      "READ",
+      "SYNC"
+    ],
+    "READ_ONLY": [
+      "READ"
+    ]
+  },
+  "modules": {
+    "HR": {
+      "value": 0,
+      "description": "Human Resources module"
+    },
+    "RECEPTION": {
+      "value": 1,
+      "description": "Reception and supplier management"
+    },
+    "PRODUCTION": {
+      "value": 2,
+      "description": "Production and quality control"
+    },
+    "FINANCE": {
+      "value": 3,
+      "description": "Financial management"
+    },
+    "HABILITATION": {
+      "value": 4,
+      "description": "System administration and configuration"
+    },
+    "INVENTAIR": {
+      "value": 5,
+      "description": "Inventory and packaging stock management"
+    },
+    "CONDITIONING": {
+      "value": 6,
+      "description": "Conditioning, orders, projects, labels and expedition management"
+    }
+  },
+  "actions": {
+    "READ": "View entity records",
+    "CREATE": "Create new entity records",
+    "UPDATE": "Modify existing entity records",
+    "DELETE": "Remove entity records",
+    "CANCEL": "Cancel operations or transactions",
+    "OLIVE_QUALITY": "Manage olive quality control",
+    "OIL_QUALITY": "Manage oil quality control",
+    "UPDATE_OLIVE_QUALITY": "Update olive quality parameters",
+    "UPDATE_OIL_QUALITY": "Update oil quality parameters",
+    "TO_PROD": "Move to production workflow",
+    "COMPLETE": "Complete operations or transactions",
+    "OIL_PAYMENT": "Process oil-related payments",
+    "OIL_OUT_TRANSACTION": "Process oil output transactions",
+    "OIL_IN_TRANSACTION": "Process oil input transactions",
+    "OIL_RECEPTION": "Manage oil reception processes",
+    "SET_PRICE": "Set pricing for entities",
+    "ASSIGN_SUPPLIER": "Assign suppliers to operations",
+    "COMPLETE_PAYMENT_DETAILS": "Complete payment information",
+    "VALIDATE": "Validate operations or data",
+    "PAY": "Process payments",
+    "GEN_PDF": "Generate PDF documents",
+    "APPROVE": "Approve operations or requests",
+    "REJECT": "Reject operations or requests",
+    "MAINTENANCE": "Perform maintenance operations",
+    "PLANNING": "Manage planning and scheduling",
+    "DELIVERYHISTORY": "Manage the history of deliveries",
+    "START": "Start workflow execution",
+    "PAUSE": "Pause workflow execution",
+    "RESUME": "Resume workflow execution",
+    "CLOSE": "Close workflow execution",
+    "SHIP": "Ship expedition or delivery",
+    "DELIVER": "Mark expedition or delivery as delivered",
+    "ADD_LINE": "Add lines to a document or operation",
+    "REMOVE_LINE": "Remove lines from a document or operation",
+    "UPDATE_STATUS": "Update business status",
+    "DRAFT": "Move content back to draft",
+    "FINALIZE": "Finalize content",
+    "EXPORT": "Export content or reports",
+    "SYNC": "Synchronize mobile/offline data",
+    "REPORT": "Generate analytical reports",
+    "ENTREE_STOCK": "",
+    "SORTIE_STOCK": "",
+    "AJUSTER_STOCK": "",
+    "ASSIGN_EMPLACEMENT": "",
+    "RESERVER_STOCK": "",
+    "LIBERER_STOCK": "",
+    "CHECK_STOCK": "",
+    "TRANSFERER_STOCK": ""
+  },
+  "entities": {
+    "BANKACCOUNT": {
+      "module": "FINANCE",
+      "description": "Bank account management",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "base_type": {
+      "module": "PRODUCTION",
+      "description": "Generic type system",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "EXPENSE": {
+      "module": "FINANCE",
+      "description": "Expense management",
+      "section": "entities",
+      "profile": "FINANCE_DOC"
+    },
+    "FINANCIALTRANSACTION": {
+      "module": "FINANCE",
+      "description": "Universal financial transactions",
+      "section": "entities",
+      "profile": "FINANCE_TRANSACTION"
+    },
+    "OILCREDIT": {
+      "module": "PRODUCTION",
+      "description": "Oil credit management",
+      "section": "entities",
+      "profile": "OIL_CREDIT"
+    },
+    "SUPPLIER": {
+      "module": "RECEPTION",
+      "description": "Supplier management",
+      "section": "entities",
+      "profile": "SUPPLIER_RECEPTION"
+    },
+    "UNIFIEDDELIVERY": {
+      "module": "RECEPTION",
+      "description": "Delivery management",
+      "section": "entities",
+      "profile": "UNIFIED_DELIVERY"
+    },
+    "MACHINEPLAN": {
+      "module": "PRODUCTION",
+      "description": "Machine planning and scheduling",
+      "section": "entities",
+      "profile": "MACHINE_PLAN"
+    },
+    "MILLMACHINE": {
+      "module": "PRODUCTION",
+      "description": "Mill machine management",
+      "section": "entities",
+      "permissions": [
+        "READ",
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "MAINTENANCE",
+        "VALIDATE",
+        "GEN_PDF"
+      ]
+    },
+    "OILTRANSACTION": {
+      "module": "PRODUCTION",
+      "description": "Oil transaction management",
+      "section": "entities",
+      "profile": "OIL_TRANSACTION"
+    },
+    "PARAMETER": {
+      "module": "HABILITATION",
+      "description": "System parameters management",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "QUALITYCONTROLRESULT": {
+      "module": "PRODUCTION",
+      "description": "Quality control results",
+      "section": "entities",
+      "profile": "QC_RESULT"
+    },
+    "QUALITYCONTROLRULE": {
+      "module": "PRODUCTION",
+      "description": "Quality control rules",
+      "section": "entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "STORAGEUNIT": {
+      "module": "PRODUCTION",
+      "description": "Storage unit management",
+      "section": "entities",
+      "profile": "STORAGE_UNIT"
+    },
+    "TRANSPORTER": {
+      "module": "RECEPTION",
+      "description": "Transporter management",
+      "section": "entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "OILSALE": {
+      "module": "FINANCE",
+      "description": "Oil sales management (includes bundled container lines; creates OIL_SALE and OIL_CONTAINER_SALE financial transactions)",
+      "section": "entities",
+      "profile": "FINANCE_SALE"
+    },
+    "WASTESALE": {
+      "module": "FINANCE",
+      "description": "Waste sales management (finance module — frontend routes and menus)",
+      "section": "entities",
+      "permissions": [
+        "READ",
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "CANCEL",
+        "VALIDATE",
+        "PAY",
+        "GEN_PDF",
+        "COMPLETE"
+      ]
+    },
+    "WASTE": {
+      "module": "PRODUCTION",
+      "description": "Waste records and payments (production API resource — alias synced with WASTESALE)",
+      "section": "entities",
+      "permissions": [
+        "READ",
+        "CREATE",
+        "UPDATE",
+        "DELETE",
+        "PAY",
+        "GEN_PDF",
+        "VALIDATE",
+        "COMPLETE"
+      ]
+    },
+    "OILCONTAINER": {
+      "module": "PRODUCTION",
+      "description": "Oil container catalog, stock and purchases (uses MaterielSupplier for purchase supplier)",
+      "section": "entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "FILTRATIONOPERATION": {
+      "module": "PRODUCTION",
+      "description": "Oil filtration operations",
+      "section": "entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "COMPANYPROFILE": {
+      "module": "HABILITATION",
+      "description": "Company profile management",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "ROLE": {
+      "module": "HABILITATION",
+      "description": "Role management",
+      "section": "security_entities",
+      "profile": "CRUD_PDF"
+    },
+    "PERMISSION": {
+      "module": "HABILITATION",
+      "description": "Permission management",
+      "section": "security_entities",
+      "profile": "CRUD_PDF"
+    },
+    "OSMUSER": {
+      "module": "HABILITATION",
+      "description": "User management",
+      "section": "security_entities",
+      "profile": "CRUD_PDF"
+    },
+    "CONTRACT": {
+      "module": "HR",
+      "description": "Employee contracts",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "DEPARTMENT": {
+      "module": "HR",
+      "description": "Departments",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "EMPLOYEE": {
+      "module": "HR",
+      "description": "Employee profiles",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "LEAVEREQUEST": {
+      "module": "HR",
+      "description": "Employee leave requests",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "PAYROLL": {
+      "module": "HR",
+      "description": "Payroll runs and items",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "POINTAGE": {
+      "module": "HR",
+      "description": "Time clock entries",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "POSTE": {
+      "module": "HR",
+      "description": "Job positions",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "CLIENT": {
+      "module": "CONDITIONING",
+      "description": "Conditioning clients",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "ARTICLESEC": {
+      "module": "INVENTAIR",
+      "description": "Article management (frontend routes and menus)",
+      "section": "security_entities",
+      "profile": "ARTICLE"
+    },
+    "ARTICLE": {
+      "module": "INVENTAIR",
+      "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
+      "section": "security_entities",
+      "profile": "ARTICLE"
+    },
+    "BOM": {
+      "module": "INVENTAIR",
+      "description": "Bill of materials",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "BONCOMMANDE": {
+      "module": "INVENTAIR",
+      "description": "Purchase order",
+      "section": "security_entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "EMPLACEMENTSTOCK": {
+      "module": "INVENTAIR",
+      "description": "Stock location",
+      "section": "security_entities",
+      "profile": "STOCK_LOCATION"
+    },
+    "MATERIEL_SUPPLIER": {
+      "module": "INVENTAIR",
+      "description": "Material / packaging supplier management (inventory stock — distinct from RECEPTION:SUPPLIER olive/oil farmers)",
+      "section": "security_entities",
+      "profile": "CRUD",
+      "legacyAliases": [
+        "FOURNISSEUR"
+      ]
+    },
+    "LIGNEBONCOMMANDE": {
+      "module": "INVENTAIR",
+      "description": "Purchase order line",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "LIGNECONDITIONNEMENT": {
+      "module": "INVENTAIR",
+      "description": "Packaging line",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "MOUVEMENTSTOCKSEC": {
+      "module": "INVENTAIR",
+      "description": "Stock movement",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "PRODUITFINAL": {
+      "module": "INVENTAIR",
+      "description": "Finished product",
+      "section": "security_entities",
+      "profile": "CRUD"
+    },
+    "STOCKSEC": {
+      "module": "INVENTAIR",
+      "description": "Stock management",
+      "section": "security_entities",
+      "profile": "STOCK_FULL"
+    },
+    "OF": {
+      "module": "CONDITIONING",
+      "description": "Conditioning manufacturing orders",
+      "section": "security_entities",
+      "profile": "CONDITIONING_OF"
+    },
+    "PROJET": {
+      "module": "CONDITIONING",
+      "description": "Conditioning projects",
+      "section": "security_entities",
+      "profile": "CONDITIONING_PROJECT"
+    },
+    "CERTIFICATION": {
+      "module": "CONDITIONING",
+      "description": "Conditioning certifications",
+      "section": "security_entities",
+      "profile": "OIL_CONTAINER"
+    },
+    "SHIPPING": {
+      "module": "CONDITIONING",
+      "description": "Conditioning shipping information",
+      "section": "security_entities",
+      "profile": "CONDITIONING_SHIPPING"
+    },
+    "EXPEDITION": {
+      "module": "CONDITIONING",
+      "description": "Conditioning expedition management",
+      "section": "security_entities",
+      "profile": "CONDITIONING_EXPEDITION"
+    },
+    "QUALITY": {
+      "module": "CONDITIONING",
+      "description": "Conditioning quality control",
+      "section": "security_entities",
+      "profile": "CONDITIONING_QUALITY"
+    },
+    "LABELCONTENT": {
+      "module": "CONDITIONING",
+      "description": "Conditioning label content",
+      "section": "security_entities",
+      "profile": "CONDITIONING_LABEL"
+    },
+    "ANALYTICS": {
+      "module": "CONDITIONING",
+      "description": "Conditioning analytics and reports",
+      "section": "security_entities",
+      "profile": "CONDITIONING_ANALYTICS"
+    },
+    "MOBILESYNC": {
+      "module": "CONDITIONING",
+      "description": "Conditioning mobile synchronization",
+      "section": "security_entities",
+      "profile": "CONDITIONING_SYNC"
+    },
+    "AUDIT": {
+      "module": "CONDITIONING",
+      "description": "Conditioning audit logs",
+      "section": "security_entities",
+      "profile": "READ_ONLY"
+    }
+  },
+  "roleMirrors": [
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "ARTICLESEC",
+      "targetModule": "INVENTAIR",
+      "targetEntity": "ARTICLE"
+    },
+    {
+      "sourceModule": "FINANCE",
+      "sourceEntity": "WASTESALE",
+      "targetModule": "PRODUCTION",
+      "targetEntity": "WASTE"
+    },
+    {
+      "sourceModule": "PRODUCTION",
+      "sourceEntity": "STORAGEUNIT",
+      "targetModule": "PRODUCTION",
+      "targetEntity": "OILCONTAINER"
+    }
+  ]
+}

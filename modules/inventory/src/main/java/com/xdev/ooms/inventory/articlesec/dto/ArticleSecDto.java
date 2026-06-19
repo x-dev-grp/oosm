@@ -3,7 +3,7 @@ package com.xdev.ooms.inventory.articlesec.dto;
 import com.xdev.ooms.inventory.Enum.CategorieArticle;
 
 import com.xdev.ooms.inventory.articlesec.entity.ArticleSec;
-import com.xdev.ooms.inventory.fournisseur.dto.FournisseurDto;
+import com.xdev.ooms.inventory.materielsupplier.dto.MaterielSupplierDto;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.models.UniteMesure;
 import lombok.Data;
@@ -33,7 +33,7 @@ public class ArticleSecDto extends BaseDto<ArticleSec> implements Serializable {
   private  Integer stockMinimum;
   private  Integer stockMaximum;
   private  Boolean actif;
-  private FournisseurDto fournisseur;
+  private MaterielSupplierDto materielSupplier;
   private String publicCode;
   private String qrUrl;
   private String qrImageBase64;

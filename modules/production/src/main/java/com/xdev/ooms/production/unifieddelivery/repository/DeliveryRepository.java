@@ -16,6 +16,19 @@ import java.util.UUID;
 public interface DeliveryRepository extends BaseRepository<UnifiedDelivery> {
 
 
+    @Query("""
+            SELECT DISTINCT d FROM UnifiedDelivery d
+            LEFT JOIN FETCH d.supplier
+            LEFT JOIN FETCH d.parcel
+            LEFT JOIN FETCH d.oliveVariety
+            LEFT JOIN FETCH d.region
+            LEFT JOIN FETCH d.storageUnit
+            LEFT JOIN FETCH d.qualityControlResults qc
+            LEFT JOIN FETCH qc.rule
+            WHERE d.id = :id AND d.isDeleted = false
+            """)
+    Optional<UnifiedDelivery> findByIdForPdf(@Param("id") UUID id);
+
     /* ── OPTIONAL HELPERS (if you still use them elsewhere) ───── */
     @Query("select coalesce(d.oliveQuantity, 0) from UnifiedDelivery d where d.id = :id")
     double weightOfLot(@Param("id") String id);
@@ -155,4 +168,7 @@ public interface DeliveryRepository extends BaseRepository<UnifiedDelivery> {
     Optional<UnifiedDelivery> findTopByOrderByCreatedDateDesc();
 
     List<UnifiedDelivery> findByGlobalLotNumberAndDeliveryTypeAndIsDeletedFalse(String globalLotNumber, DeliveryType deliveryType);
+
+    @Query("SELECT d.deliveryNumber FROM UnifiedDelivery d WHERE d.isDeleted = false AND d.deliveryNumber IS NOT NULL")
+    List<String> findAllDeliveryNumbers();
 }

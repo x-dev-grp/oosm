@@ -6,12 +6,12 @@ import com.xdev.ooms.inventory.Enum.CategorieArticle;
 import com.xdev.ooms.inventory.common.service.InventoryDeleteGuardService;
 import com.xdev.ooms.inventory.config.ArticleConfig;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto;
-import com.xdev.ooms.inventory.fournisseur.dto.FournisseurDto;
+import com.xdev.ooms.inventory.materielsupplier.dto.MaterielSupplierDto;
 import com.xdev.ooms.inventory.articlesec.entity.ArticleSec;
-import com.xdev.ooms.inventory.fournisseur.entity.Fournisseur;
+import com.xdev.ooms.inventory.materielsupplier.entity.MaterielSupplier;
 import com.xdev.ooms.inventory.articlesec.repository.ArticleSecRepository;
 import com.xdev.ooms.inventory.bom.repository.BomLineRepository;
-import com.xdev.ooms.inventory.fournisseur.repository.FournisseurRepository;
+import com.xdev.ooms.inventory.materielsupplier.repository.MaterielSupplierRepository;
 import com.xdev.ooms.inventory.stocksec.entity.StockSec;
 import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
 import com.xdev.ooms.inventory.stocksec.service.StockSecService;
@@ -34,7 +34,7 @@ import java.util.stream.Collectors;
 public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto, ArticleSecDto> {
 
     private final ArticleSecRepository articleRepository;
-    private final FournisseurRepository fournisseurRepository;
+    private final MaterielSupplierRepository materielSupplierRepository;
     private final ModelMapper modelMapper;
     private final StockSecService stockSecService;
     private final StockSecRepository stockSecRepository;
@@ -46,7 +46,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
     @Autowired
     public ArticleSecService(BaseRepository<ArticleSec> repository,
                              ArticleSecRepository articleRepository,
-                             FournisseurRepository fournisseurRepository,
+                             MaterielSupplierRepository materielSupplierRepository,
                              ModelMapper modelMapper,
                              StockSecService stockSecService,
                              StockSecRepository stockSecRepository,
@@ -55,7 +55,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
                              ObjectMapper objectMapper) {
         super(repository, modelMapper);
         this.articleRepository = articleRepository;
-        this.fournisseurRepository = fournisseurRepository;
+        this.materielSupplierRepository = materielSupplierRepository;
         this.modelMapper = modelMapper;
         this.stockSecService = stockSecService;
         this.stockSecRepository = stockSecRepository;
@@ -120,10 +120,10 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         }
         UUID id = articleDto.getId();
         ArticleSec existingArticle = getArticleEntityById(id);
-        if (!existingArticle.getNom().equals(articleDto.getNom()) && articleDto.getFournisseur() != null) {
-            Fournisseur fournisseur = fournisseurRepository.findById(articleDto.getFournisseur().getId()).orElse(null);
-            if (fournisseur != null && articleRepository.existsByNomAndFournisseur(articleDto.getNom(), fournisseur)) {
-                throw new RuntimeException("Un article avec ce nom existe déjà pour ce fournisseur");
+        if (!existingArticle.getNom().equals(articleDto.getNom()) && articleDto.getMaterielSupplier() != null) {
+            MaterielSupplier materielSupplier = materielSupplierRepository.findById(articleDto.getMaterielSupplier().getId()).orElse(null);
+            if (materielSupplier != null && articleRepository.existsByNomAndMaterielSupplier(articleDto.getNom(), materielSupplier)) {
+                throw new RuntimeException("Un article avec ce nom existe déjà pour ce fournisseur materiel");
             }
         }
 
@@ -142,12 +142,12 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
             }
         }
 
-        if (articleDto.getFournisseur() != null && articleDto.getFournisseur().getId() != null) {
-            Fournisseur fournisseur = fournisseurRepository.findById(articleDto.getFournisseur().getId())
-                    .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec ID: " + articleDto.getFournisseur().getId()));
-            existingArticle.setFournisseur(fournisseur);
+        if (articleDto.getMaterielSupplier() != null && articleDto.getMaterielSupplier().getId() != null) {
+            MaterielSupplier materielSupplier = materielSupplierRepository.findById(articleDto.getMaterielSupplier().getId())
+                    .orElseThrow(() -> new RuntimeException("Material supplier not found with ID: " + articleDto.getMaterielSupplier().getId()));
+            existingArticle.setMaterielSupplier(materielSupplier);
         } else {
-            existingArticle.setFournisseur(null);
+            existingArticle.setMaterielSupplier(null);
         }
         existingArticle.validateConfiguration();
 
@@ -223,10 +223,10 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
 
     private ArticleSec convertToEntity(ArticleSecDto dto) {
         ArticleSec article = modelMapper.map(dto, ArticleSec.class);
-        if (dto.getFournisseur() != null && dto.getFournisseur().getId() != null) {
-            Fournisseur fournisseur = fournisseurRepository.findById(dto.getFournisseur().getId())
-                    .orElseThrow(() -> new RuntimeException("Fournisseur non trouvé avec ID: " + dto.getFournisseur().getId()));
-            article.setFournisseur(fournisseur);
+        if (dto.getMaterielSupplier() != null && dto.getMaterielSupplier().getId() != null) {
+            MaterielSupplier materielSupplier = materielSupplierRepository.findById(dto.getMaterielSupplier().getId())
+                    .orElseThrow(() -> new RuntimeException("Material supplier not found with ID: " + dto.getMaterielSupplier().getId()));
+            article.setMaterielSupplier(materielSupplier);
         }
         if (dto.getConfiguration() != null) {
             try {
@@ -241,8 +241,8 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
 
     private ArticleSecDto convertToDto(ArticleSec article) {
         ArticleSecDto dto = modelMapper.map(article, ArticleSecDto.class);
-        if (article.getFournisseur() != null) {
-            dto.setFournisseur(modelMapper.map(article.getFournisseur(), FournisseurDto.class));
+        if (article.getMaterielSupplier() != null) {
+            dto.setMaterielSupplier(modelMapper.map(article.getMaterielSupplier(), MaterielSupplierDto.class));
         }
         if (article.getConfiguration() != null) {
             Map<String, Object> configMap = objectMapper.convertValue(

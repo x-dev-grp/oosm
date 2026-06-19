@@ -1,23 +1,19 @@
 package com.xdev.ooms.production.supplier.dto;
 
-import com.xdev.ooms.sharedkernel.basetype.entity.BaseType;
-
-import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
 import com.xdev.ooms.production.storageunit.dto.StorageUnitDto;
-import com.xdev.ooms.production.storageunit.entity.StorageUnit;
-
 import com.xdev.ooms.production.supplier.entity.Supplier;
+import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 /**
  * DTO for {@link Supplier}
  */
-
 public class SupplierDto extends BaseDto<Supplier> {
     private BaseTypeDto genericSupplierType;
     private Boolean hasStorage;
     private String name;
     private String lastname;
+    private String fullName;
     private String phone;
     private String email;
     private String address;
@@ -25,14 +21,7 @@ public class SupplierDto extends BaseDto<Supplier> {
     private String rib;
     private String bankName;
     private String matriculeFiscal;
-    private String fullName;
     private StorageUnitDto storageUnit;
-
-    public String getFullName() {
-        return fullName;
-    }
-
-
 
     public String getMatriculeFiscal() {
         return matriculeFiscal;
@@ -42,14 +31,13 @@ public class SupplierDto extends BaseDto<Supplier> {
         this.matriculeFiscal = matriculeFiscal;
     }
 
-
     public String getName() {
         return name;
     }
 
     public void setName(String name) {
-        this.fullName = name+" "+lastname;
         this.name = name;
+        refreshFullName();
     }
 
     public String getLastname() {
@@ -58,6 +46,23 @@ public class SupplierDto extends BaseDto<Supplier> {
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
+        refreshFullName();
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public void setFullName(String fullName) {
+        if (fullName != null && !fullName.isBlank()) {
+            this.fullName = fullName.trim();
+            return;
+        }
+        refreshFullName();
+    }
+
+    private void refreshFullName() {
+        this.fullName = Supplier.buildFullName(this.name, this.lastname);
     }
 
     public String getPhone() {
@@ -83,7 +88,6 @@ public class SupplierDto extends BaseDto<Supplier> {
     public void setAddress(String address) {
         this.address = address;
     }
-
 
     public BaseTypeDto getRegion() {
         return region;
@@ -116,7 +120,6 @@ public class SupplierDto extends BaseDto<Supplier> {
     public void setHasStorage(Boolean hasStorage) {
         this.hasStorage = hasStorage;
     }
-
 
     public BaseTypeDto getGenericSupplierType() {
         return genericSupplierType;

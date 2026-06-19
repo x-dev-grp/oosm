@@ -8,10 +8,13 @@ import com.xdev.ooms.production.unifieddelivery.dto.UnifiedDeliveryDTO;
 
 
 import com.xdev.ooms.production.unifieddelivery.dto.ExchangePricingDto;
+import com.xdev.ooms.production.unifieddelivery.dto.NextDeliveryNumbersDto;
+import com.xdev.ooms.production.unifieddelivery.dto.NextDeliveryNumbersResponse;
 import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
 import com.xdev.ooms.production.unifieddelivery.service.UnifiedDeliveryService;
 import  com.xdev.ooms.sharedkernel.Enum.DeliveryType;
 import  com.xdev.ooms.sharedkernel.Enum.OliveLotStatus;
+import  com.xdev.ooms.sharedkernel.Enum.Olive_Oil_Type;
 
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
@@ -48,6 +51,15 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
         }catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @GetMapping("/next-numbers")
+    public ResponseEntity<NextDeliveryNumbersResponse> previewNextNumbers(
+            @RequestParam DeliveryType deliveryType,
+            @RequestParam(required = false) Olive_Oil_Type oliveType,
+            @RequestParam(required = false) Olive_Oil_Type oilType) {
+        NextDeliveryNumbersDto numbers = UnifiedDeliveryService.previewNextNumbers(deliveryType, oliveType, oilType);
+        return ResponseEntity.ok(new NextDeliveryNumbersResponse(true, "Next delivery numbers", numbers));
     }
 
     @GetMapping("/planning")
@@ -158,6 +170,19 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
       }
 
     }
+
+    @GetMapping("/createOilRecFromOliveRec/{uuid}")
+    public ResponseEntity<ApiSingleResponse<UnifiedDelivery, UnifiedDeliveryDTO>> createOilRecFromOliveRec(
+            @PathVariable UUID uuid) {
+        try {
+            UnifiedDelivery oilDelivery = UnifiedDeliveryService.createOilRecFromOliveRecImpl(uuid, false, null);
+            UnifiedDeliveryDTO dto = modelMapper.map(oilDelivery, UnifiedDeliveryDTO.class);
+            return ResponseEntity.ok(new ApiSingleResponse<>(true, "Oil reception created", attachPermittedActions(dto)));
+        } catch (Exception e) {
+            return ResponseEntity.ok(new ApiSingleResponse<>(false, e.getMessage(), null));
+        }
+    }
+
     @Override
     protected String getResourceName() {
         return "UnifiedDelivery".toUpperCase();

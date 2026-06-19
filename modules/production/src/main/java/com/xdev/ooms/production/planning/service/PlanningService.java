@@ -130,16 +130,26 @@ public class PlanningService {
                 }
             });
 
-            // 6. Handle unassigned lots - revert to their previous status
-            deliveryMap.values().stream().filter(d -> !processedLotNumbers.contains(d.getLotNumber())).forEach(d -> {
+            // 6. Handle unassigned lots — revert only if they were in progress on a mill
+            deliveryMap.values().stream()
+                    .filter(d -> !processedLotNumbers.contains(d.getLotNumber()))
+                    .forEach(d -> {
                 d.setMillMachine(null);
                 d.setGlobalLotNumber(null);
 
-                // Revert to previous status based on operation type and quality control
-                if (d.getOperationType() == OperationType.BASE) {
+                if (d.getStatus() != OliveLotStatus.IN_PROGRESS) {
+                    return;
+                }
+
+                if (d.getOperationType() == OperationType.BASE
+                        || (d.getUnitPrice() != null && d.getUnitPrice() > 0
+                        && (d.getOperationType() == OperationType.OLIVE_PURCHASE
+                        || d.getOperationType() == OperationType.EXCHANGE))) {
                     d.setStatus(OliveLotStatus.PROD_READY);
+                } else if (!d.getQualityControlResults().isEmpty()) {
+                    d.setStatus(OliveLotStatus.OLIVE_CONTROLLED);
                 } else {
-                    d.setStatus(!d.getQualityControlResults().isEmpty() ? OliveLotStatus.OLIVE_CONTROLLED : OliveLotStatus.NEW);
+                    d.setStatus(OliveLotStatus.NEW);
                 }
             });
 

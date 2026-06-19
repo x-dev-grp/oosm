@@ -91,12 +91,12 @@ public class InventoryDeleteGuardService {
     }
 
     @Transactional(readOnly = true)
-    public void assertFournisseurCanBeRemoved(UUID fournisseurId) {
-        long articleCount = articleSecRepository.countByFournisseur_IdAndIsDeletedFalse(fournisseurId);
+    public void assertMaterielSupplierCanBeRemoved(UUID materielSupplierId) {
+        long articleCount = articleSecRepository.countByMaterielSupplier_IdAndIsDeletedFalse(materielSupplierId);
         if (articleCount > 0) {
             throw new InventoryBusinessException(
-                    "FOURNISSEUR_HAS_ARTICLES",
-                    "Impossible de supprimer ou desactiver le fournisseur : "
+                    "MATERIEL_SUPPLIER_HAS_ARTICLES",
+                    "Impossible de supprimer ou desactiver le fournisseur materiel : "
                             + articleCount + " article(s) y sont encore rattaches"
             );
         }

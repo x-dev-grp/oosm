@@ -21,6 +21,10 @@
             <artifactId>shared-kernel</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.xdev.ooms</groupId>
+            <artifactId>inventory</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <scope>provided</scope>

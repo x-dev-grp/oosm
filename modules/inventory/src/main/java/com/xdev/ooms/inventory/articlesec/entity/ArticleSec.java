@@ -1,6 +1,6 @@
 package com.xdev.ooms.inventory.articlesec.entity;
 
-import com.xdev.ooms.inventory.fournisseur.entity.Fournisseur;
+import com.xdev.ooms.inventory.materielsupplier.entity.MaterielSupplier;
 import com.xdev.ooms.inventory.Enum.CategorieArticle;
 import com.xdev.ooms.inventory.config.*;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
@@ -37,7 +37,7 @@ public class ArticleSec extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "fournisseur_id")
-    private Fournisseur fournisseur;
+    private MaterielSupplier materielSupplier;
 
     private Integer stockMinimum = 0;
     private Integer stockMaximum = 0;

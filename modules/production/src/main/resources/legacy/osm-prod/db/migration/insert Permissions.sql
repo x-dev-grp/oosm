@@ -1,3 +1,4 @@
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- ====== 0) Pré-requis & idempotence ======
 CREATE EXTENSION IF NOT EXISTS pgcrypto; -- pour gen_random_uuid()
 
@@ -135,349 +136,679 @@ $$ LANGUAGE plpgsql;
 
 -- ====== 2) Exemple d'appel : colle ton JSON entre $$ ... $$ ======
 -- Remplace le contenu par TON fichier "permisisons and modules .json"
-SELECT public.seed_permissions_from_json($$
-{
+SELECT public.seed_permissions_from_json($${
   "entities": {
     "BANKACCOUNT": {
       "description": "Bank account management",
       "module": "FINANCE",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "base_type": {
       "description": "Generic type system",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "EXPENSE": {
       "description": "Expense management",
       "module": "FINANCE",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
         "APPROVE",
-        "REJECT",
-        "VALIDATE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
         "PAY",
-        "GEN_PDF"
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "FINANCIALTRANSACTION": {
       "description": "Universal financial transactions",
       "module": "FINANCE",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
         "APPROVE",
-        "REJECT",
-        "VALIDATE",
-        "PAY",
+        "COMPLETE_PAYMENT_DETAILS",
+        "CREATE",
+        "DELETE",
         "GEN_PDF",
-        "COMPLETE_PAYMENT_DETAILS"
+        "PAY",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "OILCREDIT": {
       "description": "Oil credit management",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
         "APPROVE",
-        "REJECT",
-        "VALIDATE",
         "COMPLETE",
-        "GEN_PDF"
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "SUPPLIER": {
       "description": "Supplier management",
       "module": "RECEPTION",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
         "ASSIGN_SUPPLIER",
-        "VALIDATE",
-        "GEN_PDF"
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "UNIFIEDDELIVERY": {
       "description": "Delivery management",
       "module": "RECEPTION",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "VALIDATE",
         "COMPLETE",
-        "TO_PROD",
+        "COMPLETE_PAYMENT_DETAILS",
+        "CREATE",
+        "DELETE",
         "GEN_PDF",
-        "OLIVE_QUALITY",
-        "OIL_QUALITY",
-        "UPDATE_OLIVE_QUALITY",
-        "UPDATE_OIL_QUALITY",
+        "GEN_PDF_PRODUCTION",
         "GEN_PDF_QC_OIL",
         "GEN_PDF_QC_OLIVE",
-        "GEN_PDF_PRODUCTION",
-        "SET_PRICE",
-        "PAY",
+        "OIL_QUALITY",
         "OIL_RECEPTION",
-        "COMPLETE_PAYMENT_DETAILS",
-        "PLANNING"
+        "OLIVE_QUALITY",
+        "PAY",
+        "PLANNING",
+        "READ",
+        "SET_PRICE",
+        "TO_PROD",
+        "UPDATE",
+        "UPDATE_OIL_QUALITY",
+        "UPDATE_OLIVE_QUALITY",
+        "VALIDATE"
       ]
     },
     "MACHINEPLAN": {
       "description": "Machine planning and scheduling",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "VALIDATE",
         "APPROVE",
-        "REJECT",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
         "MAINTENANCE",
-        "GEN_PDF"
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "MILLMACHINE": {
       "description": "Mill machine management",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
+        "GEN_PDF",
         "MAINTENANCE",
-        "VALIDATE",
-        "GEN_PDF"
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "OILTRANSACTION": {
       "description": "Oil transaction management",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
+        "COMPLETE",
         "CREATE",
-        "UPDATE",
         "DELETE",
+        "GEN_PDF",
         "OIL_IN_TRANSACTION",
         "OIL_OUT_TRANSACTION",
         "OIL_PAYMENT",
-        "VALIDATE",
-        "GEN_PDF",
-        "COMPLETE"
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "PARAMETER": {
       "description": "System parameters management",
       "module": "HABILITATION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "QUALITYCONTROLRESULT": {
       "description": "Quality control results",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "OLIVE_QUALITY",
+        "GEN_PDF",
         "OIL_QUALITY",
-        "UPDATE_OLIVE_QUALITY",
+        "OLIVE_QUALITY",
+        "READ",
+        "UPDATE",
         "UPDATE_OIL_QUALITY",
-        "VALIDATE",
-        "GEN_PDF"
+        "UPDATE_OLIVE_QUALITY",
+        "VALIDATE"
       ]
     },
     "QUALITYCONTROLRULE": {
       "description": "Quality control rules",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "VALIDATE",
-        "GEN_PDF"
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "STORAGEUNIT": {
       "description": "Storage unit management",
       "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "VALIDATE",
+        "GEN_PDF",
+        "READ",
         "SET_PRICE",
-        "GEN_PDF"
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "TRANSPORTER": {
       "description": "Transporter management",
       "module": "RECEPTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "VALIDATE",
-        "GEN_PDF"
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "OILSALE": {
-      "description": "Oil sales management",
+      "description": "Oil sales management (includes bundled container lines; creates OIL_SALE and OIL_CONTAINER_SALE financial transactions)",
       "module": "FINANCE",
       "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "CANCEL",
-        "VALIDATE",
         "APPROVE",
-        "REJECT",
-        "PAY",
+        "CANCEL",
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
         "GEN_PDF",
-        "COMPLETE"
+        "PAY",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
-    "COMPANYPROFILE": {
-      "description": "Company profile management",
-      "module": "HABILITATION",
+    "WASTESALE": {
+      "description": "Waste sales management (finance module — frontend routes and menus)",
+      "module": "FINANCE",
       "permissions": [
-        "READ",
+        "CANCEL",
+        "COMPLETE",
         "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "ROLE": {
-      "description": "Role management",
-      "module": "HABILITATION",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
         "DELETE",
-        "GEN_PDF"
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
-    "PERMISSION": {
-      "description": "Permission management",
-      "module": "HABILITATION",
+    "WASTE": {
+      "description": "Waste records and payments (production API resource — alias synced with WASTESALE)",
+      "module": "PRODUCTION",
       "permissions": [
-        "READ",
+        "COMPLETE",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "GEN_PDF"
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
-    "OSMUSER": {
-      "description": "User management",
-      "module": "HABILITATION",
+    "OILCONTAINER": {
+      "description": "Oil container catalog, stock and purchases (uses MaterielSupplier for purchase supplier)",
+      "module": "PRODUCTION",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
         "DELETE",
-        "GEN_PDF"
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "FILTRATIONOPERATION": {
+      "description": "Oil filtration operations",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
       ]
     },
     "CONTRACT": {
       "description": "Employee contracts",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "DEPARTMENT": {
       "description": "Departments",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "EMPLOYEE": {
       "description": "Employee profiles",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "LEAVEREQUEST": {
       "description": "Employee leave requests",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "PAYROLL": {
       "description": "Payroll runs and items",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "POINTAGE": {
       "description": "Time clock entries",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
-        "UPDATE",
-        "DELETE"
+        "DELETE",
+        "READ",
+        "UPDATE"
       ]
     },
     "POSTE": {
       "description": "Job positions",
       "module": "HR",
       "permissions": [
-        "READ",
         "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    }
+  },
+  "security_entities": {
+    "COMPANYPROFILE": {
+      "description": "Company profile management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "ROLE": {
+      "description": "Role management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PERMISSION": {
+      "description": "Permission management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "OSMUSER": {
+      "description": "User management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "CLIENT": {
+      "description": "Conditioning clients",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "ARTICLESEC": {
+      "description": "Article management (frontend routes and menus)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "READ",
+        "SORTIE_STOCK",
+        "UPDATE"
+      ]
+    },
+    "ARTICLE": {
+      "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "READ",
+        "SORTIE_STOCK",
+        "UPDATE"
+      ]
+    },
+    "BOM": {
+      "description": "Bill of materials",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "BONCOMMANDE": {
+      "description": "Purchase order",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
         "UPDATE",
-        "DELETE"
+        "VALIDATE"
+      ]
+    },
+    "EMPLACEMENTSTOCK": {
+      "description": "Stock location",
+      "module": "INVENTAIR",
+      "permissions": [
+        "ASSIGN_EMPLACEMENT",
+        "CREATE",
+        "DELETE",
+        "LIBERER_STOCK",
+        "READ",
+        "RESERVER_STOCK",
+        "TRANSFERER_STOCK",
+        "UPDATE"
+      ]
+    },
+    "MATERIEL_SUPPLIER": {
+      "description": "Material / packaging supplier management (inventory stock — distinct from RECEPTION:SUPPLIER olive/oil farmers)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "FOURNISSEUR": {
+      "description": "Legacy alias — migrated to MATERIEL_SUPPLIER",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LIGNEBONCOMMANDE": {
+      "description": "Purchase order line",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LIGNECONDITIONNEMENT": {
+      "description": "Packaging line",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "MOUVEMENTSTOCKSEC": {
+      "description": "Stock movement",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PRODUITFINAL": {
+      "description": "Finished product",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "STOCKSEC": {
+      "description": "Stock management",
+      "module": "INVENTAIR",
+      "permissions": [
+        "AJUSTER_STOCK",
+        "ASSIGN_EMPLACEMENT",
+        "CHECK_STOCK",
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "LIBERER_STOCK",
+        "READ",
+        "RESERVER_STOCK",
+        "SORTIE_STOCK",
+        "TRANSFERER_STOCK",
+        "UPDATE"
+      ]
+    },
+    "OF": {
+      "description": "Conditioning manufacturing orders",
+      "module": "CONDITIONING",
+      "permissions": [
+        "AJUSTER_STOCK",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAUSE",
+        "READ",
+        "RESUME",
+        "START",
+        "UPDATE"
+      ]
+    },
+    "PROJET": {
+      "description": "Conditioning projects",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "CERTIFICATION": {
+      "description": "Conditioning certifications",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "SHIPPING": {
+      "description": "Conditioning shipping information",
+      "module": "CONDITIONING",
+      "permissions": [
+        "ADD_LINE",
+        "CREATE",
+        "DELETE",
+        "DELIVER",
+        "GEN_PDF",
+        "READ",
+        "REMOVE_LINE",
+        "SHIP",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "EXPEDITION": {
+      "description": "Conditioning expedition management",
+      "module": "CONDITIONING",
+      "permissions": [
+        "ADD_LINE",
+        "CANCEL",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "DELIVER",
+        "GEN_PDF",
+        "READ",
+        "REMOVE_LINE",
+        "SHIP",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "QUALITY": {
+      "description": "Conditioning quality control",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS",
+        "VALIDATE"
+      ]
+    },
+    "LABELCONTENT": {
+      "description": "Conditioning label content",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "DRAFT",
+        "EXPORT",
+        "FINALIZE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "ANALYTICS": {
+      "description": "Conditioning analytics and reports",
+      "module": "CONDITIONING",
+      "permissions": [
+        "EXPORT",
+        "GEN_PDF",
+        "READ",
+        "REPORT"
+      ]
+    },
+    "MOBILESYNC": {
+      "description": "Conditioning mobile synchronization",
+      "module": "CONDITIONING",
+      "permissions": [
+        "READ",
+        "SYNC"
+      ]
+    },
+    "AUDIT": {
+      "description": "Conditioning audit logs",
+      "module": "CONDITIONING",
+      "permissions": [
+        "READ"
       ]
     }
   },
@@ -552,346 +883,115 @@ SELECT public.seed_permissions_from_json($$
     "EXPORT": "Export content or reports",
     "SYNC": "Synchronize mobile/offline data",
     "REPORT": "Generate analytical reports",
-    "ENTREE_STOCK":"" ,
-    "SORTIE_STOCK":"",
-    "AJUSTER_STOCK":"",
-    "ASSIGN_EMPLACEMENT":"",
-    "RESERVER_STOCK":"",
-    "LIBERER_STOCK":"",
-    "CHECK_STOCK":"",
-    "TRANSFERER_STOCK":""
-  },
-  "security_entities": {
-    "COMPANYPROFILE": {
-      "table": "osmsecurity.public.company_profile",
-      "description": "Company profile information",
-      "module": "HABILITATION",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "ROLE": {
-      "table": "osmsecurity.public.role",
-      "description": "User roles and permissions",
-      "module": "HABILITATION",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "PERMISSION": {
-      "table": "osmsecurity.public.permission",
-      "description": "System permissions",
-      "module": "HABILITATION",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "OSMUSER": {
-      "table": "osmsecurity.public.osmuser",
-      "description": "System users",
-      "module": "HABILITATION",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "CLIENT": {
-      "table": "abiooc_inventory.public.clients",
-      "description": "System users",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "ARTICLESEC": {
-      "description": "Article management",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "ENTREE_STOCK",
-        "SORTIE_STOCK"
-      ]
-    },
-
-    "BOM": {
-      "description": "Bill of materials",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "BONCOMMANDE": {
-      "description": "Purchase order",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "VALIDATE",
-        "GEN_PDF"
-      ]
-    },
-
-    "CLIENT": {
-      "description": "Client management",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "EMPLACEMENTSTOCK": {
-      "description": "Stock location",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "ASSIGN_EMPLACEMENT",
-        "RESERVER_STOCK",
-        "LIBERER_STOCK",
-        "TRANSFERER_STOCK"
-      ]
-    },
-
-    "FOURNISSEUR": {
-      "description": "Supplier management",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "LIGNEBONCOMMANDE": {
-      "description": "Purchase order line",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "LIGNECONDITIONNEMENT": {
-      "description": "Packaging line",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "MOUVEMENTSTOCKSEC": {
-      "description": "Stock movement",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-
-      ]
-    },
-
-    "PRODUITFINAL": {
-      "description": "Finished product",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-
-    "STOCKSEC": {
-      "description": "Stock management",
-      "module": "INVENTAIR",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "ENTREE_STOCK" ,
-        "SORTIE_STOCK",
-        "AJUSTER_STOCK",
-        "ASSIGN_EMPLACEMENT",
-        "RESERVER_STOCK",
-        "LIBERER_STOCK",
-        "CHECK_STOCK",
-        "TRANSFERER_STOCK"
-      ]
-    },
-    "OF": {
-      "description": "Conditioning manufacturing orders",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "START",
-        "PAUSE",
-        "RESUME",
-        "CLOSE",
-        "AJUSTER_STOCK",
-        "GEN_PDF"
-      ]
-    },
-    "PROJET": {
-      "description": "Conditioning projects",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "CANCEL",
-        "UPDATE_STATUS",
-        "GEN_PDF"
-      ]
-    },
-    "CLIENT": {
-      "description": "Conditioning clients",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE"
-      ]
-    },
-    "CERTIFICATION": {
-      "description": "Conditioning certifications",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "VALIDATE",
-        "GEN_PDF"
-      ]
-    },
-    "SHIPPING": {
-      "description": "Conditioning shipping information",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "ADD_LINE",
-        "REMOVE_LINE",
-        "UPDATE_STATUS",
-        "SHIP",
-        "DELIVER",
-        "GEN_PDF"
-      ]
-    },
-    "EXPEDITION": {
-      "description": "Conditioning expedition management",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "ADD_LINE",
-        "REMOVE_LINE",
-        "VALIDATE",
-        "SHIP",
-        "DELIVER",
-        "CLOSE",
-        "CANCEL",
-        "GEN_PDF"
-      ]
-    },
-    "QUALITY": {
-      "description": "Conditioning quality control",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "VALIDATE",
-        "UPDATE_STATUS",
-        "GEN_PDF"
-      ]
-    },
-    "LABELCONTENT": {
-      "description": "Conditioning label content",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "CREATE",
-        "UPDATE",
-        "DELETE",
-        "DRAFT",
-        "VALIDATE",
-        "FINALIZE",
-        "EXPORT",
-        "GEN_PDF"
-      ]
-    },
-    "ANALYTICS": {
-      "description": "Conditioning analytics and reports",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "REPORT",
-        "GEN_PDF",
-        "EXPORT"
-      ]
-    },
-    "MOBILESYNC": {
-      "description": "Conditioning mobile synchronization",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ",
-        "SYNC"
-      ]
-    },
-    "AUDIT": {
-      "description": "Conditioning audit logs",
-      "module": "CONDITIONING",
-      "permissions": [
-        "READ"
-      ]
-    }
+    "ENTREE_STOCK": "",
+    "SORTIE_STOCK": "",
+    "AJUSTER_STOCK": "",
+    "ASSIGN_EMPLACEMENT": "",
+    "RESERVER_STOCK": "",
+    "LIBERER_STOCK": "",
+    "CHECK_STOCK": "",
+    "TRANSFERER_STOCK": ""
   }
-}
-$$::jsonb);
+}$$::jsonb);
+
+-- ====== 1.2) Migrate legacy FOURNISSEUR -> MATERIEL_SUPPLIER ======
+DO $$
+DECLARE
+    legacy_permission RECORD;
+    target_permission_id UUID;
+BEGIN
+    FOR legacy_permission IN
+        SELECT id, module, permission_name
+        FROM public.permission
+        WHERE UPPER(entity) = 'FOURNISSEUR'
+        LOOP
+            SELECT id
+            INTO target_permission_id
+            FROM public.permission
+            WHERE module = legacy_permission.module
+              AND UPPER(entity) = 'MATERIEL_SUPPLIER'
+              AND permission_name = legacy_permission.permission_name
+            LIMIT 1;
+
+            IF target_permission_id IS NULL THEN
+                UPDATE public.permission
+                SET entity = 'MATERIEL_SUPPLIER'
+                WHERE id = legacy_permission.id;
+            ELSE
+                INSERT INTO public.role_permissions (role_id, permissions_id)
+                SELECT rp.role_id, target_permission_id
+                FROM public.role_permissions rp
+                WHERE rp.permissions_id = legacy_permission.id
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM public.role_permissions existing_rp
+                      WHERE existing_rp.role_id = rp.role_id
+                        AND existing_rp.permissions_id = target_permission_id
+                  );
+
+                DELETE FROM public.role_permissions
+                WHERE permissions_id = legacy_permission.id;
+
+                DELETE FROM public.permission
+                WHERE id = legacy_permission.id;
+            END IF;
+        END LOOP;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ====== 1.3) Mirror role grants onto backend/API alias entities ======
+DO $$
+BEGIN
+    -- ARTICLESEC (FE) -> ARTICLE (ArticleSecController)
+    INSERT INTO public.role_permissions (role_id, permissions_id)
+    SELECT rp.role_id, target_perm.id
+    FROM public.role_permissions rp
+             JOIN public.permission source_perm ON source_perm.id = rp.permissions_id
+             JOIN public.permission target_perm
+                  ON target_perm.module = source_perm.module
+                      AND UPPER(target_perm.entity) = 'ARTICLE'
+                      AND target_perm.permission_name = source_perm.permission_name
+    WHERE UPPER(source_perm.entity) = 'ARTICLESEC'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.role_permissions existing_rp
+        WHERE existing_rp.role_id = rp.role_id
+          AND existing_rp.permissions_id = target_perm.id
+    );
+
+    -- FINANCE:WASTESALE (FE) -> PRODUCTION:WASTE (WasteController)
+    INSERT INTO public.role_permissions (role_id, permissions_id)
+    SELECT rp.role_id, target_perm.id
+    FROM public.role_permissions rp
+             JOIN public.permission source_perm ON source_perm.id = rp.permissions_id
+             JOIN public.permission target_perm
+                  ON UPPER(target_perm.entity) = 'WASTE'
+                      AND target_perm.permission_name = source_perm.permission_name
+    WHERE source_perm.module = 3
+      AND UPPER(source_perm.entity) = 'WASTESALE'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.role_permissions existing_rp
+        WHERE existing_rp.role_id = rp.role_id
+          AND existing_rp.permissions_id = target_perm.id
+    );
+
+    -- PRODUCTION:STORAGEUNIT -> PRODUCTION:OILCONTAINER (container API)
+    INSERT INTO public.role_permissions (role_id, permissions_id)
+    SELECT rp.role_id, target_perm.id
+    FROM public.role_permissions rp
+             JOIN public.permission source_perm ON source_perm.id = rp.permissions_id
+             JOIN public.permission target_perm
+                  ON target_perm.module = source_perm.module
+                      AND UPPER(target_perm.entity) = 'OILCONTAINER'
+                      AND target_perm.permission_name = source_perm.permission_name
+    WHERE source_perm.module = 2
+      AND UPPER(source_perm.entity) = 'STORAGEUNIT'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM public.role_permissions existing_rp
+        WHERE existing_rp.role_id = rp.role_id
+          AND existing_rp.permissions_id = target_perm.id
+    );
+END;
+$$ LANGUAGE plpgsql;

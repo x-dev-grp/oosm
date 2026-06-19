@@ -6,10 +6,12 @@ import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
+import lombok.Getter;
 
 /**
  * A Supplier.
  */
+@Getter
 @Entity
 public class Supplier extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
@@ -18,6 +20,7 @@ public class Supplier extends BaseEntity {
     private Boolean hasStorage = false;
     private String name;
     private String lastname;
+    private String fullName;
     private String phone;
     private String email;
     private String address;
@@ -40,40 +43,20 @@ public class Supplier extends BaseEntity {
     @Transient
     private Float totalDebt;
 
-    public StorageUnit getStorageUnit() {
-        return storageUnit;
-    }
-
     public void setStorageUnit(StorageUnit storageUnit) {
         this.storageUnit = storageUnit;
-    }
-
-    public Boolean getHasStorage() {
-        return hasStorage;
     }
 
     public void setHasStorage(Boolean hasStorage) {
         this.hasStorage = hasStorage;
     }
 
-    public String getMatriculeFiscal() {
-        return matriculeFiscal;
-    }
-
     public void setMatriculeFiscal(String matriculeFiscal) {
         this.matriculeFiscal = matriculeFiscal;
     }
 
-    public Float getTotalOliveQuantity() {
-        return totalOliveQuantity;
-    }
-
     public void setTotalOliveQuantity(Float totalOliveQuantity) {
         this.totalOliveQuantity = totalOliveQuantity;
-    }
-
-    public Float getTotalOilQuantity() {
-        return totalOilQuantity;
     }
 
     /**
@@ -82,10 +65,6 @@ public class Supplier extends BaseEntity {
 
     public void setTotalOilQuantity(Float totalOilQuantity) {
         this.totalOilQuantity = totalOilQuantity;
-    }
-
-    public Float getTotalPaidAmount() {
-        return totalPaidAmount;
     }
 
     /**
@@ -98,10 +77,6 @@ public class Supplier extends BaseEntity {
         this.totalPaidAmount = totalPaidAmount;
     }
 
-    public Float getTotalUnpaidAmount() {
-        return totalUnpaidAmount;
-    }
-
     /**
      * Sums the unpaid amounts from all oil deliveries.
      */
@@ -109,10 +84,6 @@ public class Supplier extends BaseEntity {
 
     public void setTotalUnpaidAmount(Float totalUnpaidAmount) {
         this.totalUnpaidAmount = totalUnpaidAmount;
-    }
-
-    public Float getTotalDebt() {
-        return totalDebt;
     }
 
     /**
@@ -124,48 +95,54 @@ public class Supplier extends BaseEntity {
         this.totalDebt = totalDebt;
     }
 
-    public String getName() {
-        return name;
-    }
-
     public void setName(String name) {
         this.name = name;
-    }
-
-    public String getLastname() {
-        return lastname;
+        refreshFullName();
     }
 
     public void setLastname(String lastname) {
         this.lastname = lastname;
+        refreshFullName();
     }
 
-    public String getPhone() {
-        return phone;
+    public void setFullName(String ignored) {
+        refreshFullName();
+    }
+
+    public static String buildFullName(String name, String lastname) {
+        String first = name == null ? "" : name.trim();
+        String last = lastname == null ? "" : lastname.trim();
+        String combined = (first + " " + last).trim();
+        return combined.isEmpty() ? null : combined;
+    }
+
+    @PrePersist
+    @PreUpdate
+    private void onPersistOrUpdate() {
+        refreshFullName();
+    }
+
+    @PostLoad
+    private void ensureFullNameLoaded() {
+        if (fullName == null && (name != null || lastname != null)) {
+            refreshFullName();
+        }
+    }
+
+    private void refreshFullName() {
+        this.fullName = buildFullName(this.name, this.lastname);
     }
 
     public void setPhone(String phone) {
         this.phone = phone;
     }
 
-    public String getEmail() {
-        return email;
-    }
-
     public void setEmail(String email) {
         this.email = email;
     }
 
-    public String getAddress() {
-        return address;
-    }
-
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public String getRib() {
-        return rib;
     }
 
     public void setRib(String rib) {
@@ -176,24 +153,12 @@ public class Supplier extends BaseEntity {
 
     // Calculated totals based on child class values
 
-    public String getBankName() {
-        return bankName;
-    }
-
     public void setBankName(String bankName) {
         this.bankName = bankName;
     }
 
-    public BaseType getRegion() {
-        return region;
-    }
-
     public void setRegion(BaseType region) {
         this.region = region;
-    }
-
-    public BaseType getGenericSupplierType() {
-        return genericSupplierType;
     }
 
     public void setGenericSupplierType(BaseType genericSupplierType) {

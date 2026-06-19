@@ -41,6 +41,7 @@
         <module>modules/reception</module>
         <module>modules/storage</module>
         <module>modules/production</module>
+        <module>modules/document-generation</module>
         <module>modules/hr</module>
         <module>modules/reporting</module>
         <module>app</module>
@@ -91,6 +92,11 @@
             <dependency>
                 <groupId>com.xdev.ooms</groupId>
                 <artifactId>production</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.xdev.ooms</groupId>
+                <artifactId>document-generation</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

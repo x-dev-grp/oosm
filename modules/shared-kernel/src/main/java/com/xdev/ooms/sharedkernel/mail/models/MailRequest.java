@@ -4,6 +4,7 @@ public class MailRequest {
     private String to;
     private String subject;
     private String body;
+    private String htmlBody;
 
     public String getTo() {
         return to;
@@ -27,5 +28,17 @@ public class MailRequest {
 
     public void setBody(String body) {
         this.body = body;
+    }
+
+    public String getHtmlBody() {
+        return htmlBody;
+    }
+
+    public void setHtmlBody(String htmlBody) {
+        this.htmlBody = htmlBody;
+    }
+
+    public boolean hasHtmlBody() {
+        return htmlBody != null && !htmlBody.isBlank();
     }
 }

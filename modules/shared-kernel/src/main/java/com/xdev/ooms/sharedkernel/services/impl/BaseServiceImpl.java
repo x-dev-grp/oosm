@@ -544,7 +544,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             return response;
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "Error during search operation", e);
-            return new SearchResponse<>(0, null, 0, 0, null);
+            throw e instanceof RuntimeException runtime ? runtime : new IllegalStateException("Search operation failed", e);
         }
     }
 

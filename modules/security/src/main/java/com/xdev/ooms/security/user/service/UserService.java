@@ -15,8 +15,10 @@ import com.xdev.ooms.security.user.entity.OSMUser;
 import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationCodeType;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationMethod;
+import com.xdev.ooms.sharedkernel.mail.models.EmailBranding;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
+import com.xdev.ooms.sharedkernel.mail.templates.OsmMailComposer;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
 import com.xdev.ooms.sharedkernel.models.Action;
@@ -44,12 +46,13 @@ import java.util.stream.Collectors;
 public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUTDTO> implements UserDetailsService {
     private final UserRepository userRepository;
     private final MailService mailService;
+    private final OsmMailComposer mailComposer;
     private final ConfirmationCodeService confirmationCodeService;
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final CompanyProfileRepository companyProfileRepository;
 
-    protected UserService(BaseRepository<OSMUser> repository, ModelMapper modelMapper, UserRepository userRepository, MailService mailService, ConfirmationCodeService confirmationCodeService, PasswordEncoder passwordEncoder, RoleRepository roleRepository, CompanyProfileRepository companyProfileRepository) {
+    protected UserService(BaseRepository<OSMUser> repository, ModelMapper modelMapper, UserRepository userRepository, MailService mailService, OsmMailComposer mailComposer, ConfirmationCodeService confirmationCodeService, PasswordEncoder passwordEncoder, RoleRepository roleRepository, CompanyProfileRepository companyProfileRepository) {
         super(repository, modelMapper);
 
         long startTime = System.currentTimeMillis();
@@ -58,6 +61,7 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         try {
             this.userRepository = userRepository;
             this.mailService = mailService;
+            this.mailComposer = mailComposer;
             this.confirmationCodeService = confirmationCodeService;
             this.passwordEncoder = passwordEncoder;
 
@@ -312,6 +316,24 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         sendConfirmation(userDTO, rawPassword);
     }
 
+    private EmailBranding resolveBranding(UUID tenantId) {
+        EmailBranding branding = mailComposer.defaultBranding();
+        if (tenantId == null) {
+            return branding;
+        }
+
+        companyProfileRepository.findById(tenantId).ifPresent(profile -> {
+            if (profile.getLegalName() != null && !profile.getLegalName().isBlank()) {
+                branding.setCompanyName(profile.getLegalName());
+            }
+            if (profile.getEmail() != null && !profile.getEmail().isBlank()) {
+                branding.setSupportEmail(profile.getEmail());
+            }
+        });
+
+        return branding;
+    }
+
     private void sendConfirmation(OSMUserOUTDTO userDTO, String rawPassword) throws Exception {
         long startTime = System.currentTimeMillis();
         String username = userDTO != null ? userDTO.getUsername() : "null";
@@ -321,15 +343,11 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         try {
             switch (userDTO.getConfirmationMethod()) {
                 case EMAIL -> {
-                    MailRequest mailRequest = new MailRequest();
-                    mailRequest.setTo(userDTO.getEmail());
-                    mailRequest.setSubject("Compte OSM");
-                    mailRequest.setBody(
-
-                            "Welcome to OSM\n\n" +
-                                    "Username: " + userDTO.getUsername() + "\n" +
-                                    "Temporary password: " + rawPassword + "\n\n" +
-                                    "If you didn’t request this account, please ignore this email"
+                    MailRequest mailRequest = mailComposer.composeWelcomeCredentials(
+                            userDTO.getEmail(),
+                            userDTO.getUsername(),
+                            rawPassword,
+                            resolveBranding(userDTO.getTenantId())
                     );
                     mailService.sendEmail(mailRequest);
 
@@ -384,10 +402,12 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
                     confirmationCode.setConsumedAt(null);
                     saveConfirmationCode(confirmationCode);
 
-                    MailRequest mailrequest = new MailRequest();
-                    mailrequest.setTo(user.getEmail());
-                    mailrequest.setSubject("Password reset");
-                    mailrequest.setBody("Code: " + code);
+                    MailRequest mailrequest = mailComposer.composePasswordReset(
+                            user.getEmail(),
+                            code,
+                            user.getId().toString(),
+                            resolveBranding(user.getTenantId())
+                    );
                     mailService.sendEmail(mailrequest);
 
                     OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_CODE_SENT",

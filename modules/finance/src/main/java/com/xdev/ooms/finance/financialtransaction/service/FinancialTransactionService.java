@@ -1,5 +1,7 @@
 package com.xdev.ooms.finance.financialtransaction.service;
 
+import com.xdev.ooms.finance.bankaccount.entity.BankAccount;
+import com.xdev.ooms.finance.bankaccount.repository.BankAccountRepository;
 import com.xdev.ooms.finance.financialtransaction.dto.FinancialTransactionDto;
 import com.xdev.ooms.finance.financialtransaction.dto.SupplierFinancialSummaryDto;
 import com.xdev.ooms.finance.internal.FinanceModuleDtoMapper;
@@ -12,7 +14,13 @@ import com.xdev.ooms.sharedkernel.Enum.ExpenseStatus;
 import com.xdev.ooms.sharedkernel.Enum.ResourceName;
 import com.xdev.ooms.sharedkernel.Enum.TransactionDirection;
 import com.xdev.ooms.sharedkernel.Enum.TransactionType;
+import com.xdev.ooms.production.supplier.entity.Supplier;
+import com.xdev.ooms.production.supplier.repository.SupplierRepository;
+import com.xdev.ooms.sharedkernel.communicator.models.shared.BankAccountDto;
+import com.xdev.ooms.sharedkernel.communicator.models.shared.ExpenseDto;
+import com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto;
 import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.ports.InvoiceNumberPort;
 import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncCommand;
 import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
@@ -37,6 +45,9 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
     private final ProductionFinancialSyncPort productionFinancialSyncPort;
     private final ExpensesRepository expensesRepository;
     private final FinanceModuleDtoMapper moduleDtoMapper;
+    private final SupplierRepository supplierRepository;
+    private final BankAccountRepository bankAccountRepository;
+    private final InvoiceNumberPort invoiceNumberPort;
 
     public FinancialTransactionService(
             BaseRepository<FinancialTransaction> repository,
@@ -44,12 +55,18 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
             FinancialTransactionRepository financialTransactionRepository,
             ProductionFinancialSyncPort productionFinancialSyncPort,
             ExpensesRepository expensesRepository,
-            FinanceModuleDtoMapper moduleDtoMapper) {
+            FinanceModuleDtoMapper moduleDtoMapper,
+            SupplierRepository supplierRepository,
+            BankAccountRepository bankAccountRepository,
+            InvoiceNumberPort invoiceNumberPort) {
         super(repository, modelMapper);
         this.financialTransactionRepository = financialTransactionRepository;
         this.productionFinancialSyncPort = productionFinancialSyncPort;
         this.expensesRepository = expensesRepository;
         this.moduleDtoMapper = moduleDtoMapper;
+        this.supplierRepository = supplierRepository;
+        this.bankAccountRepository = bankAccountRepository;
+        this.invoiceNumberPort = invoiceNumberPort;
     }
 
     @Transactional
@@ -65,13 +82,14 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         validateRequest(request);
 
         if (request.getInvoiceReference() == null || request.getInvoiceReference().isBlank()) {
-            request.setInvoiceReference(generateNextInvoiceRef());
+            request.setInvoiceReference(invoiceNumberPort.nextInvoiceNumber());
         }
 
         boolean syncProduction = request.getSyncProductionState() == null
                 || Boolean.TRUE.equals(request.getSyncProductionState());
 
         FinancialTransaction tx = modelMapper.map(request, FinancialTransaction.class);
+        attachRelations(tx, request);
 
         if (tx.getTransactionDate() == null) {
             tx.setTransactionDate(LocalDateTime.now());
@@ -96,11 +114,19 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
     @Transactional
     public FinancialTransactionDto update(FinancialTransactionDto request) {
         validateRequest(request);
-        FinancialTransactionDto updated = super.update(request);
-        if (updated == null) {
-            throw new jakarta.persistence.EntityNotFoundException("Financial transaction not found with id " + request.getId());
+        if (request == null || request.getId() == null) {
+            return null;
         }
-        return updated;
+        FinancialTransaction existed = financialTransactionRepository.findByIdAndIsDeletedFalse(request.getId())
+                .orElse(null);
+        if (existed == null) {
+            return null;
+        }
+        UUID externalId = existed.getExternalId();
+        modelMapper.map(request, existed);
+        existed.setExternalId(externalId);
+        attachRelations(existed, request);
+        return modelMapper.map(financialTransactionRepository.save(existed), FinancialTransactionDto.class);
     }
 
     @Transactional
@@ -129,6 +155,54 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         return modelMapper.map(financialTransactionRepository.save(tx), FinancialTransactionDto.class);
     }
 
+    private void attachRelations(FinancialTransaction tx, FinancialTransactionDto request) {
+        if (request == null) {
+            return;
+        }
+        tx.setSupplier(resolveSupplier(request.getSupplier()));
+        tx.setBankAccount(resolveBankAccount(request.getBankAccount()));
+        tx.setExpense(resolveExpense(request.getExpense()));
+    }
+
+    private Supplier resolveSupplier(SupplierDto supplierDto) {
+        if (supplierDto == null) {
+            return null;
+        }
+        if (supplierDto.getExternalId() != null) {
+            return supplierRepository.findByExternalIdAndIsDeletedFalse(supplierDto.getExternalId()).orElse(null);
+        }
+        if (supplierDto.getId() != null) {
+            return supplierRepository.findByIdAndIsDeletedFalse(supplierDto.getId()).orElse(null);
+        }
+        return null;
+    }
+
+    private BankAccount resolveBankAccount(BankAccountDto bankAccountDto) {
+        if (bankAccountDto == null) {
+            return null;
+        }
+        if (bankAccountDto.getExternalId() != null) {
+            return bankAccountRepository.findByExternalIdAndIsDeletedFalse(bankAccountDto.getExternalId()).orElse(null);
+        }
+        if (bankAccountDto.getId() != null) {
+            return bankAccountRepository.findByIdAndIsDeletedFalse(bankAccountDto.getId()).orElse(null);
+        }
+        return null;
+    }
+
+    private Expense resolveExpense(ExpenseDto expenseDto) {
+        if (expenseDto == null) {
+            return null;
+        }
+        if (expenseDto.getExternalId() != null) {
+            return expensesRepository.findByExternalIdAndIsDeletedFalse(expenseDto.getExternalId()).orElse(null);
+        }
+        if (expenseDto.getId() != null) {
+            return expensesRepository.findByIdAndIsDeletedFalse(expenseDto.getId()).orElse(null);
+        }
+        return null;
+    }
+
     private void validateRequest(FinancialTransactionDto request) {
         if (request == null) {
             throw new IllegalArgumentException("Financial transaction payload is required");
@@ -144,6 +218,18 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         }
     }
 
+    @Transactional
+    public String ensureInvoiceReference(UUID id) {
+        FinancialTransaction tx = financialTransactionRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+                        "Financial transaction not found with id " + id));
+        if (tx.getInvoiceReference() == null || tx.getInvoiceReference().isBlank()) {
+            tx.setInvoiceReference(invoiceNumberPort.nextInvoiceNumber());
+            financialTransactionRepository.save(tx);
+        }
+        return tx.getInvoiceReference();
+    }
+
     private void applyPostSaveEffects(FinancialTransaction savedTx) {
         switch (savedTx.getTransactionType()) {
             case OIL_SALE, OIL_PURCHASE, PAYMENT, PURCHASE -> updateOilInvoice(savedTx);
@@ -153,10 +239,6 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
             default -> {
             }
         }
-    }
-
-    private String generateNextInvoiceRef() {
-        return generateBusinessCode("invoiceReference", "INV");
     }
 
     private TransactionDirection inferDirection(TransactionType type) {

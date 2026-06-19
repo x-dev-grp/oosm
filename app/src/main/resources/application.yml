@@ -86,10 +86,10 @@ spring:
           jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
 
   mail:
-    host: ${MAIL_HOST:}
+    host: ${MAIL_HOST:smtp.gmail.com}
     port: ${MAIL_PORT:587}
-    username: ${MAIL_USER:}
-    password: ${MAIL_PASS:}
+    username: ${MAIL_USER:xdevgroupe@gmail.com}
+    password: ${MAIL_PASS:jzea krmd ubpo nlos}
     protocol: smtp
     default-encoding: UTF-8
     properties:
@@ -122,6 +122,10 @@ app:
     search-on-startup: ${SEARCH_DEBUG_ON_STARTUP:false}
   frontend:
     base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
+  mail:
+    from-name: ${MAIL_FROM_NAME:OSM}
+    support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_USER:}}
+    debug: ${MAIL_DEBUG:false}
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
@@ -134,6 +138,8 @@ app:
       password: ${SECURITY_BOOTSTRAP_PASSWORD:}
       email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
       phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
+    permissions:
+      sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}
   production:
     bootstrap:
       enabled: ${PRODUCTION_BOOTSTRAP_ENABLED:true}

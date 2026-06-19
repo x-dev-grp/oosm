@@ -170,11 +170,26 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             QualityControlResult e = new QualityControlResult();
             e.setRule(rule);
             e.setMeasuredValue(dto.getMeasuredValue());
-            e.setDelivery(newOIlRec); // if you add an idx field to the entity
+            e.setDelivery(newOIlRec);
             return e;
         }).toList();
+
+        Optional<QualityControlResult> match = entities.stream()
+                .filter(qcr -> allowedSet.contains(qcr.getMeasuredValue()))
+                .findFirst();
+        if (match.isPresent()) {
+            newOIlRec.setCategoryOliveOil(TunisiaOilGradeUtil.normalizeCategory(match.get().getMeasuredValue()));
+        } else {
+            suggestCategoryFromMeasurements(entities).ifPresent(newOIlRec::setCategoryOliveOil);
+        }
+
         // Persist QC results
         List<QualityControlResult> saved = repository.saveAll(entities);
+
+        newOIlRec.setHasQualityControl(true);
+        newOIlRec.setStatus(OliveLotStatus.OIL_CONTROLLED);
+        deliveryRepo.save(newOIlRec);
+
         // Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
         OSMLogger.logMethodExit(this.getClass(), "saveAllForIdx", resultDtos);

@@ -104,7 +104,7 @@ public class StatistiqueService {
         stats.setTopArticlesValeur(new ArrayList<>());
         stats.setArticlesRuptureFrequente(new ArrayList<>());
         stats.setMouvementsParMois(buildMouvementsParMois(CHART_MONTHS));
-        stats.setAchatsParFournisseur(new LinkedHashMap<>());
+        stats.setAchatsParMaterielSupplier(new LinkedHashMap<>());
         stats.setAlertesParCategorie(buildAlertesParCategorie(articlesActifs, stockByArticle));
 
         return stats;

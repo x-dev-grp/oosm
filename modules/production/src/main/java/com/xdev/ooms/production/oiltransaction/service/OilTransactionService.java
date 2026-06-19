@@ -624,7 +624,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         OilTransactionDTO oilTransactionDTOforSale = modelMapper.map(oilTransactionDTO, OilTransactionDTO.class);
         oilTransactionDTOforSale.setTransactionType(TransactionType.OIL_SALE);
         oilTransactionDTOforSale.setTransactionState(TransactionState.PENDING);
-        return save(oilTransactionDTOforSale);
+        // Stock is deducted when storage validates/approves the linked transaction, not at sale create.
+        return saveWithoutStockAdjustment(oilTransactionDTOforSale);
     }
 
     private void validateNonNegativeVolumeBeforeSave(StorageUnit source, StorageUnit destination, Double quantityKg) {

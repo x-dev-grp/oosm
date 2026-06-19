@@ -54,6 +54,10 @@
         </dependency>
         <dependency>
             <groupId>com.xdev.ooms</groupId>
+            <artifactId>document-generation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.xdev.ooms</groupId>
             <artifactId>hr</artifactId>
         </dependency>
         <dependency>

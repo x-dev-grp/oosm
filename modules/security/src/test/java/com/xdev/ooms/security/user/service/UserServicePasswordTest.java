@@ -9,6 +9,7 @@ import com.xdev.ooms.security.user.dto.UpdatePasswordDTO;
 import com.xdev.ooms.security.user.entity.OSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
+import com.xdev.ooms.sharedkernel.mail.templates.OsmMailComposer;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,7 @@ class UserServicePasswordTest {
                 new ModelMapper(),
                 userRepository,
                 mock(MailService.class),
+                mock(OsmMailComposer.class),
                 confirmationCodeService,
                 passwordEncoder,
                 mock(RoleRepository.class),

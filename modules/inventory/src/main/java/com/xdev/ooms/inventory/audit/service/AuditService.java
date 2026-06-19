@@ -7,7 +7,7 @@ import com.xdev.ooms.inventory.bom.entity.BomLine;
 import com.xdev.ooms.inventory.boncommande.entity.BonCommande;
 import com.xdev.ooms.inventory.boncommande.entity.LigneBonCommande;
 import com.xdev.ooms.inventory.emplacementstock.entity.EmplacementStock;
-import com.xdev.ooms.inventory.fournisseur.entity.Fournisseur;
+import com.xdev.ooms.inventory.materielsupplier.entity.MaterielSupplier;
 import com.xdev.ooms.inventory.ligneconditionnement.entity.LigneConditionnement;
 import com.xdev.ooms.inventory.produitfinal.entity.ProduitFinal;
 import com.xdev.ooms.inventory.stocksec.entity.MouvementStockSec;
@@ -42,7 +42,7 @@ public class AuditService {
                 BomLine.class,
                 BonCommande.class,
                 EmplacementStock.class,
-                Fournisseur.class,
+                MaterielSupplier.class,
                 LigneBonCommande.class,
                 LigneConditionnement.class,
                 MouvementStockSec.class,

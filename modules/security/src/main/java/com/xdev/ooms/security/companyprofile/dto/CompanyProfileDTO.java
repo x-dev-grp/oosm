@@ -4,6 +4,7 @@ import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private String legalName;
@@ -21,6 +22,8 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private String governorate;
     private String logoData;
     private String logoContentType;
+    private LocalDateTime campaignStartAt;
+    private LocalDateTime campaignEndAt;
     private Integer campaignStartMonth;
     private Integer campaignStartDay;
     private Integer campaignEndMonth;
@@ -145,6 +148,22 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
 
     public void setLogoContentType(String logoContentType) {
         this.logoContentType = logoContentType;
+    }
+
+    public LocalDateTime getCampaignStartAt() {
+        return campaignStartAt;
+    }
+
+    public void setCampaignStartAt(LocalDateTime campaignStartAt) {
+        this.campaignStartAt = campaignStartAt;
+    }
+
+    public LocalDateTime getCampaignEndAt() {
+        return campaignEndAt;
+    }
+
+    public void setCampaignEndAt(LocalDateTime campaignEndAt) {
+        this.campaignEndAt = campaignEndAt;
     }
 
     public Integer getCampaignStartMonth() {

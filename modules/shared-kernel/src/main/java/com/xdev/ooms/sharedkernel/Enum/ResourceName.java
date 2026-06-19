@@ -2,5 +2,5 @@ package com.xdev.ooms.sharedkernel.Enum;
 
 public enum ResourceName {
     UnifiedDelivery,
-    Expense, Waste, OILSALE, StorageUnit
+    Expense, Waste, OILSALE, StorageUnit, OilContainer
 }

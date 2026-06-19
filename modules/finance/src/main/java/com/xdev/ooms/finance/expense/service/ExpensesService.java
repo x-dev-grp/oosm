@@ -11,6 +11,7 @@ import  com.xdev.ooms.sharedkernel.Enum.Currency;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionDirection;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
 import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.ports.InvoiceNumberPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import org.modelmapper.ModelMapper;
@@ -27,20 +28,26 @@ import java.util.Set;
 public class ExpensesService extends BaseServiceImpl<Expense, ExpenseDto, ExpenseDto> {
     private final FinancialTransactionRepository financialTransactionRepository;
     private final FinanceModuleDtoMapper moduleDtoMapper;
+    private final InvoiceNumberPort invoiceNumberPort;
 
     public ExpensesService(
             BaseRepository<Expense> repository,
             ModelMapper modelMapper,
             FinancialTransactionRepository financialTransactionRepository,
-            FinanceModuleDtoMapper moduleDtoMapper) {
+            FinanceModuleDtoMapper moduleDtoMapper,
+            InvoiceNumberPort invoiceNumberPort) {
         super(repository, modelMapper);
         this.financialTransactionRepository = financialTransactionRepository;
         this.moduleDtoMapper = moduleDtoMapper;
+        this.invoiceNumberPort = invoiceNumberPort;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public ExpenseDto save(ExpenseDto request) {
+        if (request.getInvoiceRef() == null || request.getInvoiceRef().isBlank()) {
+            request.setInvoiceRef(invoiceNumberPort.nextInvoiceNumber());
+        }
         Expense expense = modelMapper.map(request, Expense.class);
         Expense savdExpense = repository.save(expense);
         FinancialTransactionDto financialTransactionDto = new FinancialTransactionDto();
@@ -50,6 +57,7 @@ public class ExpensesService extends BaseServiceImpl<Expense, ExpenseDto, Expens
         financialTransactionDto.setCurrency(Currency.TND);
         financialTransactionDto.setExpense(moduleDtoMapper.toSharedExpenseReference(savdExpense));
         financialTransactionDto.setCheckNumber(savdExpense.getCheckNumber() != null ? savdExpense.getCheckNumber() : null);
+        financialTransactionDto.setInvoiceReference(savdExpense.getInvoiceRef());
         financialTransactionDto.setTransactionDate(LocalDateTime.now());
         financialTransactionDto.setApproved(true);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());

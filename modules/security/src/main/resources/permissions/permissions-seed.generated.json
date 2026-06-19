@@ -1,0 +1,757 @@
+{
+  "entities": {
+    "BANKACCOUNT": {
+      "description": "Bank account management",
+      "module": "FINANCE",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "base_type": {
+      "description": "Generic type system",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "EXPENSE": {
+      "description": "Expense management",
+      "module": "FINANCE",
+      "permissions": [
+        "APPROVE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "FINANCIALTRANSACTION": {
+      "description": "Universal financial transactions",
+      "module": "FINANCE",
+      "permissions": [
+        "APPROVE",
+        "COMPLETE_PAYMENT_DETAILS",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "OILCREDIT": {
+      "description": "Oil credit management",
+      "module": "PRODUCTION",
+      "permissions": [
+        "APPROVE",
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "SUPPLIER": {
+      "description": "Supplier management",
+      "module": "RECEPTION",
+      "permissions": [
+        "ASSIGN_SUPPLIER",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "UNIFIEDDELIVERY": {
+      "description": "Delivery management",
+      "module": "RECEPTION",
+      "permissions": [
+        "COMPLETE",
+        "COMPLETE_PAYMENT_DETAILS",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "GEN_PDF_PRODUCTION",
+        "GEN_PDF_QC_OIL",
+        "GEN_PDF_QC_OLIVE",
+        "OIL_QUALITY",
+        "OIL_RECEPTION",
+        "OLIVE_QUALITY",
+        "PAY",
+        "PLANNING",
+        "READ",
+        "SET_PRICE",
+        "TO_PROD",
+        "UPDATE",
+        "UPDATE_OIL_QUALITY",
+        "UPDATE_OLIVE_QUALITY",
+        "VALIDATE"
+      ]
+    },
+    "MACHINEPLAN": {
+      "description": "Machine planning and scheduling",
+      "module": "PRODUCTION",
+      "permissions": [
+        "APPROVE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "MAINTENANCE",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "MILLMACHINE": {
+      "description": "Mill machine management",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "MAINTENANCE",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "OILTRANSACTION": {
+      "description": "Oil transaction management",
+      "module": "PRODUCTION",
+      "permissions": [
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "OIL_IN_TRANSACTION",
+        "OIL_OUT_TRANSACTION",
+        "OIL_PAYMENT",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "PARAMETER": {
+      "description": "System parameters management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "QUALITYCONTROLRESULT": {
+      "description": "Quality control results",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "OIL_QUALITY",
+        "OLIVE_QUALITY",
+        "READ",
+        "UPDATE",
+        "UPDATE_OIL_QUALITY",
+        "UPDATE_OLIVE_QUALITY",
+        "VALIDATE"
+      ]
+    },
+    "QUALITYCONTROLRULE": {
+      "description": "Quality control rules",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "STORAGEUNIT": {
+      "description": "Storage unit management",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "SET_PRICE",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "TRANSPORTER": {
+      "description": "Transporter management",
+      "module": "RECEPTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "OILSALE": {
+      "description": "Oil sales management (includes bundled container lines; creates OIL_SALE and OIL_CONTAINER_SALE financial transactions)",
+      "module": "FINANCE",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "REJECT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "WASTESALE": {
+      "description": "Waste sales management (finance module — frontend routes and menus)",
+      "module": "FINANCE",
+      "permissions": [
+        "CANCEL",
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "WASTE": {
+      "description": "Waste records and payments (production API resource — alias synced with WASTESALE)",
+      "module": "PRODUCTION",
+      "permissions": [
+        "COMPLETE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "OILCONTAINER": {
+      "description": "Oil container catalog, stock and purchases (uses MaterielSupplier for purchase supplier)",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "FILTRATIONOPERATION": {
+      "description": "Oil filtration operations",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "CONTRACT": {
+      "description": "Employee contracts",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "DEPARTMENT": {
+      "description": "Departments",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "EMPLOYEE": {
+      "description": "Employee profiles",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LEAVEREQUEST": {
+      "description": "Employee leave requests",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PAYROLL": {
+      "description": "Payroll runs and items",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "POINTAGE": {
+      "description": "Time clock entries",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "POSTE": {
+      "description": "Job positions",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    }
+  },
+  "security_entities": {
+    "COMPANYPROFILE": {
+      "description": "Company profile management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "ROLE": {
+      "description": "Role management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PERMISSION": {
+      "description": "Permission management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "OSMUSER": {
+      "description": "User management",
+      "module": "HABILITATION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "CLIENT": {
+      "description": "Conditioning clients",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "ARTICLESEC": {
+      "description": "Article management (frontend routes and menus)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "READ",
+        "SORTIE_STOCK",
+        "UPDATE"
+      ]
+    },
+    "ARTICLE": {
+      "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "READ",
+        "SORTIE_STOCK",
+        "UPDATE"
+      ]
+    },
+    "BOM": {
+      "description": "Bill of materials",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "BONCOMMANDE": {
+      "description": "Purchase order",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "EMPLACEMENTSTOCK": {
+      "description": "Stock location",
+      "module": "INVENTAIR",
+      "permissions": [
+        "ASSIGN_EMPLACEMENT",
+        "CREATE",
+        "DELETE",
+        "LIBERER_STOCK",
+        "READ",
+        "RESERVER_STOCK",
+        "TRANSFERER_STOCK",
+        "UPDATE"
+      ]
+    },
+    "MATERIEL_SUPPLIER": {
+      "description": "Material / packaging supplier management (inventory stock — distinct from RECEPTION:SUPPLIER olive/oil farmers)",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "FOURNISSEUR": {
+      "description": "Legacy alias — migrated to MATERIEL_SUPPLIER",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LIGNEBONCOMMANDE": {
+      "description": "Purchase order line",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LIGNECONDITIONNEMENT": {
+      "description": "Packaging line",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "MOUVEMENTSTOCKSEC": {
+      "description": "Stock movement",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PRODUITFINAL": {
+      "description": "Finished product",
+      "module": "INVENTAIR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "STOCKSEC": {
+      "description": "Stock management",
+      "module": "INVENTAIR",
+      "permissions": [
+        "AJUSTER_STOCK",
+        "ASSIGN_EMPLACEMENT",
+        "CHECK_STOCK",
+        "CREATE",
+        "DELETE",
+        "ENTREE_STOCK",
+        "LIBERER_STOCK",
+        "READ",
+        "RESERVER_STOCK",
+        "SORTIE_STOCK",
+        "TRANSFERER_STOCK",
+        "UPDATE"
+      ]
+    },
+    "OF": {
+      "description": "Conditioning manufacturing orders",
+      "module": "CONDITIONING",
+      "permissions": [
+        "AJUSTER_STOCK",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "PAUSE",
+        "READ",
+        "RESUME",
+        "START",
+        "UPDATE"
+      ]
+    },
+    "PROJET": {
+      "description": "Conditioning projects",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "CERTIFICATION": {
+      "description": "Conditioning certifications",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "SHIPPING": {
+      "description": "Conditioning shipping information",
+      "module": "CONDITIONING",
+      "permissions": [
+        "ADD_LINE",
+        "CREATE",
+        "DELETE",
+        "DELIVER",
+        "GEN_PDF",
+        "READ",
+        "REMOVE_LINE",
+        "SHIP",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "EXPEDITION": {
+      "description": "Conditioning expedition management",
+      "module": "CONDITIONING",
+      "permissions": [
+        "ADD_LINE",
+        "CANCEL",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "DELIVER",
+        "GEN_PDF",
+        "READ",
+        "REMOVE_LINE",
+        "SHIP",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "QUALITY": {
+      "description": "Conditioning quality control",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS",
+        "VALIDATE"
+      ]
+    },
+    "LABELCONTENT": {
+      "description": "Conditioning label content",
+      "module": "CONDITIONING",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "DRAFT",
+        "EXPORT",
+        "FINALIZE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "ANALYTICS": {
+      "description": "Conditioning analytics and reports",
+      "module": "CONDITIONING",
+      "permissions": [
+        "EXPORT",
+        "GEN_PDF",
+        "READ",
+        "REPORT"
+      ]
+    },
+    "MOBILESYNC": {
+      "description": "Conditioning mobile synchronization",
+      "module": "CONDITIONING",
+      "permissions": [
+        "READ",
+        "SYNC"
+      ]
+    },
+    "AUDIT": {
+      "description": "Conditioning audit logs",
+      "module": "CONDITIONING",
+      "permissions": [
+        "READ"
+      ]
+    }
+  },
+  "modules": {
+    "HR": {
+      "value": 0,
+      "description": "Human Resources module"
+    },
+    "RECEPTION": {
+      "value": 1,
+      "description": "Reception and supplier management"
+    },
+    "PRODUCTION": {
+      "value": 2,
+      "description": "Production and quality control"
+    },
+    "FINANCE": {
+      "value": 3,
+      "description": "Financial management"
+    },
+    "HABILITATION": {
+      "value": 4,
+      "description": "System administration and configuration"
+    },
+    "INVENTAIR": {
+      "value": 5,
+      "description": "Inventory and packaging stock management"
+    },
+    "CONDITIONING": {
+      "value": 6,
+      "description": "Conditioning, orders, projects, labels and expedition management"
+    }
+  },
+  "actions": {
+    "READ": "View entity records",
+    "CREATE": "Create new entity records",
+    "UPDATE": "Modify existing entity records",
+    "DELETE": "Remove entity records",
+    "CANCEL": "Cancel operations or transactions",
+    "OLIVE_QUALITY": "Manage olive quality control",
+    "OIL_QUALITY": "Manage oil quality control",
+    "UPDATE_OLIVE_QUALITY": "Update olive quality parameters",
+    "UPDATE_OIL_QUALITY": "Update oil quality parameters",
+    "TO_PROD": "Move to production workflow",
+    "COMPLETE": "Complete operations or transactions",
+    "OIL_PAYMENT": "Process oil-related payments",
+    "OIL_OUT_TRANSACTION": "Process oil output transactions",
+    "OIL_IN_TRANSACTION": "Process oil input transactions",
+    "OIL_RECEPTION": "Manage oil reception processes",
+    "SET_PRICE": "Set pricing for entities",
+    "ASSIGN_SUPPLIER": "Assign suppliers to operations",
+    "COMPLETE_PAYMENT_DETAILS": "Complete payment information",
+    "VALIDATE": "Validate operations or data",
+    "PAY": "Process payments",
+    "GEN_PDF": "Generate PDF documents",
+    "APPROVE": "Approve operations or requests",
+    "REJECT": "Reject operations or requests",
+    "MAINTENANCE": "Perform maintenance operations",
+    "PLANNING": "Manage planning and scheduling",
+    "DELIVERYHISTORY": "Manage the history of deliveries",
+    "START": "Start workflow execution",
+    "PAUSE": "Pause workflow execution",
+    "RESUME": "Resume workflow execution",
+    "CLOSE": "Close workflow execution",
+    "SHIP": "Ship expedition or delivery",
+    "DELIVER": "Mark expedition or delivery as delivered",
+    "ADD_LINE": "Add lines to a document or operation",
+    "REMOVE_LINE": "Remove lines from a document or operation",
+    "UPDATE_STATUS": "Update business status",
+    "DRAFT": "Move content back to draft",
+    "FINALIZE": "Finalize content",
+    "EXPORT": "Export content or reports",
+    "SYNC": "Synchronize mobile/offline data",
+    "REPORT": "Generate analytical reports",
+    "ENTREE_STOCK": "",
+    "SORTIE_STOCK": "",
+    "AJUSTER_STOCK": "",
+    "ASSIGN_EMPLACEMENT": "",
+    "RESERVER_STOCK": "",
+    "LIBERER_STOCK": "",
+    "CHECK_STOCK": "",
+    "TRANSFERER_STOCK": ""
+  }
+}

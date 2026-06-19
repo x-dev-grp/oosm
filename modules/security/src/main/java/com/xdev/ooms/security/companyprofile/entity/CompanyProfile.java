@@ -10,6 +10,7 @@ import jakarta.persistence.FetchType;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 public class CompanyProfile extends BaseEntity implements Serializable {
@@ -50,6 +51,12 @@ public class CompanyProfile extends BaseEntity implements Serializable {
     private String postalCode;
    
     private String governorate;
+
+    @Column(name = "campaign_start_at")
+    private LocalDateTime campaignStartAt;
+
+    @Column(name = "campaign_end_at")
+    private LocalDateTime campaignEndAt;
 
     @Column(name = "campaign_start_month")
     private Integer campaignStartMonth = 9;
@@ -191,6 +198,22 @@ public class CompanyProfile extends BaseEntity implements Serializable {
 
     public void setGovernorate(String governorate) {
         this.governorate = governorate;
+    }
+
+    public LocalDateTime getCampaignStartAt() {
+        return campaignStartAt;
+    }
+
+    public void setCampaignStartAt(LocalDateTime campaignStartAt) {
+        this.campaignStartAt = campaignStartAt;
+    }
+
+    public LocalDateTime getCampaignEndAt() {
+        return campaignEndAt;
+    }
+
+    public void setCampaignEndAt(LocalDateTime campaignEndAt) {
+        this.campaignEndAt = campaignEndAt;
     }
 
     public Integer getCampaignStartMonth() {

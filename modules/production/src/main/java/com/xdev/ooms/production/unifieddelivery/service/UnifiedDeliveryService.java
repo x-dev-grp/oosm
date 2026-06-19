@@ -20,6 +20,7 @@ import com.xdev.ooms.production.unifieddelivery.repository.DeliveryRepository;
 
 
 import com.xdev.ooms.production.unifieddelivery.dto.ExchangePricingDto;
+import com.xdev.ooms.production.unifieddelivery.dto.NextDeliveryNumbersDto;
 import com.xdev.ooms.production.unifieddelivery.dto.UnifiedDeliveryDTO;
 
 
@@ -140,6 +141,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             delivery.setSupplierType(supplier);
         }
 
+        assignNumbersOnCreate(delivery);
 
         // Save entity
         UnifiedDelivery savedDelivery = deliveryRepository.saveAndFlush(delivery);
@@ -370,9 +372,13 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                         actions.add(Action.GEN_PDF);
 
                         if (!delivery.getPaid()) {
-                            actions.add(Action.OIL_QUALITY);
                             actions.add(Action.PAY);
-                            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
+                            if (!hasActivePaymentOilLeg(delivery)) {
+                                actions.add(Action.OIL_QUALITY);
+                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
+                            } else {
+                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Skipped OIL_QUALITY — payment oil leg already exists for " + delivery.getLotNumber());
+                            }
                         }
                     }
                     case BASE, OLIVE_PURCHASE -> {
@@ -436,21 +442,31 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             case OIL_CONTROLLED -> {
                 OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding OIL_CONTROLLED status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.GEN_PDF_QC_OIL);
-                actions.add(Action.SET_PRICE);
                 actions.add(Action.GEN_PDF);
+                if (delivery.getOperationType() == OperationType.PAYMENT) {
+                    actions.add(Action.COMPLETE_PAYMENT_DETAILS);
+                } else {
+                    actions.add(Action.SET_PRICE);
+                }
             }
             case WAITING_FOR_PAYMENT_DETAILS -> {
                 OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding WAITING_FOR_PAYMENT_DETAILS status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.COMPLETE_PAYMENT_DETAILS);
-
                 actions.add(Action.GEN_PDF);
+            }
+            case STOCK_READY -> {
+                actions.add(Action.GEN_PDF);
+                actions.add(Action.GEN_PDF_QC_OIL);
             }
             case COMPLETED, IN_STOCK -> {
                 OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding GEN_PDF_BON_PROD status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.GEN_PDF_PRODUCTION);
                 actions.add(Action.GEN_PDF_QC_OIL);
-//                actions.add(Action.GEN_INVOICE);
-
+                actions.add(Action.GEN_PDF);
+                if (delivery.getOperationType() == OperationType.OIL_PURCHASE && !Boolean.TRUE.equals(delivery.getPaid())) {
+                    actions.add(Action.PAY);
+                    actions.add(Action.GEN_INVOICE);
+                }
             }
         }
 
@@ -658,8 +674,26 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 Optional<StorageUnitDto> stdModel = storageUnitRepo.findById(UUID.fromString(std)).map((element) -> modelMapper.map(element, StorageUnitDto.class));
                 newDelivery.setStorageUnit(modelMapper.map(stdModel.get(), StorageUnit.class));
             }
+            Optional<UnifiedDelivery> existingPaymentLeg = deliveryRepository
+                    .findAllByLotNumberAndDeliveryTypeAndIsDeletedFalse(delivery.getLotNumber(), DeliveryType.OIL)
+                    .stream()
+                    .filter(d -> d.getOperationType() == OperationType.PAYMENT)
+                    .filter(d -> d.getStatus() != OliveLotStatus.CANCELLED)
+                    .findFirst();
+            if (existingPaymentLeg.isPresent()) {
+                UnifiedDelivery existing = existingPaymentLeg.get();
+                if (existing.isHasQualityControl() || existing.getStatus() == OliveLotStatus.STOCK_READY) {
+                    throw new IllegalArgumentException("Payment oil reception already exists for olive lot " + delivery.getLotNumber());
+                }
+                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                        "[createOilRecForPayment] Reusing existing payment oil reception %s for olive lot %s",
+                        existing.getLotNumber(), delivery.getLotNumber());
+                applyStorageUnitToPaymentLeg(existing, std);
+                return existing;
+            }
+
             newDelivery.setDeliveryType(DeliveryType.OIL);
-            newDelivery.setStatus(OliveLotStatus.OIL_CONTROLLED);
+            newDelivery.setStatus(OliveLotStatus.NEW);
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] used the original olive reception lot number as new lot number: %s, delivery number: %s", delivery.getLotNumber(), delivery.getDeliveryNumber());
 
             // Set basic delivery information
@@ -704,42 +738,83 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         }
     }
 
-
-    private Map<String, Object> generateDeliveryNumber(UnifiedDelivery del) {
-        long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "generateDeliveryNumber", del);
-        // 1) Find last delivery to calculate next sequence
-        UnifiedDelivery last = deliveryRepository.findTopByOrderByCreatedDateDesc().orElse(null);
-
-        int nextSeq = 1;
-        if (last != null) {
-            try {
-                nextSeq = Integer.parseInt(last.getDeliveryNumber()) + 1;
-            } catch (NumberFormatException e) {
-                // log.warn("Invalid deliveryNumber on last record, resetting to 1", e);
-                nextSeq = 1;
-            }
+    private void applyStorageUnitToPaymentLeg(UnifiedDelivery oilDelivery, String std) {
+        if (std == null || std.isEmpty()) {
+            return;
         }
-
-        // 2) Build each piece
-        String sequencePart = String.format(D, nextSeq);          // zero-padded to 4 digits
-//        String oliveTypeCode = del.getOilType().getName().toUpperCase();           // e.g. "OB"
-        int year = del.getDeliveryDate().getYear();                    // e.g. 2025
-//        String yearPart = String.format(D1, year % 100);
-        // last two digits: "25"
-
-        // 3) Concatenate into final lot number
-//        String lotNumber = sequencePart + yearPart;    // "0005OB25"
-
-        // 4) Return both if you still need the raw sequence
-        Map<String, Object> map = new HashMap<>();
-        map.put(DELIVERY_NUMBER, nextSeq);
-//        map.put(LOT_NUMBER, lotNumber);
-        OSMLogger.logMethodExit(this.getClass(), "generateDeliveryNumber", map);
-        OSMLogger.logPerformance(this.getClass(), "generateDeliveryNumber", startTime, System.currentTimeMillis());
-        return map;
+        storageUnitRepo.findById(UUID.fromString(std))
+                .map(unit -> modelMapper.map(unit, StorageUnit.class))
+                .ifPresent(oilDelivery::setStorageUnit);
+        deliveryRepository.save(oilDelivery);
     }
 
+    private boolean hasActivePaymentOilLeg(UnifiedDelivery oliveDelivery) {
+        if (oliveDelivery == null || oliveDelivery.getLotNumber() == null) {
+            return false;
+        }
+        return deliveryRepository
+                .findAllByLotNumberAndDeliveryTypeAndIsDeletedFalse(oliveDelivery.getLotNumber(), DeliveryType.OIL)
+                .stream()
+                .anyMatch(d -> d.getOperationType() == OperationType.PAYMENT
+                        && d.getStatus() != OliveLotStatus.CANCELLED);
+    }
+
+
+    private int parseDeliveryNumber(String deliveryNumber) {
+        if (deliveryNumber == null || deliveryNumber.isBlank()) {
+            return 0;
+        }
+        try {
+            return Integer.parseInt(deliveryNumber.trim());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private int resolveNextDeliverySequence() {
+        Set<Integer> used = deliveryRepository.findAllDeliveryNumbers().stream()
+                .map(this::parseDeliveryNumber)
+                .filter(n -> n > 0)
+                .collect(Collectors.toSet());
+        int seq = 1;
+        while (used.contains(seq)) {
+            seq++;
+        }
+        return seq;
+    }
+
+    private String buildLotNumber(UnifiedDelivery delivery, int seq) {
+        if (delivery.getDeliveryType() == DeliveryType.OIL) {
+            return String.valueOf(seq);
+        }
+        Olive_Oil_Type oliveType = delivery.getOliveType();
+        if (oliveType == null) {
+            return "";
+        }
+        LocalDateTime date = delivery.getDeliveryDate() != null ? delivery.getDeliveryDate() : LocalDateTime.now();
+        String yearPart = String.format(D1, date.getYear() % 100);
+        return String.format("%04d", seq) + oliveType.name() + yearPart;
+    }
+
+    private void assignNumbersOnCreate(UnifiedDelivery delivery) {
+        int seq = resolveNextDeliverySequence();
+        delivery.setDeliveryNumber(String.valueOf(seq));
+        delivery.setLotNumber(buildLotNumber(delivery, seq));
+    }
+
+    @Transactional(readOnly = true)
+    public NextDeliveryNumbersDto previewNextNumbers(DeliveryType deliveryType, Olive_Oil_Type oliveType, Olive_Oil_Type oilType) {
+        int seq = resolveNextDeliverySequence();
+        UnifiedDelivery preview = new UnifiedDelivery();
+        preview.setDeliveryType(deliveryType);
+        preview.setDeliveryDate(LocalDateTime.now());
+        if (deliveryType == DeliveryType.OLIVE) {
+            preview.setOliveType(oliveType);
+        } else if (deliveryType == DeliveryType.OIL) {
+            preview.setOilType(oilType);
+        }
+        return new NextDeliveryNumbersDto(String.valueOf(seq), buildLotNumber(preview, seq));
+    }
 
     /**
      * Updates the status of a delivery.
@@ -952,6 +1027,23 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 throw new IllegalArgumentException("Payment reception can only be processed for OIL deliveries");
             }
 
+            if (oilDelivery.getOperationType() != OperationType.PAYMENT) {
+                throw new IllegalArgumentException("Payment pricing can only be processed for PAYMENT operation deliveries");
+            }
+
+            if (oilDelivery.getStatus() != OliveLotStatus.OIL_CONTROLLED
+                    && oilDelivery.getStatus() != OliveLotStatus.WAITING_FOR_PAYMENT_DETAILS) {
+                throw new IllegalArgumentException("Payment pricing requires oil delivery status OIL_CONTROLLED, current: " + oilDelivery.getStatus());
+            }
+
+            if (originalOliveDelivery == null) {
+                throw new EntityNotFoundException("Linked olive delivery not found for lot " + oilDelivery.getLotOliveNumber());
+            }
+
+            if (originalOliveDelivery.getOperationType() != OperationType.SIMPLE_RECEPTION) {
+                throw new IllegalArgumentException("Payment oil leg must link to a SIMPLE_RECEPTION olive delivery");
+            }
+
             // Validate pricing data
             if (dto.getUnitPrice() == null || dto.getUnitPrice() <= 0) {
                 OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid unit price: " + dto.getUnitPrice());
@@ -963,29 +1055,45 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 throw new IllegalArgumentException("Total price must be positive");
             }
 
-            // Update pricing on the Delivery
+            double paymentAmount = r3(dto.getPrice());
+            double remainingUnpaid = r3(Math.max(0.0, safe(originalOliveDelivery.getUnpaidAmount())));
+            if (paymentAmount > remainingUnpaid + 0.001) {
+                throw new IllegalArgumentException("Payment amount exceeds remaining unpaid balance");
+            }
+
+            // Update pricing on the oil leg
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Updating pricing for oilDelivery %s: unitPrice=%.2f, price=%.2f", oilDelivery.getLotNumber(), dto.getUnitPrice(), dto.getPrice());
 
             oilDelivery.setUnitPrice(dto.getUnitPrice());
             oilDelivery.setOilQuantity(dto.getOilQuantity());
             oilDelivery.setPoidsNet(dto.getOilQuantity());
-            oilDelivery.setPrice(dto.getPrice());
-            oilDelivery.setPaidAmount(dto.getPrice());
-            originalOliveDelivery.setPaidAmount(dto.getPrice());
-            originalOliveDelivery.setUnpaidAmount(originalOliveDelivery.getUnpaidAmount() - dto.getPrice());
+            oilDelivery.setPrice(paymentAmount);
+            oilDelivery.setPaidAmount(paymentAmount);
+            oilDelivery.setUnpaidAmount(0.0);
+            oilDelivery.setPaid(true);
+            if (dto.getQualityGrade() != null && !dto.getQualityGrade().isBlank()) {
+                oilDelivery.setCategoryOliveOil(dto.getQualityGrade());
+            }
             oilDelivery.setStatus(OliveLotStatus.STOCK_READY);
+
+            updateDelivery(originalOliveDelivery, paymentAmount);
 
             // Save the updated oilDelivery
             UnifiedDelivery savedDelivery = deliveryRepository.save(oilDelivery);
-            if (originalOliveDelivery != null) {
-                deliveryRepository.save(originalOliveDelivery);
-            }
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully saved oilDelivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
 
             // Create oil transaction
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Creating oil transaction for oilDelivery " + oilDelivery.getLotNumber());
             oilTransactionService.createSingleOilTransactionIn(savedDelivery);
-            recordOilPurchaseFinancialTransaction(savedDelivery, dto.getPrice());
+
+            PaymentDTO paymentDTO = new PaymentDTO();
+            paymentDTO.setAmount(paymentAmount);
+            paymentDTO.setCurrency(Currency.TND);
+            paymentDTO.setPaymentMethod(PaymentMethod.OIL);
+            if (originalOliveDelivery.getSupplier() != null) {
+                paymentDTO.setSupplier(modelMapper.map(originalOliveDelivery.getSupplier(), SupplierDto.class));
+            }
+            prepareFinanacalTransaction(paymentDTO, paymentAmount, originalOliveDelivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.SIMPLE_RECEPTION);
 
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully completed payment reception processing for oilDelivery %s", oilDelivery.getLotNumber());
 

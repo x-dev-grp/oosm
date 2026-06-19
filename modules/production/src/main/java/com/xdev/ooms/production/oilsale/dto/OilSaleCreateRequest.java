@@ -56,6 +56,7 @@ public class OilSaleCreateRequest {
 
     private String invoiceNumber;
     private String description;
+    private String deliveryAddress;
 
     // FE may send; server recomputes.
     private BigDecimal totalAmount;
@@ -121,6 +122,14 @@ public class OilSaleCreateRequest {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public void setDeliveryAddress(String deliveryAddress) {
+        this.deliveryAddress = deliveryAddress;
     }
 
     public String getInvoiceNumber() {

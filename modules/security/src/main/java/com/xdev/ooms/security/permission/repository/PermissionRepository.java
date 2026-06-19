@@ -10,9 +10,9 @@ import java.util.Optional;
 
 @Repository
 public interface PermissionRepository extends BaseRepository<Permission> {
-    // Derived query method (works if fields are named exactly as in the entity)
     Optional<Permission> findByModuleAndEntityAndPermissionName(
             OSMModule module, String entity, String permissionName
     );
 
+    List<Permission> findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(OSMModule module, String entity);
 }

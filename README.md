@@ -1,5 +1,7 @@
 # OSM 2.0 Modular Monolith
 
+> **Documentation:** See the repo root [docs/](../docs/README.md) for architecture, getting started, and domain guides.
+
 This project is the migration target for the OSM backend.
 
 ## Current Slice

@@ -31,6 +31,6 @@ public class StatistiquesDTO {
 
     // Graphiques
     private Map<String, Integer> mouvementsParMois;
-    private Map<String, Double> achatsParFournisseur;
+    private Map<String, Double> achatsParMaterielSupplier;
     private Map<String, Integer> alertesParCategorie;
 }

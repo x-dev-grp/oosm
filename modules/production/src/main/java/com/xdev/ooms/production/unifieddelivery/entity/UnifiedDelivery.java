@@ -48,6 +48,7 @@ public class UnifiedDelivery extends BaseEntity implements Serializable {
     private LocalDate ddm; // Expedition
     // --- Common Fields ---
     private String deliveryNumber;
+    private String invoiceNumber;
     private String categoryOliveOil;
 
     @Enumerated(EnumType.STRING)
