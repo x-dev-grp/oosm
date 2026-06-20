@@ -46,6 +46,8 @@ Copy from [`.env.railway.example`](.env.railway.example). Minimum:
 
 `Dockerfile` converts Railway `DATABASE_URL` (`postgres://…`) to JDBC when `DB_URL` is unset.
 
+**JWT key persistence (recommended):** attach a Railway Volume mounted at `/app/data` on the backend service so OAuth signing keys survive redeploys. Do not use `VOLUME` in the Dockerfile — Railway configures volumes in the dashboard.
+
 After first deploy, run optional SQL from [RAILWAY_DATABASE_BOOTSTRAP.md](RAILWAY_DATABASE_BOOTSTRAP.md) if you need seeds beyond Hibernate `update`.
 
 ## 3. Frontend service (`osm-ms-fe` repo)

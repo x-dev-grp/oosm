@@ -1,5 +1,3 @@
-# syntax=docker/dockerfile:1.7
-
 FROM maven:3.9.8-eclipse-temurin-21 AS build
 
 WORKDIR /workspace
@@ -7,8 +5,7 @@ COPY pom.xml .
 COPY modules ./modules
 COPY app ./app
 
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn -B -DskipTests package -pl app -am
+RUN mvn -B -DskipTests package -pl app -am
 
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
@@ -31,7 +28,6 @@ ENV SERVER_PORT=8084 \
 USER osm
 
 EXPOSE 8084
-VOLUME ["/app/data"]
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
     CMD curl --fail --silent "http://localhost:${PORT:-${SERVER_PORT}}/actuator/health/liveness" > /dev/null || exit 1
