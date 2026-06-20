@@ -29,4 +29,4 @@ EXPOSE 8084
 HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=8 \
     CMD sh -c 'curl --fail --silent "http://127.0.0.1:${PORT:-8084}/actuator/health/liveness" > /dev/null || exit 1'
 
-ENTRYPOINT ["sh", "-c", "if [ -n \"$DATABASE_URL\" ] && [ -z \"$DB_URL\" ]; then export DB_URL=\"$(printf '%s' \"$DATABASE_URL\" | sed -e 's#^postgres://#jdbc:postgresql://#' -e 's#^postgresql://#jdbc:postgresql://#')\"; fi; java $JAVA_OPTS -jar /app/osm-monolith.jar"]
+ENTRYPOINT ["sh", "-c", "if [ -n \"$DATABASE_URL\" ]; then export DB_URL=\"$(printf '%s' \"$DATABASE_URL\" | sed -e 's#^postgres://#jdbc:postgresql://#' -e 's#^postgresql://#jdbc:postgresql://#')\"; fi; export DB_USER=\"${DB_USER:-${PGUSER:-postgres}}\"; export DB_PASS=\"${DB_PASS:-${PGPASSWORD:-}}\"; java $JAVA_OPTS -jar /app/osm-monolith.jar"]

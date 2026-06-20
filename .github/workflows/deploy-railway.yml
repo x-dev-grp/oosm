@@ -21,6 +21,14 @@ jobs:
       - name: Install Railway CLI
         run: npm install -g @railway/cli@latest
 
+      - name: Link Postgres reference variables
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+          RAILWAY_ENVIRONMENT: ${{ secrets.RAILWAY_ENVIRONMENT_NAME || 'testing' }}
+          RAILWAY_POSTGRES_SERVICE: ${{ vars.RAILWAY_POSTGRES_SERVICE_NAME || 'Postgres' }}
+        run: sh scripts/railway-link-postgres.sh
+
       - name: Deploy backend to Railway
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}

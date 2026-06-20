@@ -1,0 +1,16 @@
+# Copy these into Railway → backend service → Variables (Add reference), or run:
+#   ./scripts/railway-link-postgres.sh
+#
+# Replace "Postgres" with your database service name if different (case-sensitive).
+# DELETE any existing DB_URL variable (especially Render dpg-* URLs).
+
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+DB_USER=${{Postgres.PGUSER}}
+DB_PASS=${{Postgres.PGPASSWORD}}
+PGHOST=${{Postgres.PGHOST}}
+PGPORT=${{Postgres.PGPORT}}
+PGDATABASE=${{Postgres.PGDATABASE}}
+PGUSER=${{Postgres.PGUSER}}
+PGPASSWORD=${{Postgres.PGPASSWORD}}
+
+# Use DATABASE_URL (internal), NOT DATABASE_PUBLIC_URL — the app runs inside Railway.

@@ -26,16 +26,33 @@ Users hit the **frontend** URL. Nginx proxies API, OAuth, WebSocket (`/ws`), and
 2. Root directory: `/` (contains `Dockerfile`, `railway.json`).
 3. Settings → **Build**: Dockerfile (`railway.json` already sets this).
 4. Settings → **Deploy** → health check: `/actuator/health/liveness`.
+5. Ensure the PostgreSQL plugin service is named **`Postgres`** (Railway default). If you renamed it, edit [`railway.toml`](railway.toml) references (`${{YourDbName.DATABASE_URL}}`, etc.).
 
-### Backend variables
+### Backend variables (automatic Postgres link)
 
-Copy from [`.env.railway.example`](.env.railway.example). Minimum:
+On each deploy, GitHub Actions runs [`scripts/railway-link-postgres.sh`](scripts/railway-link-postgres.sh) to set reference variables on the backend service:
 
-| Variable | Value |
-|----------|--------|
-| `DATABASE_URL` or `DB_URL` | `${{Postgres.DATABASE_URL}}` or JDBC URL |
-| `DB_USER` / `DB_PASS` | From Postgres reference if not using `DATABASE_URL` alone |
-| `HIBERNATE_DDL_AUTO` | `update` (testing) |
+| Variable | Reference |
+|----------|-----------|
+| `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (internal — **not** `DATABASE_PUBLIC_URL`) |
+| `DB_USER` / `DB_PASS` | `${{Postgres.PGUSER}}` / `${{Postgres.PGPASSWORD}}` |
+| `PGHOST`, `PGPORT`, `PGDATABASE` | Same Postgres service |
+
+**Requirements**
+
+1. Postgres plugin service must be named **`Postgres`** (Railway default), or set repo variable `RAILWAY_POSTGRES_SERVICE_NAME` to your DB service name (case-sensitive).
+2. GitHub secret `RAILWAY_SERVICE_ID` = backend service ID (not Postgres).
+
+**One-time manual setup** (without CI): from `oosm/` with `railway link`:
+
+```bash
+chmod +x scripts/railway-link-postgres.sh
+RAILWAY_SERVICE_ID=<backend-service-id> ./scripts/railway-link-postgres.sh
+```
+
+Or paste lines from [`railway-db.references`](railway-db.references) in the dashboard: **Variables** → **Add variable** → **Add reference**.
+
+Also set on the backend service (copy from [`.env.railway.example`](.env.railway.example)):
 | `JWT_ISSUER_URI` | `https://<backend-public-domain>` |
 | `JWK_SET_URI` | `https://<backend-public-domain>/oauth2/jwks` |
 | `INTERNAL_BASE_URL` | Same as public backend URL |
@@ -44,11 +61,22 @@ Copy from [`.env.railway.example`](.env.railway.example). Minimum:
 | `JWT_SECRET` | Long random string (32+ chars) — same value on every redeploy |
 | `SECURITY_BOOTSTRAP_*` | Optional first admin (disable after login) |
 
-`Dockerfile` converts Railway `DATABASE_URL` (`postgres://…`) to JDBC when `DB_URL` is unset.
+`Dockerfile` converts Railway `DATABASE_URL` (`postgres://…`) to JDBC. **`DATABASE_URL` always wins** — do not set `DB_URL` on Railway.
 
 JWT keys use a single **`JWT_SECRET`** environment variable (symmetric HS256). No volume or key files required. Local dev uses the default in `application.yml` unless you override `JWT_SECRET`.
 
 After first deploy, run optional SQL from [RAILWAY_DATABASE_BOOTSTRAP.md](RAILWAY_DATABASE_BOOTSTRAP.md) if you need seeds beyond Hibernate `update`.
+
+### Troubleshooting: `UnknownHostException: dpg-...`
+
+The backend is using an **old Render database URL**, not Railway Postgres.
+
+1. Railway → **backend service** → **Variables**
+2. **Delete** `DB_URL` if it contains `dpg-` or `render.com`
+3. Ensure `DATABASE_URL` = `${{Postgres.DATABASE_URL}}` (reference, not a pasted public URL)
+4. Redeploy
+
+Or run `./scripts/railway-link-postgres.sh` — it removes `DB_URL` and sets Postgres references.
 
 ## 3. Frontend service (`osm-ms-fe` repo)
 
