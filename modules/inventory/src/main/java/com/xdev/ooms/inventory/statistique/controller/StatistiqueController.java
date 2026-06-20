@@ -5,7 +5,6 @@ import com.xdev.ooms.inventory.stocksec.dto.MouvementRecentDto;
 import com.xdev.ooms.inventory.statistique.dto.StatistiquesDTO;
 import com.xdev.ooms.inventory.stocksec.dto.StockDashboardPayloadDto;
 import com.xdev.ooms.inventory.statistique.service.StatistiqueService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

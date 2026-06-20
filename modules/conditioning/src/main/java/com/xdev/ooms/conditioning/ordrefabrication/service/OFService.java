@@ -34,6 +34,8 @@ import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +47,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@lombok.extern.slf4j.Slf4j
 public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricationDto, OrdreFabricationDto> {
+    private static final Logger log = LoggerFactory.getLogger(OFService.class);
     private static final String STATUT_PROJET_EN_COURS = "EN_COURS";
 
     @Autowired

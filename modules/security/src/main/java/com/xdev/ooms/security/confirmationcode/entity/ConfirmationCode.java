@@ -7,13 +7,8 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.time.LocalDateTime;
 
-@Setter
-@Getter
 @Entity
 public class ConfirmationCode extends BaseEntity {
     private String code;
@@ -32,4 +27,44 @@ public class ConfirmationCode extends BaseEntity {
         return consumedAt != null;
     }
 
+
+    public String getCode() {
+        return code;
+    }
+
+    public ConfirmationCodeType getConfirmationCodeType() {
+        return confirmationCodeType;
+    }
+
+    public int getFailedAttempts() {
+        return failedAttempts;
+    }
+
+    public LocalDateTime getConsumedAt() {
+        return consumedAt;
+    }
+
+    public OSMUser getUser() {
+        return user;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setConfirmationCodeType(ConfirmationCodeType confirmationCodeType) {
+        this.confirmationCodeType = confirmationCodeType;
+    }
+
+    public void setFailedAttempts(int failedAttempts) {
+        this.failedAttempts = failedAttempts;
+    }
+
+    public void setConsumedAt(LocalDateTime consumedAt) {
+        this.consumedAt = consumedAt;
+    }
+
+    public void setUser(OSMUser user) {
+        this.user = user;
+    }
 }

@@ -3,19 +3,12 @@ package com.xdev.ooms.inventory.boncommande.dto;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto;
 import com.xdev.ooms.inventory.boncommande.entity.LigneBonCommande;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 
-@Getter
-@Setter
-@Data
 public class LigneBonCommandeDto extends BaseDto<LigneBonCommande> implements Serializable {
     UUID id;
     UUID tenantId;
@@ -35,4 +28,20 @@ public class LigneBonCommandeDto extends BaseDto<LigneBonCommande> implements Se
 
 
 
+
+    public UUID getBonCommandeId() {
+        return bonCommandeId;
+    }
+
+    public UUID getArticleId() {
+        return articleId;
+    }
+
+    public void setBonCommandeId(UUID bonCommandeId) {
+        this.bonCommandeId = bonCommandeId;
+    }
+
+    public void setArticleId(UUID articleId) {
+        this.articleId = articleId;
+    }
 }

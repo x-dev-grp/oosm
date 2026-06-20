@@ -3,17 +3,9 @@ package com.xdev.ooms.inventory.bom.dto;
 import com.xdev.ooms.inventory.bom.entity.BOM;
 import com.xdev.ooms.inventory.produitfinal.entity.ProduitFinal;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.util.List;
 import java.util.UUID;
-
-@Data
-@Getter
-@Setter
 
 public class BOMDto  extends BaseDto<BOM> implements Serializable {
     private List<BomLineDto> lines;
@@ -53,5 +45,53 @@ public class BOMDto  extends BaseDto<BOM> implements Serializable {
 
     public void setSkuCode(String skuCode) {
         this.finalProductName = skuCode;
+    }
+
+    public List<BomLineDto> getLines() {
+        return lines;
+    }
+
+    public UUID getFinalProductId() {
+        return finalProductId;
+    }
+
+    public String getFinalProductName() {
+        return finalProductName;
+    }
+
+    public ProduitFinal getProduitFinal() {
+        return produitFinal;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public Boolean getActive() {
+        return active;
+    }
+
+    public void setLines(List<BomLineDto> lines) {
+        this.lines = lines;
+    }
+
+    public void setFinalProductId(UUID finalProductId) {
+        this.finalProductId = finalProductId;
+    }
+
+    public void setFinalProductName(String finalProductName) {
+        this.finalProductName = finalProductName;
+    }
+
+    public void setProduitFinal(ProduitFinal produitFinal) {
+        this.produitFinal = produitFinal;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setActive(Boolean active) {
+        this.active = active;
     }
 }

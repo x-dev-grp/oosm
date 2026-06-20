@@ -2,16 +2,11 @@ package com.xdev.ooms.conditioning.ordrefabrication.entity;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
 public class LigneOF extends BaseEntity implements Serializable {
 
     @ManyToOne
@@ -27,4 +22,44 @@ public class LigneOF extends BaseEntity implements Serializable {
     private BigDecimal quantiteReelle;
 
     private String motifAjustement;
+
+    public OrdreFabrication getOf() {
+        return of;
+    }
+
+    public UUID getArticleId() {
+        return articleId;
+    }
+
+    public BigDecimal getQuantiteTheorique() {
+        return quantiteTheorique;
+    }
+
+    public BigDecimal getQuantiteReelle() {
+        return quantiteReelle;
+    }
+
+    public String getMotifAjustement() {
+        return motifAjustement;
+    }
+
+    public void setOf(OrdreFabrication of) {
+        this.of = of;
+    }
+
+    public void setArticleId(UUID articleId) {
+        this.articleId = articleId;
+    }
+
+    public void setQuantiteTheorique(BigDecimal quantiteTheorique) {
+        this.quantiteTheorique = quantiteTheorique;
+    }
+
+    public void setQuantiteReelle(BigDecimal quantiteReelle) {
+        this.quantiteReelle = quantiteReelle;
+    }
+
+    public void setMotifAjustement(String motifAjustement) {
+        this.motifAjustement = motifAjustement;
+    }
 }

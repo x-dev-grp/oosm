@@ -2,9 +2,6 @@ package com.xdev.ooms.production.filtration.dto;
 
 
 
-import lombok.Getter;
-
-@Getter
 public enum FiltrationStatus {
 
     CREATED("Created"), IN_PROGRESS("In Progress"), COMPLETED("Completed"), CANCELLED("Cancelled");
@@ -13,5 +10,9 @@ public enum FiltrationStatus {
 
     FiltrationStatus(String name) {
         this.name = name;
+    }
+
+    public String getName() {
+        return name;
     }
 }

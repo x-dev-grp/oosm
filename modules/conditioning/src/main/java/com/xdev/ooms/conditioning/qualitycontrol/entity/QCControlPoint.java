@@ -4,14 +4,7 @@ package com.xdev.ooms.conditioning.qualitycontrol.entity;
 import com.xdev.ooms.conditioning.Enum.ControlType;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
-@Data
-@Getter
-@Setter
 @Entity
 public class QCControlPoint extends BaseEntity implements Serializable {
 
@@ -26,4 +19,52 @@ public class QCControlPoint extends BaseEntity implements Serializable {
     private boolean blocking;
 
 
+
+    public QCPlan getPlan() {
+        return plan;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public ControlType getType() {
+        return type;
+    }
+
+    public Double getMinValue() {
+        return minValue;
+    }
+
+    public Double getMaxValue() {
+        return maxValue;
+    }
+
+    public boolean isBlocking() {
+        return blocking;
+    }
+
+    public void setPlan(QCPlan plan) {
+        this.plan = plan;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public void setType(ControlType type) {
+        this.type = type;
+    }
+
+    public void setMinValue(Double minValue) {
+        this.minValue = minValue;
+    }
+
+    public void setMaxValue(Double maxValue) {
+        this.maxValue = maxValue;
+    }
+
+    public void setBlocking(boolean blocking) {
+        this.blocking = blocking;
+    }
 }

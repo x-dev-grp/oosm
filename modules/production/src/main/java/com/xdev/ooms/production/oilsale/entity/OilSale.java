@@ -5,8 +5,6 @@ import com.xdev.ooms.production.supplier.entity.Supplier;
 import com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -16,7 +14,6 @@ import java.util.UUID;
 /**
  * Oil Sale entity for managing oil sales transactions
  */
-@Getter
 @Entity
 public class OilSale extends BaseEntity implements Serializable {
 
@@ -210,5 +207,93 @@ public class OilSale extends BaseEntity implements Serializable {
      */
     public boolean isPending() {
         return SaleStatus.PENDING.equals(status);
+    }
+
+    public Double getPaidAmount() {
+        return paidAmount;
+    }
+
+    public Double getUnpaidAmount() {
+        return unpaidAmount;
+    }
+
+    public boolean isPaid() {
+        return paid;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public QualityGrades getQualityGrade() {
+        return qualityGrade;
+    }
+
+    public SaleStatus getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getSaleDate() {
+        return saleDate;
+    }
+
+    public Supplier getSupplier() {
+        return supplier;
+    }
+
+    public UUID getStorageUnit() {
+        return storageUnit;
+    }
+
+    public Olive_Oil_Type getOilType() {
+        return oilType;
+    }
+
+    public BigDecimal getQuantity() {
+        return quantity;
+    }
+
+    public BigDecimal getUnitPrice() {
+        return unitPrice;
+    }
+
+    public BigDecimal getTotalAmount() {
+        return totalAmount;
+    }
+
+    public Currency getCurrency() {
+        return currency;
+    }
+
+    public PaymentMethod getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public String getBankAccount() {
+        return bankAccount;
+    }
+
+    public String getCheckNumber() {
+        return checkNumber;
+    }
+
+    public String getExternalTransactionId() {
+        return externalTransactionId;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public LocalDateTime getDeliveryDate() {
+        return deliveryDate;
+    }
+
+    public String getDeliveryAddress() {
+        return deliveryAddress;
+    }
+
+    public String getDeliveryNotes() {
+        return deliveryNotes;
     }
 }

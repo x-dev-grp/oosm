@@ -16,9 +16,6 @@ import  com.xdev.ooms.sharedkernel.Enum.Olive_Oil_Type;
 import  com.xdev.ooms.sharedkernel.Enum.OperationType;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -36,9 +33,6 @@ import static org.apache.commons.math3.util.Precision.round;
  * Depending on the deliveryType, only a subset of these fields may be populated.
  */
 @Entity
-@Data
-@Getter
-@Setter
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
 @JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -449,4 +443,24 @@ public class UnifiedDelivery extends BaseEntity implements Serializable {
 
 
 // getter/setter
+
+    public LocalDate getDdm() {
+        return ddm;
+    }
+
+    public String getInvoiceNumber() {
+        return invoiceNumber;
+    }
+
+    public boolean isPaid() {
+        return paid;
+    }
+
+    public void setDdm(LocalDate ddm) {
+        this.ddm = ddm;
+    }
+
+    public void setInvoiceNumber(String invoiceNumber) {
+        this.invoiceNumber = invoiceNumber;
+    }
 }

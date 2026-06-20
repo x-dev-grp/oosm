@@ -3,15 +3,10 @@ package com.xdev.ooms.conditioning.projet.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
 public class ProjetReservation extends BaseEntity implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -27,4 +22,36 @@ public class ProjetReservation extends BaseEntity implements Serializable {
     
     // Status can be e.g. "PENDING", "CONFIRMED", "RELEASED"
     private String statut;
+
+    public Projet getProjet() {
+        return projet;
+    }
+
+    public UUID getArticleId() {
+        return articleId;
+    }
+
+    public Double getQuantiteReservee() {
+        return quantiteReservee;
+    }
+
+    public String getStatut() {
+        return statut;
+    }
+
+    public void setProjet(Projet projet) {
+        this.projet = projet;
+    }
+
+    public void setArticleId(UUID articleId) {
+        this.articleId = articleId;
+    }
+
+    public void setQuantiteReservee(Double quantiteReservee) {
+        this.quantiteReservee = quantiteReservee;
+    }
+
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
 }

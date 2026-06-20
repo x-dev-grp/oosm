@@ -12,8 +12,8 @@ import com.xdev.ooms.inventory.articlesec.repository.ArticleSecRepository;
 import com.xdev.ooms.inventory.boncommande.repository.BonCommandeRepository;
 import com.xdev.ooms.inventory.stocksec.repository.MouvementStockSecRepository;
 import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -30,8 +30,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 @Transactional(readOnly = true)
 public class StatistiqueService {
 
@@ -229,5 +227,14 @@ public class StatistiqueService {
 
     private int safe(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(StatistiqueService.class);
+
+    public StatistiqueService(ArticleSecRepository articleRepository, StockSecRepository stockRepository, MouvementStockSecRepository mouvementRepository, BonCommandeRepository bonCommandeRepository) {
+        this.articleRepository = articleRepository;
+        this.stockRepository = stockRepository;
+        this.mouvementRepository = mouvementRepository;
+        this.bonCommandeRepository = bonCommandeRepository;
     }
 }

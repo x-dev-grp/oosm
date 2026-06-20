@@ -4,18 +4,11 @@ import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class BonCommande extends BaseEntity {
 
     @Column(name = "numero_bc", unique = true, nullable = false)
@@ -39,4 +32,64 @@ public class BonCommande extends BaseEntity {
     private List<LigneBonCommande> lignes = new ArrayList<>();
 
 
+
+    public BonCommande() {
+    }
+
+    public BonCommande(String numeroBC, String motifRefus, LocalDateTime dateValidation, LocalDateTime dateReceptionPrevue, StatutBonCommande status, List<LigneBonCommande> lignes) {
+        this.numeroBC = numeroBC;
+        this.motifRefus = motifRefus;
+        this.dateValidation = dateValidation;
+        this.dateReceptionPrevue = dateReceptionPrevue;
+        this.status = status;
+        this.lignes = lignes;
+    }
+
+    public String getNumeroBC() {
+        return numeroBC;
+    }
+
+    public String getMotifRefus() {
+        return motifRefus;
+    }
+
+    public LocalDateTime getDateValidation() {
+        return dateValidation;
+    }
+
+    public LocalDateTime getDateReceptionPrevue() {
+        return dateReceptionPrevue;
+    }
+
+    public StatutBonCommande getStatus() {
+        return status;
+    }
+
+    public List<LigneBonCommande> getLignes() {
+        return lignes;
+    }
+
+    public void setNumeroBC(String numeroBC) {
+        this.numeroBC = numeroBC;
+    }
+
+    public void setMotifRefus(String motifRefus) {
+        this.motifRefus = motifRefus;
+    }
+
+    public void setDateValidation(LocalDateTime dateValidation) {
+        this.dateValidation = dateValidation;
+    }
+
+    public void setDateReceptionPrevue(LocalDateTime dateReceptionPrevue) {
+        this.dateReceptionPrevue = dateReceptionPrevue;
+    }
+
+    public void setStatus(StatutBonCommande status) {
+        this.status = status;
+    }
+
+    public void setLignes(List<LigneBonCommande> lignes) {
+        this.lignes = lignes;
+    }
 }

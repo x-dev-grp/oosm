@@ -2,15 +2,10 @@ package com.xdev.ooms.conditioning.expedition.entity;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
 public class ExpeditionArticle extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -43,4 +38,84 @@ public class ExpeditionArticle extends BaseEntity {
 
     @Column(length = 30)
     private String unit;
+
+    public Expedition getExpedition() {
+        return expedition;
+    }
+
+    public UUID getOfId() {
+        return ofId;
+    }
+
+    public String getOfCode() {
+        return ofCode;
+    }
+
+    public UUID getArticleId() {
+        return articleId;
+    }
+
+    public String getArticleName() {
+        return articleName;
+    }
+
+    public String getArticleNameSnapshot() {
+        return articleNameSnapshot;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public BigDecimal getVolume() {
+        return volume;
+    }
+
+    public String getLotNumber() {
+        return lotNumber;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setExpedition(Expedition expedition) {
+        this.expedition = expedition;
+    }
+
+    public void setOfId(UUID ofId) {
+        this.ofId = ofId;
+    }
+
+    public void setOfCode(String ofCode) {
+        this.ofCode = ofCode;
+    }
+
+    public void setArticleId(UUID articleId) {
+        this.articleId = articleId;
+    }
+
+    public void setArticleName(String articleName) {
+        this.articleName = articleName;
+    }
+
+    public void setArticleNameSnapshot(String articleNameSnapshot) {
+        this.articleNameSnapshot = articleNameSnapshot;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setVolume(BigDecimal volume) {
+        this.volume = volume;
+    }
+
+    public void setLotNumber(String lotNumber) {
+        this.lotNumber = lotNumber;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
 }

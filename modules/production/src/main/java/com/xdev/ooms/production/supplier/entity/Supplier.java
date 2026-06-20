@@ -6,12 +6,9 @@ import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-
 /**
  * A Supplier.
  */
-@Getter
 @Entity
 public class Supplier extends BaseEntity {
     @ManyToOne(fetch = FetchType.EAGER)
@@ -166,4 +163,76 @@ public class Supplier extends BaseEntity {
     }
 
 
+
+    public BaseType getGenericSupplierType() {
+        return genericSupplierType;
+    }
+
+    public Boolean getHasStorage() {
+        return hasStorage;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getLastname() {
+        return lastname;
+    }
+
+    public String getFullName() {
+        return fullName;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public String getRib() {
+        return rib;
+    }
+
+    public String getBankName() {
+        return bankName;
+    }
+
+    public String getMatriculeFiscal() {
+        return matriculeFiscal;
+    }
+
+    public StorageUnit getStorageUnit() {
+        return storageUnit;
+    }
+
+    public BaseType getRegion() {
+        return region;
+    }
+
+    public Float getTotalOliveQuantity() {
+        return totalOliveQuantity;
+    }
+
+    public Float getTotalOilQuantity() {
+        return totalOilQuantity;
+    }
+
+    public Float getTotalPaidAmount() {
+        return totalPaidAmount;
+    }
+
+    public Float getTotalUnpaidAmount() {
+        return totalUnpaidAmount;
+    }
+
+    public Float getTotalDebt() {
+        return totalDebt;
+    }
 }

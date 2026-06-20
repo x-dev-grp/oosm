@@ -4,13 +4,10 @@ package com.xdev.ooms.conditioning.projet.dto;
 import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.enums.TypeProduit;
 import jakarta.validation.constraints.*;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
-@Data
 public class ProjetCreationRequest {
 
     @NotNull
@@ -37,4 +34,68 @@ public class ProjetCreationRequest {
     @NotBlank
     @Size(max = 2000)
     private String conditionsLivraison;
+
+    public UUID getClientId() {
+        return clientId;
+    }
+
+    public TypeProduit getTypeProduit() {
+        return typeProduit;
+    }
+
+    public TypeEmballage getTypeEmballage() {
+        return typeEmballage;
+    }
+
+    public Double getQuantiteCible() {
+        return quantiteCible;
+    }
+
+    public String getUnite() {
+        return unite;
+    }
+
+    public LocalDate getDateLimiteLivraison() {
+        return dateLimiteLivraison;
+    }
+
+    public BigDecimal getPrixUnitaire() {
+        return prixUnitaire;
+    }
+
+    public String getConditionsLivraison() {
+        return conditionsLivraison;
+    }
+
+    public void setClientId(UUID clientId) {
+        this.clientId = clientId;
+    }
+
+    public void setTypeProduit(TypeProduit typeProduit) {
+        this.typeProduit = typeProduit;
+    }
+
+    public void setTypeEmballage(TypeEmballage typeEmballage) {
+        this.typeEmballage = typeEmballage;
+    }
+
+    public void setQuantiteCible(Double quantiteCible) {
+        this.quantiteCible = quantiteCible;
+    }
+
+    public void setUnite(String unite) {
+        this.unite = unite;
+    }
+
+    public void setDateLimiteLivraison(LocalDate dateLimiteLivraison) {
+        this.dateLimiteLivraison = dateLimiteLivraison;
+    }
+
+    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+        this.prixUnitaire = prixUnitaire;
+    }
+
+    public void setConditionsLivraison(String conditionsLivraison) {
+        this.conditionsLivraison = conditionsLivraison;
+    }
 }

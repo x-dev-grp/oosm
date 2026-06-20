@@ -1,12 +1,10 @@
 package com.xdev.ooms.conditioning.expedition.dto;
 
-import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@Data
 public class GenealogyDto {
     private UUID traceabilityLotId;
     private String traceabilitySourceType;
@@ -18,4 +16,84 @@ public class GenealogyDto {
     private List<FiltrationStepDto> filtrations = new ArrayList<>();
     private List<RootSourceDto> rootSources = new ArrayList<>();
     private List<IntakeStepDto> intakeChain = new ArrayList<>();
+
+    public UUID getTraceabilityLotId() {
+        return traceabilityLotId;
+    }
+
+    public String getTraceabilitySourceType() {
+        return traceabilitySourceType;
+    }
+
+    public UUID getRootReceptionId() {
+        return rootReceptionId;
+    }
+
+    public UUID getStorageUnitId() {
+        return storageUnitId;
+    }
+
+    public String getLotNumber() {
+        return lotNumber;
+    }
+
+    public String getStorageUnitName() {
+        return storageUnitName;
+    }
+
+    public Map<String, String> getFilteredQualityControls() {
+        return filteredQualityControls;
+    }
+
+    public List<FiltrationStepDto> getFiltrations() {
+        return filtrations;
+    }
+
+    public List<RootSourceDto> getRootSources() {
+        return rootSources;
+    }
+
+    public List<IntakeStepDto> getIntakeChain() {
+        return intakeChain;
+    }
+
+    public void setTraceabilityLotId(UUID traceabilityLotId) {
+        this.traceabilityLotId = traceabilityLotId;
+    }
+
+    public void setTraceabilitySourceType(String traceabilitySourceType) {
+        this.traceabilitySourceType = traceabilitySourceType;
+    }
+
+    public void setRootReceptionId(UUID rootReceptionId) {
+        this.rootReceptionId = rootReceptionId;
+    }
+
+    public void setStorageUnitId(UUID storageUnitId) {
+        this.storageUnitId = storageUnitId;
+    }
+
+    public void setLotNumber(String lotNumber) {
+        this.lotNumber = lotNumber;
+    }
+
+    public void setStorageUnitName(String storageUnitName) {
+        this.storageUnitName = storageUnitName;
+    }
+
+    public void setFilteredQualityControls(Map<String, String> filteredQualityControls) {
+        this.filteredQualityControls = filteredQualityControls;
+    }
+
+    public void setFiltrations(List<FiltrationStepDto> filtrations) {
+        this.filtrations = filtrations;
+    }
+
+    public void setRootSources(List<RootSourceDto> rootSources) {
+        this.rootSources = rootSources;
+    }
+
+    public void setIntakeChain(List<IntakeStepDto> intakeChain) {
+        this.intakeChain = intakeChain;
+    }
 }

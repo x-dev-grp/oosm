@@ -6,7 +6,6 @@ import com.xdev.ooms.inventory.config.*;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import com.xdev.ooms.sharedkernel.models.UniteMesure;
 import jakarta.persistence.*;
-import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
@@ -15,11 +14,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Data
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
 public class ArticleSec extends BaseEntity {
 
     @Id
@@ -115,4 +109,118 @@ public class ArticleSec extends BaseEntity {
                 }
             }
           }
+
+    public ArticleSec() {
+    }
+
+    public ArticleSec(UUID id, String nom, CategorieArticle categorie, MaterielSupplier materielSupplier, Integer stockMinimum, Integer stockMaximum, Boolean actif, UniteMesure um, UUID skuId, LocalDateTime lotCreatedDate, LocalDate lotDdm, ArticleConfig configuration) {
+        this.id = id;
+        this.nom = nom;
+        this.categorie = categorie;
+        this.materielSupplier = materielSupplier;
+        this.stockMinimum = stockMinimum;
+        this.stockMaximum = stockMaximum;
+        this.actif = actif;
+        this.um = um;
+        this.skuId = skuId;
+        this.lotCreatedDate = lotCreatedDate;
+        this.lotDdm = lotDdm;
+        this.configuration = configuration;
+    }
+
+    public UUID getId() {
+        return id;
+    }
+
+    public String getNom() {
+        return nom;
+    }
+
+    public CategorieArticle getCategorie() {
+        return categorie;
+    }
+
+    public MaterielSupplier getMaterielSupplier() {
+        return materielSupplier;
+    }
+
+    public Integer getStockMinimum() {
+        return stockMinimum;
+    }
+
+    public Integer getStockMaximum() {
+        return stockMaximum;
+    }
+
+    public Boolean getActif() {
+        return actif;
+    }
+
+    public UniteMesure getUm() {
+        return um;
+    }
+
+    public UUID getSkuId() {
+        return skuId;
+    }
+
+    public LocalDateTime getLotCreatedDate() {
+        return lotCreatedDate;
+    }
+
+    public LocalDate getLotDdm() {
+        return lotDdm;
+    }
+
+    public ArticleConfig getConfiguration() {
+        return configuration;
+    }
+
+    public void setId(UUID id) {
+        this.id = id;
+    }
+
+    public void setNom(String nom) {
+        this.nom = nom;
+    }
+
+    public void setCategorie(CategorieArticle categorie) {
+        this.categorie = categorie;
+    }
+
+    public void setMaterielSupplier(MaterielSupplier materielSupplier) {
+        this.materielSupplier = materielSupplier;
+    }
+
+    public void setStockMinimum(Integer stockMinimum) {
+        this.stockMinimum = stockMinimum;
+    }
+
+    public void setStockMaximum(Integer stockMaximum) {
+        this.stockMaximum = stockMaximum;
+    }
+
+    public void setActif(Boolean actif) {
+        this.actif = actif;
+    }
+
+    public void setUm(UniteMesure um) {
+        this.um = um;
+    }
+
+    public void setSkuId(UUID skuId) {
+        this.skuId = skuId;
+    }
+
+    public void setLotCreatedDate(LocalDateTime lotCreatedDate) {
+        this.lotCreatedDate = lotCreatedDate;
+    }
+
+    public void setLotDdm(LocalDate lotDdm) {
+        this.lotDdm = lotDdm;
+    }
+
+    public void setConfiguration(ArticleConfig configuration) {
+        this.configuration = configuration;
+    }
 }

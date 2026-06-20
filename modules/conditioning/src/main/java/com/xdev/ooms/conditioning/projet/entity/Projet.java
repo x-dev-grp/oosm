@@ -6,9 +6,6 @@ import com.xdev.ooms.conditioning.projet.enums.TypeEmballage;
 import com.xdev.ooms.conditioning.projet.enums.TypeProduit;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -17,8 +14,6 @@ import java.util.UUID;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
-@Getter
-@Setter
 public class Projet extends BaseEntity {
 
     @Column(unique = true, length = 100)
@@ -62,4 +57,124 @@ public class Projet extends BaseEntity {
     @CollectionTable(name = "projet_lignes_conditionnement", joinColumns = @JoinColumn(name = "projet_id"))
     @Column(name = "ligne_id", nullable = false)
     private List<UUID> ligneIds = new ArrayList<>();
+
+    public String getCode() {
+        return code;
+    }
+
+    public List<OrdreFabrication> getOrdresFabrication() {
+        return ordresFabrication;
+    }
+
+    public Client getClient() {
+        return client;
+    }
+
+    public TypeProduit getTypeProduit() {
+        return typeProduit;
+    }
+
+    public TypeEmballage getTypeEmballage() {
+        return typeEmballage;
+    }
+
+    public Double getQuantiteCible() {
+        return quantiteCible;
+    }
+
+    public String getUnite() {
+        return unite;
+    }
+
+    public LocalDate getDateLimiteLivraison() {
+        return dateLimiteLivraison;
+    }
+
+    public BigDecimal getPrixUnitaire() {
+        return prixUnitaire;
+    }
+
+    public BigDecimal getValeurTotale() {
+        return valeurTotale;
+    }
+
+    public String getConditionsLivraison() {
+        return conditionsLivraison;
+    }
+
+    public String getStatut() {
+        return statut;
+    }
+
+    public List<ProjetProduit> getProduits() {
+        return produits;
+    }
+
+    public List<ProjetReservation> getReservations() {
+        return reservations;
+    }
+
+    public List<UUID> getLigneIds() {
+        return ligneIds;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    public void setOrdresFabrication(List<OrdreFabrication> ordresFabrication) {
+        this.ordresFabrication = ordresFabrication;
+    }
+
+    public void setClient(Client client) {
+        this.client = client;
+    }
+
+    public void setTypeProduit(TypeProduit typeProduit) {
+        this.typeProduit = typeProduit;
+    }
+
+    public void setTypeEmballage(TypeEmballage typeEmballage) {
+        this.typeEmballage = typeEmballage;
+    }
+
+    public void setQuantiteCible(Double quantiteCible) {
+        this.quantiteCible = quantiteCible;
+    }
+
+    public void setUnite(String unite) {
+        this.unite = unite;
+    }
+
+    public void setDateLimiteLivraison(LocalDate dateLimiteLivraison) {
+        this.dateLimiteLivraison = dateLimiteLivraison;
+    }
+
+    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+        this.prixUnitaire = prixUnitaire;
+    }
+
+    public void setValeurTotale(BigDecimal valeurTotale) {
+        this.valeurTotale = valeurTotale;
+    }
+
+    public void setConditionsLivraison(String conditionsLivraison) {
+        this.conditionsLivraison = conditionsLivraison;
+    }
+
+    public void setStatut(String statut) {
+        this.statut = statut;
+    }
+
+    public void setProduits(List<ProjetProduit> produits) {
+        this.produits = produits;
+    }
+
+    public void setReservations(List<ProjetReservation> reservations) {
+        this.reservations = reservations;
+    }
+
+    public void setLigneIds(List<UUID> ligneIds) {
+        this.ligneIds = ligneIds;
+    }
 }

@@ -7,7 +7,6 @@ package com.xdev.ooms.production.analytics.service;
 import com.xdev.ooms.production.filtration.dto.FiltrationAnalyticsDto;
 import com.xdev.ooms.production.filtration.entity.FiltrationOperation;
 import com.xdev.ooms.production.filtration.repository.FiltrationOperationRepo;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
  * Expose les données de filtrage pour le module Rapports & Analyses.
  */
 @Service
-@RequiredArgsConstructor
 public class ProdAnalyticsService {
 
     private final FiltrationOperationRepo filtrationRepo;
@@ -51,5 +49,9 @@ public class ProdAnalyticsService {
         double efficiency = (f.getLossPercent() != null) ? (100.0 - f.getLossPercent()) : 100.0;
         dto.setEfficiencyRate(BigDecimal.valueOf(efficiency).setScale(2, RoundingMode.HALF_UP));
         return dto;
+    }
+
+    public ProdAnalyticsService(FiltrationOperationRepo filtrationRepo) {
+        this.filtrationRepo = filtrationRepo;
     }
 }

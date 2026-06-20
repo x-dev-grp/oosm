@@ -14,7 +14,6 @@ import com.xdev.ooms.production.genealogy.enums.TraceabilitySourceType;
 import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +24,6 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class TraceabilityLotService {
 
     private final TraceabilityLotRepository traceabilityLotRepository;
@@ -157,5 +155,11 @@ public class TraceabilityLotService {
         } catch (Exception e) {
             throw new IllegalStateException("Impossible de serialiser la traceabilite du lot", e);
         }
+    }
+
+    public TraceabilityLotService(TraceabilityLotRepository traceabilityLotRepository, OilTransactionService oilTransactionService, ObjectMapper objectMapper) {
+        this.traceabilityLotRepository = traceabilityLotRepository;
+        this.oilTransactionService = oilTransactionService;
+        this.objectMapper = objectMapper;
     }
 }

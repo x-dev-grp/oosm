@@ -5,16 +5,9 @@ import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
 import com.xdev.ooms.conditioning.Enum.ResultStatus;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
-@Data
-@Getter
-@Setter
 @Entity
 public class QCResult extends BaseEntity implements Serializable {
 
@@ -35,4 +28,68 @@ public class QCResult extends BaseEntity implements Serializable {
 
 
 
-   }
+   
+    public QCControlPoint getControlPoint() {
+        return controlPoint;
+    }
+
+    public OrdreFabrication getOf() {
+        return of;
+    }
+
+    public String getValeur() {
+        return valeur;
+    }
+
+    public ResultStatus getStatut() {
+        return statut;
+    }
+
+    public String getCommentaire() {
+        return commentaire;
+    }
+
+    public String getPhoto() {
+        return photo;
+    }
+
+    public String getSignature() {
+        return signature;
+    }
+
+    public LocalDateTime getDateControle() {
+        return dateControle;
+    }
+
+    public void setControlPoint(QCControlPoint controlPoint) {
+        this.controlPoint = controlPoint;
+    }
+
+    public void setOf(OrdreFabrication of) {
+        this.of = of;
+    }
+
+    public void setValeur(String valeur) {
+        this.valeur = valeur;
+    }
+
+    public void setStatut(ResultStatus statut) {
+        this.statut = statut;
+    }
+
+    public void setCommentaire(String commentaire) {
+        this.commentaire = commentaire;
+    }
+
+    public void setPhoto(String photo) {
+        this.photo = photo;
+    }
+
+    public void setSignature(String signature) {
+        this.signature = signature;
+    }
+
+    public void setDateControle(LocalDateTime dateControle) {
+        this.dateControle = dateControle;
+    }
+}

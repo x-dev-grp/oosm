@@ -6,14 +6,9 @@ import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.io.Serializable;
 import java.util.UUID;
 
-@Setter
-@Getter
 @Entity
 public class QualityControlResult extends BaseEntity implements Serializable {
 
@@ -46,4 +41,44 @@ public class QualityControlResult extends BaseEntity implements Serializable {
     }
 
 
+
+    public QualityControlRule getRule() {
+        return rule;
+    }
+
+    public String getMeasuredValue() {
+        return measuredValue;
+    }
+
+    public UnifiedDelivery getDelivery() {
+        return delivery;
+    }
+
+    public UUID getFiltrationOperationId() {
+        return filtrationOperationId;
+    }
+
+    public UUID getTraceabilityLotId() {
+        return traceabilityLotId;
+    }
+
+    public void setRule(QualityControlRule rule) {
+        this.rule = rule;
+    }
+
+    public void setMeasuredValue(String measuredValue) {
+        this.measuredValue = measuredValue;
+    }
+
+    public void setDelivery(UnifiedDelivery delivery) {
+        this.delivery = delivery;
+    }
+
+    public void setFiltrationOperationId(UUID filtrationOperationId) {
+        this.filtrationOperationId = filtrationOperationId;
+    }
+
+    public void setTraceabilityLotId(UUID traceabilityLotId) {
+        this.traceabilityLotId = traceabilityLotId;
+    }
 }

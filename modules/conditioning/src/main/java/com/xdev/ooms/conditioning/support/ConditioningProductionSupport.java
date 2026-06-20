@@ -7,14 +7,12 @@ import com.xdev.ooms.production.genealogy.service.GenealogyService;
 import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 import com.xdev.ooms.production.storageunit.repository.StorageUnitRepo;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.StorageUnitDto;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 public class ConditioningProductionSupport {
 
     private final StorageUnitRepo storageUnitRepo;
@@ -38,5 +36,12 @@ public class ConditioningProductionSupport {
         FiltrationOperation operation = filtrationOperationRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Operation de filtration introuvable: " + id));
         return modelMapper.map(operation, Object.class);
+    }
+
+    public ConditioningProductionSupport(StorageUnitRepo storageUnitRepo, FiltrationOperationRepo filtrationOperationRepo, GenealogyService genealogyService, ModelMapper modelMapper) {
+        this.storageUnitRepo = storageUnitRepo;
+        this.filtrationOperationRepo = filtrationOperationRepo;
+        this.genealogyService = genealogyService;
+        this.modelMapper = modelMapper;
     }
 }

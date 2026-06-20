@@ -13,8 +13,8 @@ import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
 import com.xdev.ooms.conditioning.ordrefabrication.repository.OrdreFabricationRepository;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
 import com.xdev.ooms.conditioning.support.ConditioningProductionSupport;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,8 +22,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
-@Slf4j
 public class TraceabilityService {
 
     private final ConditioningProductionSupport productionSupport;
@@ -370,5 +368,16 @@ public class TraceabilityService {
         } catch (Exception e) {
             log.warn("Impossible de retro-renseigner traceabilityLotId pour l'etiquette {}", label.getId());
         }
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(TraceabilityService.class);
+
+    public TraceabilityService(ConditioningProductionSupport productionSupport, ConditioningInventorySupport inventorySupport, OrdreFabricationRepository ofRepository, LabelContentRepository labelContentRepository, ExpeditionRepository expeditionRepository, ObjectMapper objectMapper) {
+        this.productionSupport = productionSupport;
+        this.inventorySupport = inventorySupport;
+        this.ofRepository = ofRepository;
+        this.labelContentRepository = labelContentRepository;
+        this.expeditionRepository = expeditionRepository;
+        this.objectMapper = objectMapper;
     }
 }

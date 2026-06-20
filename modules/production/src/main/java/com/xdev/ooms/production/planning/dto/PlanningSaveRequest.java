@@ -4,11 +4,8 @@ package com.xdev.ooms.production.planning.dto;
 import com.xdev.ooms.production.genealogy.dto.GlobalLotDto;
 import com.xdev.ooms.production.planning.dto.MillPlanDTO;
 
-import lombok.Data;
-
 import java.util.List;
 
-@Data
 public class PlanningSaveRequest {
     private List<MillPlanDTO> mills;
     private List<GlobalLotDto> globalLots;

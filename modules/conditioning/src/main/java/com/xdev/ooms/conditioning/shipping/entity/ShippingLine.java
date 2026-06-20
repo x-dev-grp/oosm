@@ -2,14 +2,9 @@ package com.xdev.ooms.conditioning.shipping.entity;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
 import java.util.UUID;
 
 @Entity
-@Getter
-@Setter
 public class ShippingLine extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -25,5 +20,45 @@ public class ShippingLine extends BaseEntity {
 
     @Column(length = 30)
     private String unit;
+
+    public ShippingInfo getShippingInfo() {
+        return shippingInfo;
+    }
+
+    public UUID getArticleId() {
+        return articleId;
+    }
+
+    public String getArticleNameSnapshot() {
+        return articleNameSnapshot;
+    }
+
+    public Integer getQuantity() {
+        return quantity;
+    }
+
+    public String getUnit() {
+        return unit;
+    }
+
+    public void setShippingInfo(ShippingInfo shippingInfo) {
+        this.shippingInfo = shippingInfo;
+    }
+
+    public void setArticleId(UUID articleId) {
+        this.articleId = articleId;
+    }
+
+    public void setArticleNameSnapshot(String articleNameSnapshot) {
+        this.articleNameSnapshot = articleNameSnapshot;
+    }
+
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
+    }
+
+    public void setUnit(String unit) {
+        this.unit = unit;
+    }
 }
 

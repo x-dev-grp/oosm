@@ -13,8 +13,8 @@ import com.xdev.ooms.conditioning.qualitycontrol.entity.QCResult;
 import com.xdev.ooms.conditioning.ordrefabrication.repository.OrdreFabricationRepository;
 import com.xdev.ooms.conditioning.qualitycontrol.repository.QCResultRepository;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,10 +24,8 @@ import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
-@Slf4j
 @Service
 @Transactional(readOnly = true)
-@RequiredArgsConstructor
 public class AnalyticsService {
 
 
@@ -282,5 +280,14 @@ public class AnalyticsService {
             dto.setYieldPercentage(BigDecimal.ZERO);
         }
         return dto;
+    }
+
+    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
+
+    public AnalyticsService(OrdreFabricationRepository ofRepository, QCResultRepository qcResultRepository, ConditioningInventorySupport inventorySupport, FiltrationOperationRepo filtrationOperationRepo) {
+        this.ofRepository = ofRepository;
+        this.qcResultRepository = qcResultRepository;
+        this.inventorySupport = inventorySupport;
+        this.filtrationOperationRepo = filtrationOperationRepo;
     }
 }

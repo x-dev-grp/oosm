@@ -5,16 +5,9 @@ import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 
 @Entity
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class LigneBonCommande extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -35,4 +28,64 @@ public class LigneBonCommande extends BaseEntity {
     private BigDecimal prixUnitaire;
 
     private String remarque;
+
+    public LigneBonCommande() {
+    }
+
+    public LigneBonCommande(BonCommande bonCommande, ArticleSec article, Integer quantiteCommandee, Integer quantiteRecue, BigDecimal prixUnitaire, String remarque) {
+        this.bonCommande = bonCommande;
+        this.article = article;
+        this.quantiteCommandee = quantiteCommandee;
+        this.quantiteRecue = quantiteRecue;
+        this.prixUnitaire = prixUnitaire;
+        this.remarque = remarque;
+    }
+
+    public BonCommande getBonCommande() {
+        return bonCommande;
+    }
+
+    public ArticleSec getArticle() {
+        return article;
+    }
+
+    public Integer getQuantiteCommandee() {
+        return quantiteCommandee;
+    }
+
+    public Integer getQuantiteRecue() {
+        return quantiteRecue;
+    }
+
+    public BigDecimal getPrixUnitaire() {
+        return prixUnitaire;
+    }
+
+    public String getRemarque() {
+        return remarque;
+    }
+
+    public void setBonCommande(BonCommande bonCommande) {
+        this.bonCommande = bonCommande;
+    }
+
+    public void setArticle(ArticleSec article) {
+        this.article = article;
+    }
+
+    public void setQuantiteCommandee(Integer quantiteCommandee) {
+        this.quantiteCommandee = quantiteCommandee;
+    }
+
+    public void setQuantiteRecue(Integer quantiteRecue) {
+        this.quantiteRecue = quantiteRecue;
+    }
+
+    public void setPrixUnitaire(BigDecimal prixUnitaire) {
+        this.prixUnitaire = prixUnitaire;
+    }
+
+    public void setRemarque(String remarque) {
+        this.remarque = remarque;
+    }
 }

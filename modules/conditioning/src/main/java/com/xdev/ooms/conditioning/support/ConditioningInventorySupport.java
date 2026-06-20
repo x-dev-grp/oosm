@@ -11,7 +11,6 @@ import com.xdev.ooms.inventory.ligneconditionnement.repository.LigneConditionnem
 import com.xdev.ooms.inventory.produitfinal.entity.ProduitFinal;
 import com.xdev.ooms.inventory.produitfinal.repository.ProduitFinalRepository;
 import com.xdev.ooms.inventory.stocksec.service.StockSecService;
-import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Component;
 
@@ -19,7 +18,6 @@ import java.util.Map;
 import java.util.UUID;
 
 @Component
-@RequiredArgsConstructor
 public class ConditioningInventorySupport {
 
     private final ProduitFinalRepository produitFinalRepository;
@@ -99,5 +97,14 @@ public class ConditioningInventorySupport {
                         ConditioningInventoryMappers.stringFromPayload(payload, "referenceType"),
                         ConditioningInventoryMappers.uuidFromPayload(payload, "referenceId")),
                 modelMapper);
+    }
+
+    public ConditioningInventorySupport(ProduitFinalRepository produitFinalRepository, ArticleSecRepository articleSecRepository, LigneConditionnementRepository ligneConditionnementRepository, BomRepository bomRepository, StockSecService stockSecService, ModelMapper modelMapper) {
+        this.produitFinalRepository = produitFinalRepository;
+        this.articleSecRepository = articleSecRepository;
+        this.ligneConditionnementRepository = ligneConditionnementRepository;
+        this.bomRepository = bomRepository;
+        this.stockSecService = stockSecService;
+        this.modelMapper = modelMapper;
     }
 }

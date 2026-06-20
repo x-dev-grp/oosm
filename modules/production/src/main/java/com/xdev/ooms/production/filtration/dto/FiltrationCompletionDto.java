@@ -4,8 +4,6 @@ package com.xdev.ooms.production.filtration.dto;
 
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-
 /**
  * [NOUVEAU] DTO pour la complétion d'une opération de filtration
  * Ce DTO a été créé pour:
@@ -14,7 +12,6 @@ import lombok.Data;
  * - Ajouter une note de completion
  * Il est utilisé dans l'endpoint PUT /{operationId}/complete
  */
-@Data
 public class FiltrationCompletionDto {
 
     @NotNull(message = "Le volume après filtration est requis")
@@ -22,4 +19,20 @@ public class FiltrationCompletionDto {
     private Double volumeAfter;      // Volume après filtration (saisi par l'utilisateur)
 
     private String note;              // Note de completion (optionnelle)
+
+    public Double getVolumeAfter() {
+        return volumeAfter;
+    }
+
+    public String getNote() {
+        return note;
+    }
+
+    public void setVolumeAfter(Double volumeAfter) {
+        this.volumeAfter = volumeAfter;
+    }
+
+    public void setNote(String note) {
+        this.note = note;
+    }
 }

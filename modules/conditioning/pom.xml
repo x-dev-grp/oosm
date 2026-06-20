@@ -26,11 +26,6 @@
             <version>2.1.7</version>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>com.xdev.ooms</groupId>
             <artifactId>inventory</artifactId>
         </dependency>
