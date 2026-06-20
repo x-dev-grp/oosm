@@ -2,12 +2,10 @@ package com.xdev.ooms.security.authorization.entity;
 
 
 import jakarta.persistence.*;
-import org.hibernate.envers.Audited;
 
 import java.time.Instant;
 
 @Entity
-@Audited
 public class Authorization {
     @Id
     @Column
@@ -22,31 +20,31 @@ public class Authorization {
     @Column(length = 2000)
     private String state;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String authorizationCodeValue;
     private Instant authorizationCodeIssuedAt;
     private Instant authorizationCodeExpiresAt;
     @Lob
     private byte[] authorizationCodeMetadata;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String accessTokenValue;
     private Instant accessTokenIssuedAt;
     private Instant accessTokenExpiresAt;
     @Lob
     private byte[] accessTokenMetadata;
     private String accessTokenType;
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String accessTokenScopes;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String refreshTokenValue;
     private Instant refreshTokenIssuedAt;
     private Instant refreshTokenExpiresAt;
     @Lob
     private byte[] refreshTokenMetadata;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String oidcIdTokenValue;
     private Instant oidcIdTokenIssuedAt;
     private Instant oidcIdTokenExpiresAt;
@@ -55,14 +53,14 @@ public class Authorization {
     @Lob
     private byte[] oidcIdTokenClaims;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String userCodeValue;
     private Instant userCodeIssuedAt;
     private Instant userCodeExpiresAt;
     @Column(length = 2000)
     private String userCodeMetadata;
 
-    @Column(length = 10000)
+    @Column(columnDefinition = "TEXT")
     private String deviceCodeValue;
     private Instant deviceCodeIssuedAt;
     private Instant deviceCodeExpiresAt;

@@ -7,7 +7,6 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -16,10 +15,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import static org.hibernate.envers.RelationTargetAuditMode.NOT_AUDITED;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
-@Audited
 @Getter
 @Setter
 public class Expedition extends BaseEntity {
@@ -29,7 +26,6 @@ public class Expedition extends BaseEntity {
 
     @ManyToOne
     @JoinColumn(name = "projet_id", nullable = false)
-    @Audited(targetAuditMode = NOT_AUDITED)
     private Projet projet;
 
     private UUID clientId;

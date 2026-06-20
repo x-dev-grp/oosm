@@ -8,13 +8,11 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 
 @Entity
 @Data
-@Audited
 @NoArgsConstructor
 @AllArgsConstructor
 public class LigneBonCommande extends BaseEntity {

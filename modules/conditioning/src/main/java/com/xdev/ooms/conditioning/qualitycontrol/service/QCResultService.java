@@ -3,8 +3,6 @@ package com.xdev.ooms.conditioning.qualitycontrol.service;
 
 import com.xdev.ooms.conditioning.Enum.StatutOF;
 import com.xdev.ooms.conditioning.ordrefabrication.service.OFService;
-import com.xdev.ooms.security.user.repository.UserRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
 import com.xdev.ooms.conditioning.qualitycontrol.dto.QCResultDTO;
 import com.xdev.ooms.conditioning.Enum.ControlType;
 import com.xdev.ooms.conditioning.Enum.QualityStatus;
@@ -17,9 +15,8 @@ import com.xdev.ooms.conditioning.qualitycontrol.entity.QCResult;
 import com.xdev.ooms.conditioning.qualitycontrol.repository.QCControlPointRepository;
 import com.xdev.ooms.conditioning.qualitycontrol.repository.QCPlanRepository;
 import com.xdev.ooms.conditioning.qualitycontrol.repository.QCResultRepository;
-import com.xdev.ooms.sharedkernel.communicator.models.shared.OSMUserDTO;
-import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
-import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
+import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
+import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
@@ -46,9 +43,7 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
     private final ModelMapper modelMapper;
     private final QCPlanRepository qcPlanRepository;
     private final OFService ofService;
-    // === AJOUT NOTIFICATIONS ===
-    private final OneSignalServiceImpl oneSignalService;
-    private final UserRepository userRepository;
+    private final NotificationPort notificationPort;
 
     public QCResultService(BaseRepository<QCResult> repository,
                            QCResultRepository resultRepository,
@@ -56,8 +51,8 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
                            OrdreFabricationRepository ofRepository,
                            ModelMapper modelMapper,
                            QCPlanRepository qcPlanRepository,
-                           OFService ofService, OneSignalServiceImpl oneSignalService,
-                           UserRepository userRepository) {
+                           OFService ofService,
+                           NotificationPort notificationPort) {
         super(repository, modelMapper);
         this.resultRepository = resultRepository;
         this.controlPointRepository = controlPointRepository;
@@ -65,8 +60,7 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
         this.modelMapper = modelMapper;
         this.qcPlanRepository = qcPlanRepository;
         this.ofService = ofService;
-        this.oneSignalService = oneSignalService;
-        this.userRepository = userRepository;
+        this.notificationPort = notificationPort;
     }
 
     @Transactional
@@ -125,37 +119,15 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
             of.setQualityStatus(QualityStatus.BLOCKED);
             ofRepository.save(of);
             try {
-                List<OSMUser> users = userRepository.findByRoleNameAndTenant(
-                        "OSMADMIN", TenantContext.getCurrentTenant());
-                List<OSMUserDTO> responsables = users.stream()
-                        .map(user -> modelMapper.map(user, OSMUserDTO.class))
-                        .collect(Collectors.toList());
-                log.info("Utilisateurs trouvés = {}", responsables.size());
-                List<String> userIds = responsables.stream()
-                        .map(OSMUserDTO::getOneSignalPlayerId)
-                        .filter(id -> id != null && !id.isBlank())
-                        .collect(Collectors.toList());
-
-                if (!userIds.isEmpty()) {
-                    String titre = " OF Bloqué";
-                    String message = String.format(
-                            "L'OF %s a été bloqué suite à un contrôle qualité non conforme.",
-                            of.getCode()
-                    );
-
-                    // ✅ FIX 3 : une seule map cohérente
-                    Map<String, String> data = Map.of(
-                            "screen", "OF_DETAIL",
-                            "ofId", ofId.toString()
-                    );
-                    log.info("Tenant courant : {}", TenantContext.getCurrentTenant());
-                    NotificationRequest notif =
-                            new NotificationRequest(userIds, titre, message, data);
-
-                    oneSignalService.sendNotification(notif);
-                }
+                notificationPort.publish(new NotificationEvent(
+                        "OF_QC_BLOCKED",
+                        ofId,
+                        of.getCode(),
+                        Map.of("ofCode", of.getCode()),
+                        null,
+                        null));
             } catch (Exception e) {
-                System.err.println("Erreur lors de l'envoi de la notification : " + e.getMessage());
+                log.warn("Failed to publish OF blocked notification: {}", e.getMessage());
             }
         }
     }

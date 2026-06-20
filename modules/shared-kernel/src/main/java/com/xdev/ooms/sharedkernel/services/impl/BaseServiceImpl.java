@@ -423,39 +423,9 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         }
     }
 
-    @Override
-    public Optional<Revision<Integer, E>> findLastRevisionById(UUID id) {
-        long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findLastRevisionById", id);
 
-        try {
-            Optional<Revision<Integer, E>> data = this.repository.findLastChangeRevision(id);
-            OSMLogger.logMethodExit(this.getClass(), "findLastRevisionById", data.isPresent() ? "Found revision" : "No revision found");
-            OSMLogger.logPerformance(this.getClass(), "findLastRevisionById", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_LAST_REVISION", entityClass.getSimpleName());
-            return data;
-        } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding last revision for ID: " + id, e);
-            throw e;
-        }
-    }
 
-    @Override
-    public Revisions<Integer, E> findRevisionsById(UUID id) {
-        long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findRevisionsById", id);
 
-        try {
-            Revisions<Integer, E> data = this.repository.findRevisions(id);
-            OSMLogger.logMethodExit(this.getClass(), "findRevisionsById", "Found " + data.getContent().size() + " revisions");
-            OSMLogger.logPerformance(this.getClass(), "findRevisionsById", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_REVISIONS", entityClass.getSimpleName());
-            return data;
-        } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding revisions for ID: " + id, e);
-            throw e;
-        }
-    }
 
     @Override
     public SearchResponse<E, OUTDTO> search(SearchData searchData) {

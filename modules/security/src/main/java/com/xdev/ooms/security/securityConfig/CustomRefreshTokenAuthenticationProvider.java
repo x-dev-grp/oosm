@@ -8,6 +8,7 @@ import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.oauth2.core.*;
@@ -108,7 +109,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
 
             // Check if the user account is locked
             String username = authorization.getPrincipalName();
-            OSMUser user = userService.getByUsername(username);
+            OSMUser user = userService.getByUsernameWithFreshPermissions(username);
 
             if (user == null) {
                 OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_USER_NOT_FOUND",
@@ -129,17 +130,17 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             }
             OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "User validation passed for refresh token: {}", username);
 
+            UsernamePasswordAuthenticationToken freshPrincipal =
+                    new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+
             // Generate new access token
             AuthorizationServerContext authorizationServerContext = AuthorizationServerContextHolder.getContext();
             Set<String> scopes = Collections.emptySet();
-//        Set<String> scopes = user.getAuthorities().stream()
-//                .map(GrantedAuthority::getAuthority)
-//                .collect(Collectors.toSet());
 
             OAuth2Authorization.Builder authorizationBuilder = OAuth2Authorization.from(authorization);
             OAuth2TokenContext tokenContext = DefaultOAuth2TokenContext.builder()
-                    .authorization(authorizationBuilder.build())
-                    .principal(authorization.getAttribute("principal"))
+                    .authorization(authorization)
+                    .principal(freshPrincipal)
                     .registeredClient(client)
                     .tokenType(OAuth2TokenType.ACCESS_TOKEN)
                     .authorizedScopes(scopes)
@@ -171,7 +172,6 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                 authorizationBuilder.accessToken(accessToken);
             }
 
-            // Save updated authorization
             OAuth2Authorization updatedAuthorization = authorizationBuilder.build();
             authorizationService.save(updatedAuthorization);
 
@@ -185,7 +185,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             // Return token response
             OAuth2AccessTokenAuthenticationToken result = new OAuth2AccessTokenAuthenticationToken(
                     client,
-                    Objects.requireNonNull(authorization.getAttribute("principal")),
+                    freshPrincipal,
                     accessToken,
                     null, // No new refresh token
                     additionalParameters

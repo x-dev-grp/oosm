@@ -3,10 +3,8 @@ package com.xdev.ooms.security.permission.entity;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import com.xdev.ooms.sharedkernel.models.OSMModule;
 import jakarta.persistence.Entity;
-import org.hibernate.envers.Audited;
 
 @Entity
-@Audited
 public class Permission extends BaseEntity {
     private String permissionName;
     private OSMModule module;

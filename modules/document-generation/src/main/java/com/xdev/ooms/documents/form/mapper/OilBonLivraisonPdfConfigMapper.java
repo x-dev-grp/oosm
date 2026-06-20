@@ -140,6 +140,7 @@ public class OilBonLivraisonPdfConfigMapper {
             case LAMPANTE -> FormPdfLabels.OIL_GRADE_LAMPANTE;
             case REFINED -> FormPdfLabels.OIL_GRADE_REFINED;
             case OTHER -> FormPdfLabels.OIL_GRADE_UNKNOWN;
+            case POMACE -> FormPdfLabels.OIL_GRADE_POMACE;
         };
     }
 

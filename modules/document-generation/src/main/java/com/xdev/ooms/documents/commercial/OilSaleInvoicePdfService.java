@@ -1,6 +1,7 @@
 package com.xdev.ooms.documents.commercial;
 
 import com.xdev.ooms.documents.commercial.dto.BillGenerationRequest;
+import com.xdev.ooms.documents.commercial.dto.BillFooterContactDto;
 import com.xdev.ooms.documents.commercial.dto.BillPartyDto;
 import com.xdev.ooms.production.oilsale.entity.OilSale;
 import com.xdev.ooms.production.oilsale.repository.OilSaleRepository;
@@ -113,9 +114,9 @@ public class OilSaleInvoicePdfService {
         return null;
     }
 
-    private com.xdev.ooms.documents.commercial.dto.BillFooterContactDto buildFooter(CompanyProfileSnapshot profile) {
-        com.xdev.ooms.documents.commercial.dto.BillFooterContactDto footer =
-                new com.xdev.ooms.documents.commercial.dto.BillFooterContactDto();
+    private BillFooterContactDto buildFooter(CompanyProfileSnapshot profile) {
+        BillFooterContactDto footer =
+                new BillFooterContactDto();
         footer.setCompanyName(profile.legalName());
         footer.setPhone(profile.phone());
         return footer;

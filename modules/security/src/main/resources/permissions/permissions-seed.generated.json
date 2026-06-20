@@ -133,6 +133,16 @@
         "VALIDATE"
       ]
     },
+    "MAINTENANCEWORKORDER": {
+      "description": "Equipment maintenance work orders",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
     "OILTRANSACTION": {
       "description": "Oil transaction management",
       "module": "PRODUCTION",

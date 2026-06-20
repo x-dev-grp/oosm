@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.envers.Audited;
 
 /**
  * Material / packaging supplier (inventory). Distinct from production {@code Supplier}
@@ -16,7 +15,6 @@ import org.hibernate.envers.Audited;
 @Entity
 
 @Data
-@Audited
 @NoArgsConstructor
 @AllArgsConstructor
 public class MaterielSupplier extends BaseEntity {

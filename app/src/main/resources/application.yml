@@ -55,10 +55,6 @@ spring:
         format_sql: ${FORMAT_SQL:false}
         boot:
           allow_jdbc_metadata_access: ${HIBERNATE_ALLOW_JDBC_METADATA_ACCESS:true}
-        envers:
-          audit_table_suffix: _aud
-          revision_field_name: rev
-          revision_type_field_name: revtype
         id:
           db_structure_naming_strategy: standard
       jakarta:
@@ -70,7 +66,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/oauth2-schema.sql
+      schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql
 
   data:
     jpa:
@@ -139,6 +135,7 @@ app:
       email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
       phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
     permissions:
+      # Always seeds when the permission table is empty. Set true to re-sync on every startup.
       sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}
   production:
     bootstrap:

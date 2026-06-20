@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -14,7 +13,6 @@ import java.util.List;
 
 @Data
 @Getter
-@Audited
 @Setter
 @Entity
 public class QCPlan extends BaseEntity implements Serializable {

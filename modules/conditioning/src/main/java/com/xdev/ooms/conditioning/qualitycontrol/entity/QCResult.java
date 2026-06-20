@@ -11,13 +11,11 @@ import lombok.Setter;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import org.hibernate.envers.Audited;
 
 @Data
 @Getter
 @Setter
 @Entity
-@Audited
 public class QCResult extends BaseEntity implements Serializable {
 
     @ManyToOne

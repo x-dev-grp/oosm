@@ -7,7 +7,6 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -16,7 +15,6 @@ import java.util.List;
 @Entity
 @Data
 @NoArgsConstructor
-@Audited
 @AllArgsConstructor
 public class BonCommande extends BaseEntity {
 

@@ -6,14 +6,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Data
 @Getter
-@Audited
 @Setter
 @Entity
 public class BOM extends BaseEntity {

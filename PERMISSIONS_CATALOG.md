@@ -88,7 +88,46 @@ When `app.security.permissions.sync-on-startup=true` (`PERMISSIONS_SYNC_ON_START
 
 - `PermissionCatalogSyncRunner` loads `permissions-spec.json`
 - Creates missing `permission` rows idempotently
-- Merges legacy aliases and role mirrors
+- **Reactivates** soft-deleted rows that match the catalog
+- Merges legacy aliases and role mirrors (legacy rows are soft-deleted only when the canonical permission exists)
+
+Manual trigger (authenticated):
+
+```http
+POST /api/security/permission/sync-catalog
+Authorization: Bearer <token>
+```
+
+## Troubleshooting empty `fetchAll` / empty permission table
+
+The app **auto-seeds on startup when the permission table is empty** (reads `permissions-spec.json`).
+
+If the table is still empty after restart:
+
+1. Check backend logs for `Permission catalog sync complete: created=…`
+2. Manual trigger (authenticated):
+
+```http
+POST /api/security/permission/sync-catalog
+Authorization: Bearer <token>
+```
+
+3. Or run the SQL seed (PostgreSQL security DB):
+
+```bash
+# From repo root — adjust connection for your DB
+psql "$DATABASE_URL" -f "oosm/modules/production/src/main/resources/legacy/osm-prod/db/migration/insert Permissions.sql"
+```
+
+4. Force re-sync every startup: `PERMISSIONS_SYNC_ON_STARTUP=true`
+
+Emergency reactivate soft-deleted rows:
+
+```sql
+UPDATE permission SET is_deleted = false WHERE is_deleted = true;
+```
+
+Then `POST /api/security/permission/sync-catalog`.
 
 ## Authority format
 

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "rules": {
+    "OF_QC_BLOCKED": {
+      "module": "CONDITIONING",
+      "entity": "OF",
+      "recipientAction": "READ",
+      "title": "Production order blocked",
+      "recapTemplate": "{actor} blocked OF {entityLabel} after a failed quality control.",
+      "routeTemplate": "/of/{entityId}",
+      "priority": "HIGH",
+      "pushEnabled": true
+    },
+    "MAINTENANCEWORKORDER_CREATED": {
+      "module": "PRODUCTION",
+      "entity": "MAINTENANCEWORKORDER",
+      "recipientAction": "READ",
+      "title": "Maintenance scheduled",
+      "recapTemplate": "{actor} created maintenance on {entityLabel} ({maintenanceType}, {status}).",
+      "routeTemplate": "/maintenance/{entityId}/view",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
+    "MAINTENANCEWORKORDER_EXPENSE_RECORDED": {
+      "module": "PRODUCTION",
+      "entity": "MAINTENANCEWORKORDER",
+      "recipientAction": "READ",
+      "title": "Maintenance expense recorded",
+      "recapTemplate": "{actor} recorded {totalCost} TND maintenance cost on {entityLabel}. Invoice: {invoiceRef}.",
+      "routeTemplate": "/maintenance/{entityId}/view",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
+    "EXPENSE_CREATED": {
+      "module": "FINANCE",
+      "entity": "EXPENSE",
+      "recipientAction": "READ",
+      "title": "New expense",
+      "recapTemplate": "{actor} created expense {entityLabel} for {amount} TND ({category}).",
+      "routeTemplate": "/finance/expenses",
+      "priority": "NORMAL",
+      "pushEnabled": false
+    }
+  }
+}

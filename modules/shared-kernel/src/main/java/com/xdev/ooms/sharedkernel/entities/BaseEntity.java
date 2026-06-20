@@ -4,7 +4,6 @@ import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.utils.AuditEntityListener;
 import jakarta.persistence.*;
 import org.hibernate.annotations.NaturalId;
-import org.hibernate.envers.Audited;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 
-@Audited
 @MappedSuperclass
 @EntityListeners(AuditEntityListener.class)
 public class BaseEntity implements Serializable {

@@ -9,11 +9,9 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 import java.util.UUID;
 import com.xdev.ooms.inventory.Enum.TypeMouvement;
-import org.hibernate.envers.Audited;
 
 @Entity
 @Data
-@Audited
 @NoArgsConstructor
 @AllArgsConstructor
 public class MouvementStockSec  extends BaseEntity {

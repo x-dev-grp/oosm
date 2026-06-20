@@ -5,14 +5,12 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Getter
 @Setter
-@Audited
 public class ShippingEvent extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)

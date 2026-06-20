@@ -8,7 +8,6 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -19,7 +18,6 @@ import java.util.UUID;
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Getter
-@Audited
 @Setter
 public class Projet extends BaseEntity {
 

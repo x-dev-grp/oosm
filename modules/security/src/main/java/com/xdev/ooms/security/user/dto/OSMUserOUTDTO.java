@@ -16,6 +16,8 @@ public class OSMUserOUTDTO extends BaseDto<OSMUser> {
     private ConfirmationMethod confirmationMethod;
     private boolean isNewUser;
     private String tenantName;
+    private String photoData;
+    private String photoContentType;
 
     public boolean isNewUser() {
         return isNewUser;
@@ -95,5 +97,21 @@ public class OSMUserOUTDTO extends BaseDto<OSMUser> {
 
     public void setTenantName(String tenantName) {
         this.tenantName = tenantName;
+    }
+
+    public String getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(String photoData) {
+        this.photoData = photoData;
+    }
+
+    public String getPhotoContentType() {
+        return photoContentType;
+    }
+
+    public void setPhotoContentType(String photoContentType) {
+        this.photoContentType = photoContentType;
     }
 }

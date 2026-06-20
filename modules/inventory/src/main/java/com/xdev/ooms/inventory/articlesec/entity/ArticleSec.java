@@ -8,7 +8,6 @@ import com.xdev.ooms.sharedkernel.models.UniteMesure;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.envers.Audited;
 import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
@@ -19,7 +18,6 @@ import java.util.UUID;
 @Data
 @Getter
 @Setter
-@Audited
 @NoArgsConstructor
 @AllArgsConstructor
 public class ArticleSec extends BaseEntity {

@@ -10,6 +10,8 @@ import com.xdev.ooms.security.user.dto.AssignableUserDTO;
 import com.xdev.ooms.security.user.dto.OSMUserDTO;
 import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
 import com.xdev.ooms.security.user.dto.UpdatePasswordDTO;
+import com.xdev.ooms.security.user.dto.UserProfileUpdateDTO;
+import com.xdev.ooms.security.user.dto.UserPhotoDTO;
 import com.xdev.ooms.security.confirmationcode.entity.ConfirmationCode;
 import com.xdev.ooms.security.user.entity.OSMUser;
 import com.xdev.ooms.security.role.entity.Role;
@@ -44,6 +46,9 @@ import java.util.stream.Collectors;
 
 @Service
 public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUTDTO> implements UserDetailsService {
+    private static final int MAX_PHOTO_BYTES = 200 * 1024;
+    private static final Set<String> ALLOWED_PHOTO_TYPES = Set.of("image/png", "image/jpeg", "image/jpg");
+
     private final UserRepository userRepository;
     private final MailService mailService;
     private final OsmMailComposer mailComposer;
@@ -312,6 +317,12 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         }
     }
 
+    public OSMUser getByUsernameWithFreshPermissions(String username) {
+        return userRepository.findByUsernameWithRolePermissions(username)
+                .or(() -> userRepository.findByUsernameAndIsDeletedFalse(username))
+                .orElse(null);
+    }
+
     public void sendWelcomeCredentials(OSMUserOUTDTO userDTO, String rawPassword) throws Exception {
         sendConfirmation(userDTO, rawPassword);
     }
@@ -572,6 +583,119 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
             OSMLogger.logException(this.getClass(),
                     "Error updating password for user: " + userId, e);
             throw e;
+        }
+    }
+
+    public OSMUserOUTDTO getCurrentUserProfile(String username) {
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+        OSMUserOUTDTO dto = modelMapper.map(user, OSMUserOUTDTO.class);
+        enrichTenantNames(List.of(dto));
+        if (dto.getRole() != null) {
+            dto.getRole().setPermissions(null);
+        }
+        return dto;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public OSMUserOUTDTO updateCurrentUserProfile(String username, UserProfileUpdateDTO profileDto) {
+        if (profileDto == null) {
+            throw new IllegalArgumentException("Profile data must not be null");
+        }
+
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+
+        OSMUserOUTDTO validationDto = new OSMUserOUTDTO();
+        validationDto.setUsername(user.getUsername());
+        validationDto.setFirstName(profileDto.getFirstName());
+        validationDto.setLastName(profileDto.getLastName());
+        validationDto.setEmail(profileDto.getEmail());
+        validationDto.setPhoneNumber(profileDto.getPhoneNumber());
+        validationDto.setConfirmationMethod(profileDto.getConfirmationMethod());
+        validateUserDTO(validationDto);
+        checkUserToUpdate(user, user.getUsername(), profileDto.getEmail(), profileDto.getPhoneNumber());
+
+        user.setFirstName(profileDto.getFirstName());
+        user.setLastName(profileDto.getLastName());
+        user.setEmail(profileDto.getEmail());
+        user.setPhoneNumber(profileDto.getPhoneNumber());
+        user.setConfirmationMethod(profileDto.getConfirmationMethod());
+        userRepository.save(user);
+
+        OSMUserOUTDTO result = modelMapper.map(user, OSMUserOUTDTO.class);
+        enrichTenantNames(List.of(result));
+        if (result.getRole() != null) {
+            result.getRole().setPermissions(null);
+        }
+        return result;
+    }
+
+    @Transactional
+    public void changeOwnPassword(String username, UpdatePasswordDTO dto) {
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new IllegalArgumentException("Invalid credentials"));
+        if (dto == null
+                || dto.getOldPassword() == null
+                || dto.getNewPassword() == null
+                || !dto.getNewPassword().equals(dto.getNewPasswordConfirmation())) {
+            throw new IllegalArgumentException("Invalid password change request");
+        }
+        if (!passwordEncoder.matches(dto.getOldPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("Invalid credentials");
+        }
+        if (passwordEncoder.matches(dto.getNewPassword(), user.getPassword())) {
+            throw new IllegalArgumentException("New password must differ from the current password");
+        }
+
+        user.setPassword(passwordEncoder.encode(dto.getNewPassword()));
+        user.setNewUser(false);
+        userRepository.save(user);
+    }
+
+    public UserPhotoDTO getCurrentUserPhoto(String username) {
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+        UserPhotoDTO dto = new UserPhotoDTO();
+        dto.setPhotoData(user.getPhotoData());
+        dto.setPhotoContentType(user.getPhotoContentType());
+        return dto;
+    }
+
+    @Transactional
+    public UserPhotoDTO updateCurrentUserPhoto(String username, UserPhotoDTO photoDto) {
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+        validatePhoto(photoDto.getPhotoData(), photoDto.getPhotoContentType());
+        user.setPhotoData(photoDto.getPhotoData());
+        user.setPhotoContentType(photoDto.getPhotoContentType());
+        userRepository.save(user);
+
+        UserPhotoDTO result = new UserPhotoDTO();
+        result.setPhotoData(user.getPhotoData());
+        result.setPhotoContentType(user.getPhotoContentType());
+        return result;
+    }
+
+    @Transactional
+    public void removeCurrentUserPhoto(String username) {
+        OSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username)
+                .orElseThrow(() -> new UsernameNotFoundException(username));
+        user.setPhotoData(null);
+        user.setPhotoContentType(null);
+        userRepository.save(user);
+    }
+
+    private void validatePhoto(String photoData, String photoContentType) {
+        if (photoData == null || photoData.isBlank() || photoContentType == null || photoContentType.isBlank()) {
+            throw new IllegalArgumentException("Photo data is required");
+        }
+        if (!ALLOWED_PHOTO_TYPES.contains(photoContentType.toLowerCase(Locale.ROOT))) {
+            throw new IllegalArgumentException("Only PNG and JPEG images are allowed");
+        }
+        int estimatedBytes = (photoData.length() * 3) / 4;
+        if (estimatedBytes > MAX_PHOTO_BYTES) {
+            throw new IllegalArgumentException("Photo must be 200KB or smaller");
         }
     }
 

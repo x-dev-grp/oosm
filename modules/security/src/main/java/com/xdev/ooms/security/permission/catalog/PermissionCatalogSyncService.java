@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Service
 public class PermissionCatalogSyncService {
@@ -78,9 +79,21 @@ public class PermissionCatalogSyncService {
     }
 
     private boolean ensurePermission(OSMModule module, String entity, String action) {
-        Optional<Permission> current = permissionRepository.findByModuleAndEntityAndPermissionName(
-                module, entity, action);
-        if (current.isPresent()) {
+        Optional<Permission> active = permissionRepository
+                .findByModuleAndEntityAndPermissionNameAndIsDeletedFalse(module, entity, action);
+        if (active.isPresent()) {
+            return false;
+        }
+
+        Optional<Permission> existing = permissionRepository
+                .findByModuleAndEntityAndPermissionName(module, entity, action);
+        if (existing.isPresent()) {
+            Permission permission = existing.get();
+            if (Boolean.TRUE.equals(permission.getDeleted())) {
+                permission.setDeleted(false);
+                permissionRepository.save(permission);
+                return true;
+            }
             return false;
         }
 
@@ -88,13 +101,13 @@ public class PermissionCatalogSyncService {
         permission.setModule(module);
         permission.setEntity(entity);
         permission.setPermissionName(action);
-        permission.setIsDeleted(false);
+        permission.setDeleted(false);
         permissionRepository.save(permission);
         return true;
     }
 
     private int mergeLegacyAliases(PermissionCatalogSpec spec) {
-        int merged = 0;
+        AtomicInteger merged = new AtomicInteger();
 
             for (Map.Entry<String, PermissionCatalogSpec.EntitySpec> entry : spec.getEntities().entrySet()) {
                 String canonicalEntity = entry.getKey();
@@ -109,18 +122,20 @@ public class PermissionCatalogSyncService {
                             .findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(module, alias);
 
                     for (Permission legacy : legacyPermissions) {
-                        Optional<Permission> target = permissionRepository.findByModuleAndEntityAndPermissionName(
-                                module, canonicalEntity, legacy.getPermissionName());
+                        Optional<Permission> target = permissionRepository
+                                .findByModuleAndEntityAndPermissionNameAndIsDeletedFalse(
+                                        module, canonicalEntity, legacy.getPermissionName());
 
-                        target.ifPresent(targetPermission -> merged += mergeRoleGrants(legacy, targetPermission));
-
-                        legacy.setIsDeleted(true);
-                        permissionRepository.save(legacy);
+                        if (target.isPresent()) {
+                            merged.addAndGet(mergeRoleGrants(legacy, target.get()));
+                            legacy.setDeleted(true);
+                            permissionRepository.save(legacy);
+                        }
                     }
                 }
             }
 
-        return merged;
+        return merged.get();
     }
 
     private int mirrorRolePermissions(PermissionCatalogSpec spec) {
@@ -134,8 +149,9 @@ public class PermissionCatalogSyncService {
                     .findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(sourceModule, mirror.getSourceEntity());
 
             for (Permission sourcePermission : sourcePermissions) {
-                Optional<Permission> targetPermission = permissionRepository.findByModuleAndEntityAndPermissionName(
-                        targetModule, mirror.getTargetEntity(), sourcePermission.getPermissionName());
+                Optional<Permission> targetPermission = permissionRepository
+                        .findByModuleAndEntityAndPermissionNameAndIsDeletedFalse(
+                                targetModule, mirror.getTargetEntity(), sourcePermission.getPermissionName());
                 if (targetPermission.isEmpty()) {
                     continue;
                 }

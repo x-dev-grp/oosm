@@ -8,7 +8,6 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -17,7 +16,6 @@ import java.util.*;
 @Entity
 @Getter
 @Setter
-@Audited
 public class LabelContent extends BaseEntity {
 
     @Column(name = "lot_id", nullable = false)

@@ -7,14 +7,12 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.io.Serializable;
 @Data
 @Getter
 @Setter
 @Entity
-@Audited
 public class QCControlPoint extends BaseEntity implements Serializable {
 
     @ManyToOne

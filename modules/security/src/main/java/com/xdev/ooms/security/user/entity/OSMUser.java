@@ -7,16 +7,18 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
-import org.hibernate.envers.Audited;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.io.Serial;
 import java.util.Collection;
 
 @Entity
-@Audited
 public class OSMUser extends BaseEntity implements UserDetails {
+    @Serial
+    private static final long serialVersionUID = -7954089139215121063L;
+
     @Column(unique = true, nullable = false)
     private String username;
     private String firstName;
@@ -35,6 +37,12 @@ public class OSMUser extends BaseEntity implements UserDetails {
     private String oneSignalPlayerId;
     @Column( nullable = false)
     private Boolean enabled = false;
+
+    @Column(columnDefinition = "TEXT")
+    private String photoData;
+
+    @Column(length = 50)
+    private String photoContentType;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -154,5 +162,21 @@ public class OSMUser extends BaseEntity implements UserDetails {
     }
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public String getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(String photoData) {
+        this.photoData = photoData;
+    }
+
+    public String getPhotoContentType() {
+        return photoContentType;
+    }
+
+    public void setPhotoContentType(String photoContentType) {
+        this.photoContentType = photoContentType;
     }
 }

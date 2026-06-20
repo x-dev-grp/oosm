@@ -6,11 +6,9 @@ package com.xdev.ooms.inventory.bom.entity;
  import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 @Getter
 @Setter
-@Audited
 @Entity
 public class BomLine extends BaseEntity {
     @ManyToOne

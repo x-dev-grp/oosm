@@ -27,12 +27,23 @@ public class ExpensePortImpl implements ExpensePort {
         dto.setPaymentMethod(command.paymentMethod());
         dto.setObject(command.object());
         dto.setPurchaseNature(command.purchaseNature());
-        dto.setNotes(command.notes());
+        dto.setNotes(appendExternalReference(command.notes(), command.externalReference()));
         dto.setDate(LocalDate.now());
         dto.setStatus(ExpenseStatus.PAID);
         dto.setApproved(true);
         dto.setApprovalDate(LocalDate.now());
         ExpenseDto saved = expensesService.save(dto);
         return saved.getInvoiceRef();
+    }
+
+    private String appendExternalReference(String notes, String externalReference) {
+        if (externalReference == null || externalReference.isBlank()) {
+            return notes;
+        }
+        String prefix = "MaintenanceWorkOrder:" + externalReference.trim();
+        if (notes == null || notes.isBlank()) {
+            return prefix;
+        }
+        return prefix + " | " + notes.trim();
     }
 }

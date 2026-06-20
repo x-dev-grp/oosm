@@ -14,5 +14,11 @@ public interface PermissionRepository extends BaseRepository<Permission> {
             OSMModule module, String entity, String permissionName
     );
 
+    Optional<Permission> findByModuleAndEntityAndPermissionNameAndIsDeletedFalse(
+            OSMModule module, String entity, String permissionName
+    );
+
     List<Permission> findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(OSMModule module, String entity);
+
+    long countByIsDeletedFalse();
 }

@@ -50,11 +50,7 @@ public interface BaseController<E extends BaseEntity, INDTO extends BaseDto<E>, 
     @DeleteMapping("/delete/{id}")
     ResponseEntity<?> delete(@PathVariable UUID id);
 
-    @GetMapping(value = "/lastRevision/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    RevisionDto<E> findLastRevision(@PathVariable UUID id);
 
-    @GetMapping(value = "/allRevision/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
-    List<RevisionDto<E>> findAllRevisions(@PathVariable UUID id);
 
     @PostMapping("/export/pdf")
     ResponseEntity<byte[]> exportPdf(@RequestBody ExportDetails exportDetails);

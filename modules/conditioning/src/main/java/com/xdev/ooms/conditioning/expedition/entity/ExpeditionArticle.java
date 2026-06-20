@@ -4,13 +4,11 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.math.BigDecimal;
 import java.util.UUID;
 
 @Entity
-@Audited
 @Getter
 @Setter
 public class ExpeditionArticle extends BaseEntity {

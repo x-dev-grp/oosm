@@ -158,6 +158,8 @@ public class SecurityConfig {
                 if (principal.getPrincipal() instanceof OSMUser user) {
                     OSMUserOUTDTO dto = modelMapper.map(user, OSMUserOUTDTO.class);
                     dto.getRole().setPermissions(null);
+                    dto.setPhotoData(null);
+                    dto.setPhotoContentType(null);
                     context.getClaims()
                             .claim("osmUser",
                                     JWT_CLAIM_MAPPER.convertValue(dto, Map.class)

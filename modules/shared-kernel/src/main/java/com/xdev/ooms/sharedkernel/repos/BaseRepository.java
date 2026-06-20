@@ -6,14 +6,13 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.repository.NoRepositoryBean;
-import org.springframework.data.repository.history.RevisionRepository;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 @NoRepositoryBean
-public interface BaseRepository<E extends BaseEntity> extends JpaRepository<E, UUID>, RevisionRepository<E, UUID, Integer>, JpaSpecificationExecutor<E> {
+public interface BaseRepository<E extends BaseEntity> extends JpaRepository<E, UUID>, JpaSpecificationExecutor<E> {
     List<E> findByTenantId(UUID tenantId);
 
     Optional<E> findByExternalIdAndIsDeletedFalse(UUID externalId);

@@ -23,6 +23,14 @@ public interface UserRepository extends BaseRepository<OSMUser> {
     @Query("SELECT u FROM OSMUser u WHERE (u.phoneNumber = :input OR LOWER(u.email) = LOWER(:input)) AND COALESCE(u.isDeleted, FALSE) = FALSE")
     Optional<OSMUser> findByPhoneOrEmailIgnoreCase(@Param("input") String input);
 
+    @Query("""
+            SELECT DISTINCT u FROM OSMUser u
+            JOIN FETCH u.role r
+            LEFT JOIN FETCH r.permissions
+            WHERE u.username = :username AND COALESCE(u.isDeleted, FALSE) = FALSE
+            """)
+    Optional<OSMUser> findByUsernameWithRolePermissions(@Param("username") String username);
+
     Optional<OSMUser> findByEmailIgnoreCase(String email);
 
     Optional<OSMUser> findByEmailIgnoreCaseAndIsDeletedFalse(String email);

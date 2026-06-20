@@ -192,57 +192,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
         }
     }
 
-    @Override
-    public RevisionDto<E> findLastRevision(@PathVariable UUID id) {
-        long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findLastRevision", id);
 
-        try {
-            Optional<Revision<Integer, E>> revisionOptional = baseService.findLastRevisionById(id);
-            RevisionDto<E> revisionDto = new RevisionDto<E>();
-            if (revisionOptional.isPresent()) {
-                Revision<Integer, E> revision = revisionOptional.orElse(null);
-                E entity = revision.getEntity();
-                revisionDto.setRevisionMetadata(revision.getMetadata());
-                OUTDTO outDto = modelMapper.map(entity, baseService.getOutDTOClass());
-                revisionDto.setData(outDto);
-
-                OSMLogger.logMethodExit(this.getClass(), "findLastRevision", "Found revision for entity: " + entity.getId());
-                OSMLogger.logPerformance(this.getClass(), "findLastRevision", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "READ_LAST_REVISION", this.getClass().getSimpleName());
-            } else {
-                OSMLogger.logMethodExit(this.getClass(), "findLastRevision", "No revision found");
-                OSMLogger.logPerformance(this.getClass(), "findLastRevision", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "READ_LAST_REVISION", this.getClass().getSimpleName());
-            }
-            return revisionDto;
-        } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding last revision for ID: " + id, e);
-            throw e;
-        }
-    }
-
-    @Override
-    public List<RevisionDto<E>> findAllRevisions(@PathVariable UUID id) {
-        long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAllRevisions", id);
-
-        try {
-            List<Revision<Integer, E>> listRevision = baseService.findRevisionsById(id).getContent();
-            List<RevisionDto<E>> result = listRevision.stream()
-                    .map(ls -> new RevisionDto<E>(ls.getMetadata(), modelMapper.map(ls.getEntity(), baseService.getOutDTOClass())))
-                    .toList();
-
-            OSMLogger.logMethodExit(this.getClass(), "findAllRevisions", "Found " + result.size() + " revisions");
-            OSMLogger.logPerformance(this.getClass(), "findAllRevisions", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL_REVISIONS", this.getClass().getSimpleName());
-
-            return result;
-        } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding all revisions for ID: " + id, e);
-            throw e;
-        }
-    }
 
     @Transactional(readOnly = true)
     @Override

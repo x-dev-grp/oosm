@@ -9,8 +9,6 @@ import com.xdev.ooms.sharedkernel.models.SearchData;
 import com.xdev.ooms.sharedkernel.qr.model.QrCodeInfo;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import org.springframework.data.domain.Page;
-import org.springframework.data.history.Revision;
-import org.springframework.data.history.Revisions;
 
 import java.util.*;
 
@@ -39,12 +37,9 @@ public interface BaseService<E extends BaseEntity, INDTO extends BaseDto<E>, OUT
 
     void removeAll(Collection<INDTO> entities);
 
-    Optional<Revision<Integer, E>> findLastRevisionById(UUID id);
-
 
     void resolveEntityRelations(E entity);
 
-    Revisions<Integer, E> findRevisionsById(UUID id);
 
     SearchResponse<E, OUTDTO> search(SearchData searchData);
 
@@ -62,8 +57,6 @@ public interface BaseService<E extends BaseEntity, INDTO extends BaseDto<E>, OUT
         actions.add(Action.DELETE);
         return actions;
     }
-
-
 
 
     //------QRCode----//

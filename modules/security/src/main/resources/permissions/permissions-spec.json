@@ -416,6 +416,12 @@
         "GEN_PDF"
       ]
     },
+    "MAINTENANCEWORKORDER": {
+      "module": "PRODUCTION",
+      "description": "Equipment maintenance work orders",
+      "section": "entities",
+      "profile": "CRUD"
+    },
     "OILTRANSACTION": {
       "module": "PRODUCTION",
       "description": "Oil transaction management",

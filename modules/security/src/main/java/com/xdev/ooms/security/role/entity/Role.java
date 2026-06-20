@@ -3,7 +3,6 @@ package com.xdev.ooms.security.role.entity;
 import com.xdev.ooms.security.permission.entity.Permission;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
-import org.hibernate.envers.Audited;
 import org.hibernate.annotations.BatchSize;
 
 import java.util.HashSet;
@@ -11,7 +10,6 @@ import java.util.Set;
 
 
 @Entity
-@Audited
 public class Role extends BaseEntity {
     @Column(nullable = false, unique = true)
     private String roleName;

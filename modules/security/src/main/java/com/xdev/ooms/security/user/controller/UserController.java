@@ -1,15 +1,20 @@
 package com.xdev.ooms.security.user.controller;
 
+import com.xdev.ooms.security.user.dto.UserProfileUpdateDTO;
+import com.xdev.ooms.security.user.dto.UserPhotoDTO;
 import com.xdev.ooms.security.user.dto.AssignableUserDTO;
 import com.xdev.ooms.security.user.dto.OSMUserDTO;
 import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
+import com.xdev.ooms.security.user.dto.SessionRefreshResponse;
 import com.xdev.ooms.security.user.dto.UpdatePasswordDTO;
 import com.xdev.ooms.security.user.entity.OSMUser;
 import com.xdev.ooms.security.user.service.UserService;
+import com.xdev.ooms.security.user.service.UserSessionService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.models.OSMModule;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
@@ -27,10 +32,15 @@ import java.util.UUID;
 @RequestMapping("/api/security/user")
 public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMUserOUTDTO> {
     private final UserService userService;
+    private final UserSessionService userSessionService;
 
-    public UserController(BaseService<OSMUser, OSMUserDTO, OSMUserOUTDTO> baseService, ModelMapper modelMapper, UserService userService) {
+    public UserController(BaseService<OSMUser, OSMUserDTO, OSMUserOUTDTO> baseService,
+                          ModelMapper modelMapper,
+                          UserService userService,
+                          UserSessionService userSessionService) {
         super(baseService, modelMapper);
         this.userService = userService;
+        this.userSessionService = userSessionService;
     }
 
     @PostMapping("/auth/resetPassword")
@@ -240,6 +250,152 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
             OSMLogger.logException(this.getClass(),
                     "Unexpected error during initial password update for user: " + userId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update password");
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUserProfile() {
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            OSMUserOUTDTO profile = userService.getCurrentUserProfile(username);
+            return ResponseEntity.ok(profile);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error fetching current user profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to fetch profile");
+        }
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<?> updateCurrentUserProfile(@RequestBody UserProfileUpdateDTO dto) {
+        long startTime = System.currentTimeMillis();
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            OSMUserOUTDTO updated = userService.updateCurrentUserProfile(username, dto);
+
+            OSMLogger.logMethodExit(this.getClass(), "updateCurrentUserProfile",
+                    "Profile updated for user: " + username);
+            OSMLogger.logPerformance(this.getClass(), "updateCurrentUserProfile", startTime, System.currentTimeMillis());
+            OSMLogger.logSecurityEvent(this.getClass(), "USER_PROFILE_UPDATED",
+                    "Current user updated their profile: " + username);
+
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error updating current user profile", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update profile");
+        }
+    }
+
+    @PostMapping("/me/change-password")
+    public ResponseEntity<?> changeOwnPassword(@Valid @RequestBody UpdatePasswordDTO dto) {
+        long startTime = System.currentTimeMillis();
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            userService.changeOwnPassword(username, dto);
+
+            OSMLogger.logMethodExit(this.getClass(), "changeOwnPassword",
+                    "Password changed for user: " + username);
+            OSMLogger.logPerformance(this.getClass(), "changeOwnPassword", startTime, System.currentTimeMillis());
+            OSMLogger.logSecurityEvent(this.getClass(), "USER_PASSWORD_CHANGED",
+                    "Current user changed their password: " + username);
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error changing current user password", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to change password");
+        }
+    }
+
+    @GetMapping("/me/photo")
+    public ResponseEntity<?> getCurrentUserPhoto() {
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            return ResponseEntity.ok(userService.getCurrentUserPhoto(username));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error fetching current user photo", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to fetch photo");
+        }
+    }
+
+    @PostMapping("/me/photo")
+    public ResponseEntity<?> updateCurrentUserPhoto(@RequestBody UserPhotoDTO dto) {
+        long startTime = System.currentTimeMillis();
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            UserPhotoDTO updated = userService.updateCurrentUserPhoto(username, dto);
+
+            OSMLogger.logMethodExit(this.getClass(), "updateCurrentUserPhoto",
+                    "Photo updated for user: " + username);
+            OSMLogger.logPerformance(this.getClass(), "updateCurrentUserPhoto", startTime, System.currentTimeMillis());
+            OSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_UPDATED",
+                    "Current user updated their photo: " + username);
+
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error updating current user photo", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update photo");
+        }
+    }
+
+    @DeleteMapping("/me/photo")
+    public ResponseEntity<?> removeCurrentUserPhoto() {
+        long startTime = System.currentTimeMillis();
+        try {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
+            userService.removeCurrentUserPhoto(username);
+
+            OSMLogger.logMethodExit(this.getClass(), "removeCurrentUserPhoto",
+                    "Photo removed for user: " + username);
+            OSMLogger.logPerformance(this.getClass(), "removeCurrentUserPhoto", startTime, System.currentTimeMillis());
+            OSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_REMOVED",
+                    "Current user removed their photo: " + username);
+
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error removing current user photo", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to remove photo");
+        }
+    }
+
+    @PostMapping("/me/refresh-session")
+    public ResponseEntity<?> refreshSession(@RequestHeader(value = "Authorization", required = false) String authHeader) {
+        long startTime = System.currentTimeMillis();
+        OSMLogger.logMethodEntry(this.getClass(), "refreshSession", "Refreshing current user session");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        try {
+            String accessToken = authHeader.substring(7);
+            SessionRefreshResponse response = userSessionService.refreshSession(accessToken);
+
+            OSMLogger.logMethodExit(this.getClass(), "refreshSession", "Session refreshed successfully");
+            OSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
+            OSMLogger.logSecurityEvent(this.getClass(), "SESSION_PERMISSIONS_REFRESHED",
+                    "Current user session refreshed with updated permissions");
+
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            OSMLogger.logException(this.getClass(), "Error refreshing user session", e);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
 

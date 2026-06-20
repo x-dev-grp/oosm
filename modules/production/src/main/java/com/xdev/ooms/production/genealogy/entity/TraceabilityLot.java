@@ -7,7 +7,6 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -15,7 +14,6 @@ import java.util.UUID;
 @Entity
 @Getter
 @Setter
-@Audited
 public class TraceabilityLot extends BaseEntity {
 
     @Column(name = "lot_number", nullable = false, length = 120)

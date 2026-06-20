@@ -9,14 +9,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.envers.Audited;
 
 import java.time.LocalDateTime;
 
 @Setter
 @Getter
 @Entity
-@Audited
 public class ConfirmationCode extends BaseEntity {
     private String code;
     private ConfirmationCodeType confirmationCodeType;

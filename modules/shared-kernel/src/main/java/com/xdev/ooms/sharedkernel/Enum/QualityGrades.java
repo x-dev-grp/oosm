@@ -6,4 +6,5 @@ public enum QualityGrades {
     LAMPANTE ,
     OTHER ,
     REFINED,
+    POMACE,
 }
