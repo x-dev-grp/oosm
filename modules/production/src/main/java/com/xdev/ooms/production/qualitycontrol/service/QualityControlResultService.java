@@ -21,6 +21,8 @@ import  com.xdev.ooms.sharedkernel.Enum.OliveLotStatus;
 import  com.xdev.ooms.sharedkernel.Enum.OperationType;
 import  com.xdev.ooms.sharedkernel.Enum.RuleType;
 import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
+import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
@@ -45,6 +47,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     private final TraceabilityLotRepository traceabilityLotRepository;
     private final ModelMapper modelMapper;
     private final UnifiedDeliveryService unifiedDeliveryService;
+    private final NotificationPort notificationPort;
       private static final Set<String> allowedSet = Set.of(
               TunisiaOilGradeUtil.EXTRA_VIERGE,
               TunisiaOilGradeUtil.VIERGE,
@@ -52,7 +55,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
               "Vierge Extra", "Extra", "EXTRA_VIRGIN", "VIRGIN", "LAMPANTE"
       );
 
-    public QualityControlResultService(BaseRepository<QualityControlResult> repository, ModelMapper modelMapper, QualityControlResultRepository repository1, QualityControlRuleRepository ruleRepository, DeliveryRepository deliveryRepo, ModelMapper modelMapper1, UnifiedDeliveryService unifiedDeliveryService, DeliveryRepository deliveryRepository, TraceabilityLotRepository traceabilityLotRepository) {
+    public QualityControlResultService(BaseRepository<QualityControlResult> repository, ModelMapper modelMapper, QualityControlResultRepository repository1, QualityControlRuleRepository ruleRepository, DeliveryRepository deliveryRepo, ModelMapper modelMapper1, UnifiedDeliveryService unifiedDeliveryService, DeliveryRepository deliveryRepository, TraceabilityLotRepository traceabilityLotRepository, NotificationPort notificationPort) {
         super(repository, modelMapper);
         this.repository = repository1;
         this.ruleRepository = ruleRepository;
@@ -61,6 +64,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         this.unifiedDeliveryService = unifiedDeliveryService;
         this.deliveryRepository = deliveryRepository;
         this.traceabilityLotRepository = traceabilityLotRepository;
+        this.notificationPort = notificationPort;
      }
 
     @Override
@@ -142,6 +146,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             delivery.setStatus(delivery.getDeliveryType() == DeliveryType.OIL ? OliveLotStatus.OIL_CONTROLLED : OliveLotStatus.OLIVE_CONTROLLED);
         }
         deliveryRepo.save(delivery);
+        publishQcCompletedNotification(delivery);
 
         // 8) Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
@@ -189,6 +194,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         newOIlRec.setHasQualityControl(true);
         newOIlRec.setStatus(OliveLotStatus.OIL_CONTROLLED);
         deliveryRepo.save(newOIlRec);
+        publishQcCompletedNotification(newOIlRec);
 
         // Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
@@ -382,6 +388,28 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
 
         return TunisiaOilGradeUtil.suggestOilGrade(acidity, k232, k270, deltaK, peroxide);
+    }
+
+    private void publishQcCompletedNotification(UnifiedDelivery delivery) {
+        if (delivery == null || delivery.getId() == null) {
+            return;
+        }
+        try {
+            Map<String, String> fields = new HashMap<>();
+            fields.put(
+                    "deliveryType",
+                    delivery.getDeliveryType() != null ? delivery.getDeliveryType().name() : "");
+            fields.put("status", delivery.getStatus() != null ? delivery.getStatus().name() : "");
+            notificationPort.publish(new NotificationEvent(
+                    "UNIFIEDDELIVERY_QC_COMPLETED",
+                    delivery.getId(),
+                    delivery.getLotNumber() != null ? delivery.getLotNumber() : delivery.getGlobalLotNumber(),
+                    fields,
+                    null,
+                    null));
+        } catch (Exception ex) {
+            log.warn("Failed to publish QC completed notification: {}", ex.getMessage());
+        }
     }
 
 //    @Transactional(readOnly = true)

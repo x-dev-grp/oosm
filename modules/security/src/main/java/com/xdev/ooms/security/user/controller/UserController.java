@@ -156,6 +156,9 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
                 "User addition failed - Invalid input for username: " + username + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(),
                 "Unexpected error during user addition for username: " + username, e);
@@ -183,6 +186,9 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
             OSMLogger.logSecurityEvent(this.getClass(), "USER_UPDATE_INVALID",
                 "User update failed - Invalid input for user: " + username + " with ID: " + id + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+
+        } catch (org.springframework.security.access.AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
 
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(),

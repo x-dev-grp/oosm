@@ -1,0 +1,60 @@
+name: Deploy to VPS
+
+on:
+  workflow_dispatch:
+    inputs:
+      frontend_image_tag:
+        description: Frontend GHCR tag
+        required: false
+        default: release-latest
+      backend_image_tag:
+        description: Backend GHCR tag
+        required: false
+        default: release-latest
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: vps
+
+    env:
+      REGISTRY: ghcr.io
+      GHCR_ORG: x-dev-grp
+
+    steps:
+      - name: Resolve image tags
+        id: tags
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "backend=${{ inputs.backend_image_tag }}" >> "$GITHUB_OUTPUT"
+            echo "frontend=${{ inputs.frontend_image_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "backend=release-latest" >> "$GITHUB_OUTPUT"
+            echo "frontend=release-latest" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          BACKEND_IMAGE: ${{ env.REGISTRY }}/${{ env.GHCR_ORG }}/oosm-backend:${{ steps.tags.outputs.backend }}
+          FRONTEND_IMAGE: ${{ env.REGISTRY }}/${{ env.GHCR_ORG }}/osm-frontend:${{ steps.tags.outputs.frontend }}
+          GHCR_DEPLOY_USER: ${{ secrets.GHCR_DEPLOY_USER }}
+          GHCR_DEPLOY_TOKEN: ${{ secrets.GHCR_DEPLOY_TOKEN }}
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_PRIVATE_KEY }}
+          port: ${{ secrets.VPS_SSH_PORT || 22 }}
+          envs: BACKEND_IMAGE,FRONTEND_IMAGE,GHCR_DEPLOY_USER,GHCR_DEPLOY_TOKEN
+          script_stop: true
+          script: |
+            set -euo pipefail
+            cd "${{ secrets.VPS_DEPLOY_PATH }}"
+            if [ -n "${GHCR_DEPLOY_TOKEN:-}" ] && [ -n "${GHCR_DEPLOY_USER:-}" ]; then
+              echo "$GHCR_DEPLOY_TOKEN" | docker login ghcr.io -u "$GHCR_DEPLOY_USER" --password-stdin
+            fi
+            export BACKEND_IMAGE FRONTEND_IMAGE
+            docker compose --env-file .env pull backend frontend
+            docker compose --env-file .env up -d --remove-orphans
+            docker compose ps
+            docker image prune -f

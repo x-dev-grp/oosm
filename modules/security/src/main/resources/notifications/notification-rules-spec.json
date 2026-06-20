@@ -40,6 +40,36 @@
       "routeTemplate": "/finance/expenses",
       "priority": "NORMAL",
       "pushEnabled": false
+    },
+    "UNIFIEDDELIVERY_CREATED": {
+      "module": "RECEPTION",
+      "entity": "UNIFIEDDELIVERY",
+      "recipientAction": "READ",
+      "title": "New reception",
+      "recapTemplate": "{actor} registered reception {entityLabel} ({deliveryType}).",
+      "routeTemplate": "/reception/reception-details/{entityId}",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
+    "UNIFIEDDELIVERY_QC_COMPLETED": {
+      "module": "PRODUCTION",
+      "entity": "QUALITYCONTROLRESULT",
+      "recipientAction": "READ",
+      "title": "Quality control completed",
+      "recapTemplate": "{actor} completed quality control for reception {entityLabel} ({deliveryType}, {status}).",
+      "routeTemplate": "/reception/reception-details/{entityId}",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
+    "UNIFIEDDELIVERY_CRUSHING_COMPLETED": {
+      "module": "RECEPTION",
+      "entity": "UNIFIEDDELIVERY",
+      "recipientAction": "PLANNING",
+      "title": "Crushing completed",
+      "recapTemplate": "{actor} completed crushing for lot {entityLabel} (oil: {oilQuantity} kg, yield: {rendement}%).",
+      "routeTemplate": "/reception/reception-details/{entityId}",
+      "priority": "NORMAL",
+      "pushEnabled": true
     }
   }
 }

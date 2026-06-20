@@ -1,8 +1,9 @@
 package com.xdev.ooms.security.notification.controller;
 
+import com.xdev.ooms.security.notification.dto.NotificationPageResponse;
 import com.xdev.ooms.security.notification.dto.UserNotificationDto;
+import com.xdev.ooms.security.notification.entity.UserNotification;
 import com.xdev.ooms.security.notification.service.UserNotificationService;
-import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
@@ -29,18 +30,30 @@ public class NotificationController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<BaseEntity, UserNotificationDto>> list(
+    public ResponseEntity<NotificationPageResponse> list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             @RequestParam(defaultValue = "false") boolean unreadOnly) {
         try {
             Page<UserNotificationDto> notifications = userNotificationService.listForCurrentUser(page, size, unreadOnly);
-            return ResponseEntity.ok(new ApiResponse<>(
+            long unreadCount = userNotificationService.unreadCountForCurrentUser();
+            return ResponseEntity.ok(new NotificationPageResponse(
                     true,
                     "Notifications loaded",
-                    notifications.getContent()));
+                    notifications.getContent(),
+                    notifications.getTotalElements(),
+                    notifications.getNumber() + 1,
+                    notifications.getTotalPages(),
+                    unreadCount));
         } catch (Exception ex) {
-            return ExceptionHandler.handleException(this.getClass(), "list", ex);
+            return ResponseEntity.internalServerError().body(new NotificationPageResponse(
+                    false,
+                    ex.getMessage(),
+                    null,
+                    0,
+                    page + 1,
+                    0,
+                    0));
         }
     }
 
@@ -55,7 +68,7 @@ public class NotificationController {
     }
 
     @PatchMapping("/{id}/read")
-    public ResponseEntity<ApiSingleResponse<BaseEntity, UserNotificationDto>> markRead(@PathVariable UUID id) {
+    public ResponseEntity<ApiSingleResponse<UserNotification, UserNotificationDto>> markRead(@PathVariable UUID id) {
         try {
             UserNotificationDto dto = userNotificationService.markRead(id);
             return ResponseEntity.ok(new ApiSingleResponse<>(true, "Notification marked as read", dto));

@@ -1,10 +1,9 @@
 package com.xdev.ooms.security.role.controller;
 
 
-import com.xdev.ooms.security.user.dto.OSMUserDTO;
 import com.xdev.ooms.security.role.dto.RoleDTO;
 import com.xdev.ooms.security.role.entity.Role;
-import com.xdev.ooms.security.user.service.UserService;
+import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
@@ -16,15 +15,21 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/security/role")
 public class RoleController extends BaseControllerImpl<Role, RoleDTO, RoleDTO> {
-    private final UserService userService;
-    public RoleController(BaseService<Role, RoleDTO, RoleDTO> baseService, ModelMapper modelMapper, UserService userService) {
+    private final UserRepository userRepository;
+
+    public RoleController(
+            BaseService<Role, RoleDTO, RoleDTO> baseService,
+            ModelMapper modelMapper,
+            UserRepository userRepository) {
         super(baseService, modelMapper);
-        this.userService = userService;
+        this.userRepository = userRepository;
     }
 
     @GetMapping("/all-with-user-count")
@@ -37,20 +42,20 @@ public class RoleController extends BaseControllerImpl<Role, RoleDTO, RoleDTO> {
             
             if (roles != null && !roles.isEmpty()) {
                 OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "Found {} roles, calculating user counts", roles.size());
+
+                Map<String, Long> userCountsByRole = userRepository.countUsersGroupedByRole().stream()
+                        .collect(Collectors.toMap(
+                                row -> (String) row[0],
+                                row -> (Long) row[1],
+                                (left, right) -> left + right));
                 
                 List<RoleDTO> roleDTOs = roles.stream()
                         .filter(Objects::nonNull)
                         .peek(r -> {
-                            List<OSMUserDTO> users = userService.findByRoleName(r.getRoleName());
-                            if (users != null && !users.isEmpty()) {
-                                r.setUsersCount(users.size());
-                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, 
-                                    "Role {} has {} users", r.getRoleName(), users.size());
-                            } else {
-                                r.setUsersCount(0);
-                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, 
-                                    "Role {} has 0 users", r.getRoleName());
-                            }
+                            long count = userCountsByRole.getOrDefault(r.getRoleName(), 0L);
+                            r.setUsersCount((int) count);
+                            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG,
+                                    "Role {} has {} users", r.getRoleName(), count);
                         })
                         .toList();
                 

@@ -54,12 +54,13 @@ public interface UserRepository extends BaseRepository<OSMUser> {
             JOIN u.role r
             LEFT JOIN r.permissions p
             WHERE COALESCE(u.isDeleted, FALSE) = FALSE
-              AND (u.tenantId = :tenantId OR u.tenantId IS NULL)
+              AND u.tenantId = :tenantId
+              AND UPPER(r.roleName) <> 'OSMADMIN'
               AND (
                    (p.module = :module
                     AND UPPER(p.entity) = UPPER(:entity)
                     AND UPPER(p.permissionName) = UPPER(:permissionName))
-                   OR UPPER(r.roleName) IN ('ADMIN', 'OSMADMIN')
+                   OR UPPER(r.roleName) = 'ADMIN'
               )
             ORDER BY u.firstName, u.lastName, u.username
             """)
@@ -108,4 +109,15 @@ public interface UserRepository extends BaseRepository<OSMUser> {
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("UPDATE OSMUser u SET u.tenantId = NULL WHERE u.id = :id")
     void clearTenantId(@Param("id") UUID id);
+
+    @Query("""
+            SELECT u FROM OSMUser u
+            WHERE u.tenantId = :tenantId
+              AND u.id <> :excludeUserId
+              AND COALESCE(u.isDeleted, FALSE) = FALSE
+            ORDER BY u.firstName, u.lastName, u.username
+            """)
+    List<OSMUser> findActiveUsersByTenantExcluding(
+            @Param("tenantId") UUID tenantId,
+            @Param("excludeUserId") UUID excludeUserId);
 }

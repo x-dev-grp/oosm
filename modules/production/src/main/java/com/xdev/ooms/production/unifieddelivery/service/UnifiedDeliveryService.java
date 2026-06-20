@@ -29,12 +29,16 @@ import  com.xdev.ooms.sharedkernel.Enum.Currency;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.FinancialTransactionDto;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.ports.FinancialTransactionPort;
+import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
+import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,6 +50,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, UnifiedDeliveryDTO, UnifiedDeliveryDTO> {
+
+    private static final Logger log = LoggerFactory.getLogger(UnifiedDeliveryService.class);
 
     public static final String DELIVERY_NUMBER = "deliveryNumber";
     public static final String D = "%03d";
@@ -62,8 +68,9 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     private final OilTransactionService oilTransactionService;
     private final FinancialTransactionPort financialTransactionPort;
     private final QualityControlResultRepository qualityControlResultRepository;
+    private final NotificationPort notificationPort;
 
-    public UnifiedDeliveryService(BaseRepository<UnifiedDelivery> repository, ModelMapper modelMapper, DeliveryRepository deliveryRepository, SupplierRepository supplierRepository, StorageUnitRepo storageUnitRepo, GenericRepository genericRepository, OilTransactionService oilTransactionService, FinancialTransactionPort financialTransactionPort, QualityControlResultRepository qualityControlResultRepository) {
+    public UnifiedDeliveryService(BaseRepository<UnifiedDelivery> repository, ModelMapper modelMapper, DeliveryRepository deliveryRepository, SupplierRepository supplierRepository, StorageUnitRepo storageUnitRepo, GenericRepository genericRepository, OilTransactionService oilTransactionService, FinancialTransactionPort financialTransactionPort, QualityControlResultRepository qualityControlResultRepository, NotificationPort notificationPort) {
         super(repository, modelMapper);
         this.deliveryRepository = deliveryRepository;
         this.supplierRepository = supplierRepository;
@@ -72,6 +79,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         this.oilTransactionService = oilTransactionService;
         this.financialTransactionPort = financialTransactionPort;
         this.qualityControlResultRepository = qualityControlResultRepository;
+        this.notificationPort = notificationPort;
     }
 
     private static double r3(double v) {
@@ -146,6 +154,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         // Save entity
         UnifiedDelivery savedDelivery = deliveryRepository.saveAndFlush(delivery);
         savedDelivery = ensureQrCodeIfSupported(savedDelivery);
+        publishReceptionCreatedNotification(savedDelivery);
 
         // Map back to DTO and return
         OSMLogger.logMethodExit(this.getClass(), "save", savedDelivery);
@@ -1480,6 +1489,27 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             return "/reception";
         }
         return "/reception/reception-details/" + entity.getId();
+    }
+
+    private void publishReceptionCreatedNotification(UnifiedDelivery delivery) {
+        if (delivery == null || delivery.getId() == null) {
+            return;
+        }
+        try {
+            Map<String, String> fields = new HashMap<>();
+            fields.put(
+                    "deliveryType",
+                    delivery.getDeliveryType() != null ? delivery.getDeliveryType().name() : "");
+            notificationPort.publish(new NotificationEvent(
+                    "UNIFIEDDELIVERY_CREATED",
+                    delivery.getId(),
+                    delivery.getLotNumber() != null ? delivery.getLotNumber() : delivery.getGlobalLotNumber(),
+                    fields,
+                    null,
+                    null));
+        } catch (Exception ex) {
+            log.warn("Failed to publish reception created notification: {}", ex.getMessage());
+        }
     }
 
 }

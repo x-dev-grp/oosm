@@ -22,6 +22,8 @@ import com.xdev.ooms.production.unifieddelivery.repository.DeliveryRepository;
 import com.xdev.ooms.production.millmachine.repository.MillMachineRepository;
 import  com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionDto;
+import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
+import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
@@ -53,12 +55,15 @@ public class PlanningService {
     private final ModelMapper modelMapper;
     private final UnifiedDeliveryService unifiedDeliveryService;
     private final OilTransactionService oilTransactionService;
-    public PlanningService(MillMachineRepository millRepo, DeliveryRepository deliveryRepo, ModelMapper modelMapper, UnifiedDeliveryService unifiedDeliveryService, OilTransactionService oilTransactionService) {
+    private final NotificationPort notificationPort;
+
+    public PlanningService(MillMachineRepository millRepo, DeliveryRepository deliveryRepo, ModelMapper modelMapper, UnifiedDeliveryService unifiedDeliveryService, OilTransactionService oilTransactionService, NotificationPort notificationPort) {
         this.millRepo = millRepo;
         this.deliveryRepo = deliveryRepo;
         this.modelMapper = modelMapper;
         this.unifiedDeliveryService = unifiedDeliveryService;
         this.oilTransactionService = oilTransactionService;
+        this.notificationPort = notificationPort;
     }
 
     @Transactional
@@ -392,6 +397,7 @@ public class PlanningService {
             }
 
 
+            publishCrushingCompletedNotification(lot, oilQuantity, rendement);
             log.info("Lot {} marked as completed with oilQuantity: {}, rendement: {}, unpaidPrice: {}", lotNumber, oilQuantity, rendement, unpaidPrice);
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "markLotCompleted", e);
@@ -562,6 +568,26 @@ public class PlanningService {
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", e);
             throw e;
+        }
+    }
+
+    private void publishCrushingCompletedNotification(UnifiedDelivery lot, Double oilQuantity, Double rendement) {
+        if (lot == null || lot.getId() == null) {
+            return;
+        }
+        try {
+            Map<String, String> fields = new HashMap<>();
+            fields.put("oilQuantity", oilQuantity != null ? String.valueOf(oilQuantity) : "");
+            fields.put("rendement", rendement != null ? String.valueOf(rendement) : "");
+            notificationPort.publish(new NotificationEvent(
+                    "UNIFIEDDELIVERY_CRUSHING_COMPLETED",
+                    lot.getId(),
+                    lot.getLotNumber() != null ? lot.getLotNumber() : lot.getGlobalLotNumber(),
+                    fields,
+                    null,
+                    null));
+        } catch (Exception ex) {
+            log.warn("Failed to publish crushing completed notification: {}", ex.getMessage());
         }
     }
 

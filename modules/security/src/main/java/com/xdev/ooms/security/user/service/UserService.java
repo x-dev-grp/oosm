@@ -29,16 +29,22 @@ import com.xdev.ooms.sharedkernel.models.SearchData;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.CredentialExpiredException;
+import jakarta.persistence.EntityNotFoundException;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -48,6 +54,8 @@ import java.util.stream.Collectors;
 public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUTDTO> implements UserDetailsService {
     private static final int MAX_PHOTO_BYTES = 200 * 1024;
     private static final Set<String> ALLOWED_PHOTO_TYPES = Set.of("image/png", "image/jpeg", "image/jpg");
+    private static final String USER_MGMT_MODULE = "HABILITATION";
+    private static final String USER_MGMT_ENTITY = "OSMUSER";
 
     private final UserRepository userRepository;
     private final MailService mailService;
@@ -86,9 +94,59 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
 
     @Override
     public SearchResponse<OSMUser, OSMUserOUTDTO> search(SearchData searchData) {
+        assertCanListUsers();
         SearchResponse<OSMUser, OSMUserOUTDTO> response = super.search(searchData);
         enrichTenantNames(response.getData());
+        stripPhotoPayloads(response.getData());
         return response;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OSMUserOUTDTO findById(UUID id) {
+        OSMUser target = userRepository.findByIdAndIsDeletedFalse(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with this id " + id));
+
+        if (isCurrentUser(id)) {
+            String username = SecurityUtils.getCurrentUsername()
+                    .orElseThrow(() -> new UsernameNotFoundException("Unauthorized"));
+            return getCurrentUserProfile(username);
+        }
+
+        assertCanViewUser(target);
+        OSMUserOUTDTO result = modelMapper.map(target, OSMUserOUTDTO.class);
+        enrichTenantNames(List.of(result));
+        stripPhotoPayloads(List.of(result));
+        return result;
+    }
+
+    private void stripPhotoPayloads(List<OSMUserOUTDTO> users) {
+        if (users == null) {
+            return;
+        }
+        for (OSMUserOUTDTO user : users) {
+            if (user == null) {
+                continue;
+            }
+            user.setPhotoData(null);
+            user.setPhotoContentType(null);
+        }
+    }
+
+    private void assertCanListUsers() {
+        if (!hasUserManagementPermission("READ")) {
+            throw new AccessDeniedException("You are not allowed to list users");
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<OSMUserOUTDTO> findAll() {
+        assertCanListUsers();
+        List<OSMUserOUTDTO> users = super.findAll();
+        enrichTenantNames(users);
+        stripPhotoPayloads(users);
+        return users;
     }
 
     private void enrichTenantNames(List<OSMUserOUTDTO> users) {
@@ -158,6 +216,7 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         OSMLogger.logMethodEntry(this.getClass(), "addUser", "Adding new user: " + username);
 
         try {
+            assertCanCreateUser();
             validateUserDTO(userDTO);
             checkExistUser(userDTO.getUsername(), userDTO.getEmail(), userDTO.getPhoneNumber());
 
@@ -200,6 +259,7 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
             OSMUser user = repository.findByIdAndIsDeletedFalse(id)
                     .orElseThrow(() -> new UsernameNotFoundException(id.toString()));
 
+            assertCanManageUser(user);
             checkUserToUpdate(user, userDTO.getUsername(), userDTO.getEmail(), userDTO.getPhoneNumber());
 
             boolean usernameChanged = !Objects.equals(userDTO.getUsername(), user.getUsername());
@@ -594,6 +654,7 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         if (dto.getRole() != null) {
             dto.getRole().setPermissions(null);
         }
+        stripPhotoPayloads(List.of(dto));
         return dto;
     }
 
@@ -887,10 +948,77 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
                     .orElseThrow(() -> new RuntimeException("User not found: " + userIdOrUsername));
         }
 
+        UUID currentUserId = SecurityUtils.getCurrentUserId()
+                .orElseThrow(() -> new AccessDeniedException("Unauthorized"));
+        if (!currentUserId.equals(user.getId())) {
+            throw new AccessDeniedException("You can only register devices for your own account");
+        }
+
         user.setOneSignalPlayerId(playerId);
         userRepository.save(user);
         OSMLogger.logSecurityEvent(this.getClass(), "PLAYER_ID_UPDATED",
                 "OneSignal Player ID updated for user: " + userIdOrUsername);
+    }
+
+    private boolean isCurrentUser(UUID userId) {
+        if (userId == null) {
+            return false;
+        }
+        return SecurityUtils.getCurrentUserId().map(userId::equals).orElse(false);
+    }
+
+    private boolean isTenantAdmin() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth instanceof JwtAuthenticationToken jwtAuth) {
+            String role = jwtAuth.getToken().getClaimAsString("role");
+            if (role != null && "ADMIN".equalsIgnoreCase(role)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasUserManagementPermission(String action) {
+        if (isTenantAdmin()) {
+            return true;
+        }
+        String required = String.format("%s:%s:%s", USER_MGMT_MODULE, USER_MGMT_ENTITY, action).toUpperCase(Locale.ROOT);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null) {
+            return false;
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(granted -> required.equalsIgnoreCase(granted.getAuthority()));
+    }
+
+    private void assertCanCreateUser() {
+        if (!hasUserManagementPermission("CREATE")) {
+            throw new AccessDeniedException("You are not allowed to create users");
+        }
+    }
+
+    private void assertCanViewUser(OSMUser target) {
+        if (!hasUserManagementPermission("READ")) {
+            throw new AccessDeniedException("You are not allowed to view this user");
+        }
+        assertSameTenant(target);
+    }
+
+    private void assertCanManageUser(OSMUser target) {
+        if (isCurrentUser(target.getId())) {
+            throw new AccessDeniedException("Use your profile settings to update your own account");
+        }
+        if (!hasUserManagementPermission("UPDATE")) {
+            throw new AccessDeniedException("You are not allowed to update users");
+        }
+        assertSameTenant(target);
+    }
+
+    private void assertSameTenant(OSMUser target) {
+        UUID tenantId = TenantContext.getCurrentTenant();
+        if (tenantId == null || target.getTenantId() == null || !tenantId.equals(target.getTenantId())) {
+            throw new AccessDeniedException("User is not in your organization");
+        }
     }
 
 }

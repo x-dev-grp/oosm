@@ -1,5 +1,7 @@
 # OSM 2.0 Railway Deployment
 
+> **Testing environment:** see [RAILWAY_TESTING.md](RAILWAY_TESTING.md) for the full stack (Postgres + backend + frontend + GitHub Actions).
+
 OSM 2.0 is the deployment target for the backend. It is a modular monolith: one Spring Boot service, one deployable jar, one PostgreSQL database.
 
 ## Service

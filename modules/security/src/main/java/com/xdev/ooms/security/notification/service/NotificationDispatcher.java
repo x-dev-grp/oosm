@@ -74,7 +74,7 @@ public class NotificationDispatcher {
 
         UUID tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {
-            log.debug("Skipping notification {} because tenant is missing", event.ruleCode());
+            log.warn("Skipping notification {} because tenant is missing", event.ruleCode());
             return;
         }
 
@@ -100,9 +100,22 @@ public class NotificationDispatcher {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (recipientIds.isEmpty()) {
-            log.debug("No recipients for notification rule {}", event.ruleCode());
+            log.warn(
+                    "No recipients for notification rule {} (module={}, entity={}, action={}, tenant={})",
+                    event.ruleCode(),
+                    module,
+                    entity,
+                    recipientAction,
+                    tenantId);
             return;
         }
+
+        log.info(
+                "Dispatching notification {} to {} recipient(s) (tenant={}, entityId={})",
+                event.ruleCode(),
+                recipientIds.size(),
+                tenantId,
+                event.entityId());
 
         String title = rule.getTitle();
         String recap = messageBuilder.buildRecap(rule, event, actorDisplayName);
@@ -110,6 +123,7 @@ public class NotificationDispatcher {
         Map<String, String> payload = buildPayload(event, webRoute);
 
         List<String> playerIds = new ArrayList<>();
+        List<UserNotification> notificationsToSave = new ArrayList<>();
         for (OSMUser user : recipients) {
             if (!recipientIds.contains(user.getId())) {
                 continue;
@@ -129,7 +143,7 @@ public class NotificationDispatcher {
             notification.setActorUserId(actorUserId);
             notification.setActorDisplayName(actorDisplayName);
             AuditHelper.applyAuditOnCreate(notification);
-            notificationRepository.save(notification);
+            notificationsToSave.add(notification);
 
             if (rule.isPushEnabled()
                     && oneSignalAppId != null
@@ -138,6 +152,10 @@ public class NotificationDispatcher {
                     && !user.getOneSignalPlayerId().isBlank()) {
                 playerIds.add(user.getOneSignalPlayerId());
             }
+        }
+
+        if (!notificationsToSave.isEmpty()) {
+            notificationRepository.saveAll(notificationsToSave);
         }
 
         if (!playerIds.isEmpty()) {
