@@ -36,7 +36,7 @@ On each deploy, GitHub Actions runs [`scripts/railway-link-postgres.sh`](scripts
 |----------|-----------|
 | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (internal — **not** `DATABASE_PUBLIC_URL`) |
 | `DB_USER` / `DB_PASS` | `${{Postgres.PGUSER}}` / `${{Postgres.PGPASSWORD}}` |
-| `PGHOST`, `PGPORT`, `PGDATABASE` | Same Postgres service |
+| `PGHOST`, `PGPORT`, `PGDATABASE` | `${{Postgres.PGHOST}}` etc. — **hostname only**, never paste `DATABASE_URL` into `PGHOST` |
 
 **Requirements**
 
@@ -77,6 +77,15 @@ The backend is using an **old Render database URL**, not Railway Postgres.
 4. Redeploy
 
 Or run `./scripts/railway-link-postgres.sh` — it removes `DB_URL` and sets Postgres references.
+
+### Troubleshooting: `UnknownHostException: postgres:password@postgres.railway.internal`
+
+`PGHOST` was set to `user:password@host` instead of just `postgres.railway.internal`.
+
+1. Delete `PGHOST` if its value contains `@` or `:`
+2. Re-add **reference**: `PGHOST` → `Postgres.PGHOST` (value must be `postgres.railway.internal`)
+3. Ensure `DATABASE_URL` → `Postgres.DATABASE_URL` (reference)
+4. Redeploy (new `docker/entrypoint.sh` parses `DATABASE_URL` correctly)
 
 ## 3. Frontend service (`osm-ms-fe` repo)
 

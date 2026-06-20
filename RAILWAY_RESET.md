@@ -48,7 +48,9 @@ PGDATABASE    →  Postgres.PGDATABASE
 Or paste from [`railway-db.references`](railway-db.references).
 
 **Correct internal host:** `postgres.railway.internal`  
-**Wrong hosts:** `dpg-*`, `*.proxy.rlwy.net` (public URL)
+**Wrong hosts:** `dpg-*`, `*.proxy.rlwy.net` (public URL), `postgres:password@...` (never use as `PGHOST`)
+
+`PGHOST` must be **only** `postgres.railway.internal` — use reference `Postgres.PGHOST`, not a copy of `DATABASE_URL`.
 
 ### 4. Set non-DB variables (backend)
 
