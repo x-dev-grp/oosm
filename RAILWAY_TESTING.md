@@ -138,6 +138,7 @@ npm start
 
 ## Related docs
 
+- **Clean reset / fix dpg- errors:** [RAILWAY_RESET.md](RAILWAY_RESET.md)
 - Frontend: `../osm-ms-fe/RAILWAY_DEPLOYMENT.md`
 - Database scripts: [RAILWAY_DATABASE_BOOTSTRAP.md](RAILWAY_DATABASE_BOOTSTRAP.md)
 - VPS production: [deploy/vps/README.md](deploy/vps/README.md)
