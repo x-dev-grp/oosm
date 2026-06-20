@@ -127,7 +127,7 @@ app:
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
   security:
     jwt:
-      key-path: ${JWT_KEY_PATH:./app/src/main/resources/keys/osm-jwt-key}
+      secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
     bootstrap:
       enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
       username: ${SECURITY_BOOTSTRAP_USERNAME:osmAdmin}
@@ -160,6 +160,7 @@ springdoc:
 management:
   endpoints:
     web:
+      base-path: /actuator
       exposure:
         include: health,info
   endpoint:
@@ -167,6 +168,18 @@ management:
       show-details: ${HEALTH_SHOW_DETAILS:never}
       probes:
         enabled: true
+      group:
+        liveness:
+          include: livenessState
+          show-details: never
+        readiness:
+          include: readinessState,db
+          show-details: never
+  health:
+    livenessstate:
+      enabled: true
+    readinessstate:
+      enabled: true
 
 logging:
   config: classpath:logback-spring.xml

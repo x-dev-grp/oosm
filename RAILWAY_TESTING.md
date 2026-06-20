@@ -41,19 +41,19 @@ Copy from [`.env.railway.example`](.env.railway.example). Minimum:
 | `INTERNAL_BASE_URL` | Same as public backend URL |
 | `FRONTEND_ENTRY_POINT` | Frontend public URL (set after frontend deploy) |
 | `APP_CORS_ALLOWED_ORIGIN_PATTERNS` | `https://<frontend-domain>,https://*.up.railway.app` |
-| `OAUTH2_CLIENT_SECRET` | Strong secret (match frontend client config) |
+| `JWT_SECRET` | Long random string (32+ chars) — same value on every redeploy |
 | `SECURITY_BOOTSTRAP_*` | Optional first admin (disable after login) |
 
 `Dockerfile` converts Railway `DATABASE_URL` (`postgres://…`) to JDBC when `DB_URL` is unset.
 
-**JWT key persistence (recommended):** attach a Railway Volume mounted at `/app/data` on the backend service so OAuth signing keys survive redeploys. Do not use `VOLUME` in the Dockerfile — Railway configures volumes in the dashboard.
+JWT keys use a single **`JWT_SECRET`** environment variable (symmetric HS256). No volume or key files required. Local dev uses the default in `application.yml` unless you override `JWT_SECRET`.
 
 After first deploy, run optional SQL from [RAILWAY_DATABASE_BOOTSTRAP.md](RAILWAY_DATABASE_BOOTSTRAP.md) if you need seeds beyond Hibernate `update`.
 
 ## 3. Frontend service (`osm-ms-fe` repo)
 
 1. **New service** → **GitHub repo** → select frontend repo.
-2. Uses `Dockerfile` + `railway.json` (health check `/`).
+2. Uses `Dockerfile` + `railway.json` (health check `/health`).
 
 | Variable | Value |
 |----------|--------|

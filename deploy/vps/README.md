@@ -38,7 +38,7 @@ Put TLS in front with Caddy, nginx, or Traefik on the host, or terminate HTTPS a
 |----------|-------------|
 | `PUBLIC_APP_URL` | Public app URL, e.g. `https://osm.example.com` |
 | `DB_PASS` | PostgreSQL password |
-| `OAUTH2_CLIENT_SECRET` | OAuth client secret (must match frontend client) |
+| `JWT_SECRET` | Long random string (32+ chars) for token signing |
 | `BACKEND_IMAGE` / `FRONTEND_IMAGE` | GHCR image references |
 
 See `.env.example` for the full list.

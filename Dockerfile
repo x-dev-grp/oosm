@@ -14,14 +14,11 @@ WORKDIR /app
 RUN apt-get update \
     && apt-get install -y --no-install-recommends curl \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --uid 10001 --create-home osm \
-    && mkdir -p /app/data \
-    && chown osm:osm /app/data
+    && useradd --system --uid 10001 --create-home osm
 
 COPY --from=build --chown=osm:osm /workspace/app/target/osm-monolith.jar /app/osm-monolith.jar
 
 ENV SERVER_PORT=8084 \
-    JWT_KEY_PATH=/app/data/osm-jwt-key \
     JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError" \
     JAVA_OPTS=""
 
@@ -29,7 +26,7 @@ USER osm
 
 EXPOSE 8084
 
-HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 \
-    CMD curl --fail --silent "http://localhost:${PORT:-${SERVER_PORT}}/actuator/health/liveness" > /dev/null || exit 1
+HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=8 \
+    CMD sh -c 'curl --fail --silent "http://127.0.0.1:${PORT:-8084}/actuator/health/liveness" > /dev/null || exit 1'
 
 ENTRYPOINT ["sh", "-c", "if [ -n \"$DATABASE_URL\" ] && [ -z \"$DB_URL\" ]; then export DB_URL=\"$(printf '%s' \"$DATABASE_URL\" | sed -e 's#^postgres://#jdbc:postgresql://#' -e 's#^postgresql://#jdbc:postgresql://#')\"; fi; java $JAVA_OPTS -jar /app/osm-monolith.jar"]

@@ -69,7 +69,12 @@ public class AuthServerConfig {
 
         try {
             http
-                    .securityMatcher("/api/security/user/auth/**", "/api/security/user/me/refresh-session")
+                    .securityMatcher(
+                            "/actuator/health",
+                            "/actuator/health/**",
+                            "/api/security/user/auth/**",
+                            "/api/security/user/me/refresh-session"
+                    )
                     .authorizeHttpRequests(auth -> auth.anyRequest().permitAll())
                     .csrf(csrf -> csrf.disable())
                     .cors(Customizer.withDefaults())
