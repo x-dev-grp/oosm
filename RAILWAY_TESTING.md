@@ -12,7 +12,7 @@ Deploy the **backend**, **frontend**, and **PostgreSQL** to [Railway](https://ra
    *.up.railway.app         *.up.railway.app
 ```
 
-Users hit the **frontend** URL. Nginx proxies API, OAuth, WebSocket (`/ws`), and actuator paths to the backend.
+Users hit the **frontend** URL. Nginx proxies API, OAuth, and actuator paths to the backend.
 
 ## 1. Create Railway project
 
@@ -130,7 +130,6 @@ You can also enable **Railway native GitHub deploy** on each service (Settings �
 
 1. Backend: `https://<backend>/actuator/health/liveness` → `UP`
 2. Frontend: open `https://<frontend>/` → login page
-3. Chat: WebSocket via `/ws` (proxied by frontend nginx)
 
 ## 6. Local parity
 

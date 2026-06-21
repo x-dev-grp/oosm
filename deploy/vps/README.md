@@ -87,10 +87,6 @@ cp .env.example .env
 docker compose --env-file .env up -d
 ```
 
-## Chat / WebSocket
-
-The frontend nginx image proxies `/ws` to the backend for STOMP chat. No extra VPS config is required when using the provided compose stack.
-
 ## Updating
 
 ```bash

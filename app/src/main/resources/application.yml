@@ -134,6 +134,7 @@ app:
       password: ${SECURITY_BOOTSTRAP_PASSWORD:}
       email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
       phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
+      reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:true}
     permissions:
       # Always seeds when the permission table is empty. Set true to re-sync on every startup.
       sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}

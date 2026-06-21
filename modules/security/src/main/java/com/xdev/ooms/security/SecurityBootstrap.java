@@ -36,6 +36,7 @@ public class SecurityBootstrap {
     private final String adminPassword;
     private final String adminEmail;
     private final String adminPhone;
+    private final boolean resetExistingAdminPassword;
 
     public SecurityBootstrap(UserService userService,
                              RoleService roleService,
@@ -45,7 +46,8 @@ public class SecurityBootstrap {
                              @Value("${app.security.bootstrap.username}") String adminUsername,
                              @Value("${app.security.bootstrap.password}") String adminPassword,
                              @Value("${app.security.bootstrap.email}") String adminEmail,
-                             @Value("${app.security.bootstrap.phone}") String adminPhone) {
+                             @Value("${app.security.bootstrap.phone}") String adminPhone,
+                             @Value("${app.security.bootstrap.reset-existing-admin-password:true}") boolean resetExistingAdminPassword) {
         this.userService = userService;
         this.roleService = roleService;
         this.passwordEncoder = passwordEncoder;
@@ -55,6 +57,7 @@ public class SecurityBootstrap {
         this.adminPassword = adminPassword;
         this.adminEmail = adminEmail;
         this.adminPhone = adminPhone;
+        this.resetExistingAdminPassword = resetExistingAdminPassword;
     }
 
     @Bean
@@ -92,7 +95,19 @@ public class SecurityBootstrap {
 
         Optional<OSMUser> existing = userRepository.findByUsername(adminUsername);
         if (existing.isPresent()) {
-            log.debug("User '{}' already exists (id={})", adminUsername, existing.get().getId());
+            OSMUser user = existing.get();
+            log.info("User '{}' already exists (id={})", adminUsername, user.getId());
+            if (resetExistingAdminPassword) {
+                user.setPassword(passwordEncoder.encode(adminPassword));
+                user.setLocked(false);
+                user.setEnabled(true);
+                user.setNewUser(false);
+                if (user.getRole() == null) {
+                    user.setRole(roleRepository.findByRoleName(OSMADMIN).orElseThrow());
+                }
+                userRepository.save(user);
+                log.info("Reset bootstrap password for user '{}'", adminUsername);
+            }
             return;
         }
 
@@ -105,5 +120,11 @@ public class SecurityBootstrap {
         dto.setRole(role);
         dto.setLocked(false);
         userService.save(dto);
+
+        userRepository.findByUsername(adminUsername).ifPresent(user -> {
+            user.setEnabled(true);
+            user.setNewUser(false);
+            userRepository.save(user);
+        });
     }
 }

@@ -6,7 +6,7 @@ import com.xdev.ooms.production.genealogy.dto.GlobalLotDto;
 import com.xdev.ooms.production.millmachine.dto.MillMachineDto;
 import com.xdev.ooms.production.oiltransaction.dto.OilTransactionDTO;
 import com.xdev.ooms.production.oiltransaction.entity.OilTransaction;
-import com.xdev.ooms.production.oiltransaction.service.OilTransactionService;
+import com.xdev.ooms.production.maintenance.service.MillMachineAvailabilityService;
 import com.xdev.ooms.production.planning.dto.MillPlanDTO;
 import com.xdev.ooms.production.planning.dto.PlanItemDTO;
 import com.xdev.ooms.production.planning.dto.PlanningSaveRequest;
@@ -27,6 +27,7 @@ import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
@@ -56,14 +57,23 @@ public class PlanningService {
     private final UnifiedDeliveryService unifiedDeliveryService;
     private final OilTransactionService oilTransactionService;
     private final NotificationPort notificationPort;
+    private final MillMachineAvailabilityService millMachineAvailabilityService;
 
-    public PlanningService(MillMachineRepository millRepo, DeliveryRepository deliveryRepo, ModelMapper modelMapper, UnifiedDeliveryService unifiedDeliveryService, OilTransactionService oilTransactionService, NotificationPort notificationPort) {
+    public PlanningService(
+            MillMachineRepository millRepo,
+            DeliveryRepository deliveryRepo,
+            ModelMapper modelMapper,
+            UnifiedDeliveryService unifiedDeliveryService,
+            OilTransactionService oilTransactionService,
+            NotificationPort notificationPort,
+            MillMachineAvailabilityService millMachineAvailabilityService) {
         this.millRepo = millRepo;
         this.deliveryRepo = deliveryRepo;
         this.modelMapper = modelMapper;
         this.unifiedDeliveryService = unifiedDeliveryService;
         this.oilTransactionService = oilTransactionService;
         this.notificationPort = notificationPort;
+        this.millMachineAvailabilityService = millMachineAvailabilityService;
     }
 
     @Transactional
@@ -107,6 +117,10 @@ public class PlanningService {
             Set<String> processedLotNumbers = new HashSet<>();
             req.getMills().forEach(millPlan -> {
                 if (millPlan.getItems() != null && !millPlan.getItems().isEmpty()) {
+                    MillMachine mill = millRepo.findById(millPlan.getMillMachineId())
+                            .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millPlan.getMillMachineId()));
+                    millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
+
                     // Process regular lots
                     millPlan.getItems().stream().filter(item -> item.getType().equals("LOT")).forEach(item -> {
                         UnifiedDelivery delivery = deliveryMap.get(item.getId());

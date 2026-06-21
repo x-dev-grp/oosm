@@ -46,6 +46,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
     private final LigneConditionnementRepository ligneConditionnementRepository;
     private final ExpensePort expensePort;
     private final NotificationPort notificationPort;
+    private final MillMachineAvailabilityService millMachineAvailabilityService;
 
     public MaintenanceWorkOrderService(
             BaseRepository<MaintenanceWorkOrder> repository,
@@ -55,7 +56,8 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             StorageUnitRepo storageUnitRepo,
             LigneConditionnementRepository ligneConditionnementRepository,
             ExpensePort expensePort,
-            NotificationPort notificationPort) {
+            NotificationPort notificationPort,
+            MillMachineAvailabilityService millMachineAvailabilityService) {
         super(repository, modelMapper);
         this.maintenanceWorkOrderRepository = maintenanceWorkOrderRepository;
         this.millMachineRepository = millMachineRepository;
@@ -63,6 +65,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
         this.ligneConditionnementRepository = ligneConditionnementRepository;
         this.expensePort = expensePort;
         this.notificationPort = notificationPort;
+        this.millMachineAvailabilityService = millMachineAvailabilityService;
     }
 
     @Override
@@ -278,14 +281,14 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
                 .orElseThrow(() -> new EntityNotFoundException("Mill machine not found"));
         machine.setLastMaintenanceDate(lastMaintenance);
         machine.setNextMaintenanceDate(nextMaintenance);
-        if (status == MaintenanceWorkOrderStatus.COMPLETED) {
-            machine.setOperatingStatus("OPERATIONAL");
-        } else if (status == MaintenanceWorkOrderStatus.CANCELLED) {
-            if ("MAINTENANCE".equalsIgnoreCase(machine.getOperatingStatus())) {
-                machine.setOperatingStatus("OPERATIONAL");
-            }
-        } else if (underMaintenance) {
+        if (status == MaintenanceWorkOrderStatus.COMPLETED || status == MaintenanceWorkOrderStatus.CANCELLED) {
+            millMachineAvailabilityService.refreshMillOperatingStatus(assetId);
+            return;
+        }
+        if (underMaintenance) {
             machine.setOperatingStatus("MAINTENANCE");
+            millMachineRepository.save(machine);
+            return;
         }
         millMachineRepository.save(machine);
     }
