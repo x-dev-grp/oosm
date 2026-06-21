@@ -1,5 +1,6 @@
 package com.xdev.ooms.sharedkernel.utils;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
@@ -80,5 +81,44 @@ public final class SecurityUtils {
             Object username = map.get("username");
             return username != null ? username.toString() : null;
         });
+    }
+
+    public static Optional<String> getCurrentRole() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return Optional.empty();
+        }
+
+        if (auth.getPrincipal() instanceof Jwt jwt) {
+            String role = jwt.getClaimAsString("role");
+            if (role != null && !role.isBlank()) {
+                return Optional.of(normalizeRole(role));
+            }
+        }
+
+        return auth.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(authority -> authority != null && !authority.isBlank())
+                .map(SecurityUtils::normalizeRole)
+                .filter(role -> "ADMIN".equals(role) || "OSMADMIN".equals(role))
+                .findFirst();
+    }
+
+    public static boolean isOsmAdmin() {
+        return getCurrentRole().map("OSMADMIN"::equals).orElse(false);
+    }
+
+    public static boolean isTenantAdmin() {
+        return getCurrentRole().map("ADMIN"::equals).orElse(false);
+    }
+
+    public static boolean hasElevatedAdminAccess() {
+        return getCurrentRole()
+                .map(role -> "ADMIN".equals(role) || "OSMADMIN".equals(role))
+                .orElse(false);
+    }
+
+    private static String normalizeRole(String role) {
+        return role.trim().toUpperCase().replace("ROLE_", "");
     }
 }

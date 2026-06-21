@@ -8,9 +8,12 @@ import com.xdev.ooms.security.companyprofile.service.CompanyProfileService;
 
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -30,12 +33,15 @@ public class CompanyProfileController extends BaseControllerImpl<CompanyProfile,
     }
 
     @PostMapping("/save")
+    @PreAuthorize("authentication.tokenAttributes['role'] == 'OSMADMIN' or hasAnyAuthority('OSMADMIN', 'ROLE_OSMADMIN')")
     public ResponseEntity<?> saveCompany(@RequestBody CompanyUserDTO userDTO) {
         try {
             CompanyUserDTO companyUser = companyProfileService.save(userDTO);
             return ResponseEntity.ok(companyUser);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Message error: " + e.getMessage());
         }

@@ -6,6 +6,7 @@ import com.xdev.ooms.production.genealogy.dto.GlobalLotDto;
 import com.xdev.ooms.production.millmachine.dto.MillMachineDto;
 import com.xdev.ooms.production.oiltransaction.dto.OilTransactionDTO;
 import com.xdev.ooms.production.oiltransaction.entity.OilTransaction;
+import com.xdev.ooms.production.oiltransaction.service.OilTransactionService;
 import com.xdev.ooms.production.maintenance.service.MillMachineAvailabilityService;
 import com.xdev.ooms.production.planning.dto.MillPlanDTO;
 import com.xdev.ooms.production.planning.dto.PlanItemDTO;
@@ -125,7 +126,6 @@ public class PlanningService {
                     millPlan.getItems().stream().filter(item -> item.getType().equals("LOT")).forEach(item -> {
                         UnifiedDelivery delivery = deliveryMap.get(item.getId());
                         if (delivery != null && delivery.getStatus() != OliveLotStatus.COMPLETED) {
-                            MillMachine mill = millRepo.findById(millPlan.getMillMachineId()).orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millPlan.getMillMachineId()));
                             delivery.setMillMachine(mill);
                             delivery.setStatus(OliveLotStatus.IN_PROGRESS); // Set assigned lots to IN_PROGRESS
                             processedLotNumbers.add(delivery.getLotNumber());
@@ -134,8 +134,6 @@ public class PlanningService {
 
                     // Process global lots
                     millPlan.getItems().stream().filter(item -> item.getType().equals("GLOBAL_LOT")).forEach(item -> req.getGlobalLots().stream().filter(gl -> gl.getGlobalLotNumber().equals(item.getId())).findFirst().ifPresent(globalLot -> {
-                        MillMachine mill = millRepo.findById(millPlan.getMillMachineId()).orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millPlan.getMillMachineId()));
-
                         globalLot.getLots().forEach(lotDto -> {
                             UnifiedDelivery delivery = deliveryMap.get(lotDto.getLotNumber());
                             if (delivery != null && delivery.getStatus() != OliveLotStatus.COMPLETED) {

@@ -30,6 +30,7 @@ import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
+import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -967,19 +968,8 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
         return SecurityUtils.getCurrentUserId().map(userId::equals).orElse(false);
     }
 
-    private boolean isTenantAdmin() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        if (auth instanceof JwtAuthenticationToken jwtAuth) {
-            String role = jwtAuth.getToken().getClaimAsString("role");
-            if (role != null && "ADMIN".equalsIgnoreCase(role)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     private boolean hasUserManagementPermission(String action) {
-        if (isTenantAdmin()) {
+        if (SecurityUtils.hasElevatedAdminAccess()) {
             return true;
         }
         String required = String.format("%s:%s:%s", USER_MGMT_MODULE, USER_MGMT_ENTITY, action).toUpperCase(Locale.ROOT);
@@ -1015,6 +1005,9 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
     }
 
     private void assertSameTenant(OSMUser target) {
+        if (SecurityUtils.isOsmAdmin()) {
+            return;
+        }
         UUID tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null || target.getTenantId() == null || !tenantId.equals(target.getTenantId())) {
             throw new AccessDeniedException("User is not in your organization");

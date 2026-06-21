@@ -16,6 +16,7 @@ import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -25,6 +26,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.util.*;
 
@@ -69,6 +71,9 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
 
     @Transactional
     public CompanyUserDTO save(CompanyUserDTO dto) throws Exception {
+        if (!SecurityUtils.isOsmAdmin()) {
+            throw new AccessDeniedException("Only OSM administrators can create companies");
+        }
         if (dto == null || dto.getCompanyUser() == null) return null;
         CompanyProfile company = new CompanyProfile();
         company.setLegalName(dto.getLegalName());
