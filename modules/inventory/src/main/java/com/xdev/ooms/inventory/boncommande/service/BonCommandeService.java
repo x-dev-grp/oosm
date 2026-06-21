@@ -1,7 +1,7 @@
 package com.xdev.ooms.inventory.boncommande.service;
 
-import com.itextpdf.text.log.Logger;
-import com.itextpdf.text.log.LoggerFactory;
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto;
 import com.xdev.ooms.inventory.articlesec.service.ArticleSecService;
@@ -36,7 +36,6 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
     private final LigneBonCommandeRepository ligneBonCommandeRepository;
     private final ArticleSecService articleSecService;
     private final StockSecService stockSecService;
-    private static final Logger logger = LoggerFactory.getLogger(BonCommandeService.class);
 
     @Autowired
     public BonCommandeService(BaseRepository<BonCommande> repository,
@@ -80,7 +79,7 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
                                 ArticleSecDto articleDto = articleSecService.findById(ligne.getArticle().getId());
                                 ligneDto.setArticle(articleDto);
                             } catch (Exception e) {
-                                logger.error("Impossible de charger l'article {}");
+                                OSMLogger.error(BonCommandeService.class, "Impossible de charger l'article {}");
                             }
                         }
                         ligneDto.setQuantiteCommandee(ligne.getQuantiteCommandee());

@@ -1,5 +1,7 @@
 package com.xdev.ooms.production.unifieddelivery.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.production.oiltransaction.entity.OilTransaction;
 
 import com.xdev.ooms.sharedkernel.basetype.entity.BaseType;
@@ -33,12 +35,9 @@ import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,8 +49,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, UnifiedDeliveryDTO, UnifiedDeliveryDTO> {
-
-    private static final Logger log = LoggerFactory.getLogger(UnifiedDeliveryService.class);
 
     public static final String DELIVERY_NUMBER = "deliveryNumber";
     public static final String D = "%03d";
@@ -1508,7 +1505,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     null,
                     null));
         } catch (Exception ex) {
-            log.warn("Failed to publish reception created notification: {}", ex.getMessage());
+            OSMLogger.warn(UnifiedDeliveryService.class, "Failed to publish reception created notification: {}", ex.getMessage());
         }
     }
 

@@ -1,5 +1,6 @@
 package com.xdev.ooms.conditioning.qualitycontrol.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 
 import com.xdev.ooms.conditioning.Enum.StatutOF;
 import com.xdev.ooms.conditioning.ordrefabrication.service.OFService;
@@ -21,8 +22,6 @@ import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,8 +33,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCResultDTO> {
-
-    private static final Logger log = LoggerFactory.getLogger(QCResultService.class);
 
     private final QCResultRepository resultRepository;
     private final QCControlPointRepository controlPointRepository;
@@ -127,7 +124,7 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
                         null,
                         null));
             } catch (Exception e) {
-                log.warn("Failed to publish OF blocked notification: {}", e.getMessage());
+                OSMLogger.warn(QCResultService.class, "Failed to publish OF blocked notification: {}", e.getMessage());
             }
         }
     }

@@ -1,5 +1,7 @@
 package com.xdev.ooms.conditioning.ordrefabrication.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.conditioning.Enum.QualityStatus;
 import com.xdev.ooms.conditioning.Enum.StatutOF;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
@@ -34,8 +36,6 @@ import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,7 +48,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricationDto, OrdreFabricationDto> {
-    private static final Logger log = LoggerFactory.getLogger(OFService.class);
     private static final String STATUT_PROJET_EN_COURS = "EN_COURS";
 
     @Autowired
@@ -838,7 +837,7 @@ public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricatio
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            log.warn("Erreur validation lot vrac {}: {}", lotVracId, e.getMessage());
+            OSMLogger.warn(OFService.class, "Erreur validation lot vrac {}: {}", lotVracId, e.getMessage());
             throw new RuntimeException("Impossible de valider le lot vrac selectionne", e);
         }
     }

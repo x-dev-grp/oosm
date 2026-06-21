@@ -1,5 +1,7 @@
 package com.xdev.ooms.sharedkernel.services.impl;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -32,7 +34,6 @@ import com.xdev.ooms.sharedkernel.services.GlobalCodeSearchContributor;
 import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import com.xdev.ooms.sharedkernel.utils.BusinessCodeGenerator;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -40,8 +41,6 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.*;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -73,7 +72,6 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     private static final int MAX_RECORDS_PER_DOCUMENT = 1000;
     protected final BaseRepository<E> repository;
     protected final ModelMapper modelMapper;
-    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     protected Class<E> entityClass;
     protected Class<INDTO> inDTOClass;
     protected Class<OUTDTO> outDTOClass;
@@ -1114,7 +1112,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 //            return "";
 //        } catch (IllegalAccessException e) {
 //            // Log the error if needed
-//            LOGGER.error("Error accessing field " + fieldDetails.getName(), e);
+//            OSMLogger.error(BaseServiceImpl.class, "Error accessing field " + fieldDetails.getName(), e);
 //            return "";
 //        }
 //    }
@@ -1561,7 +1559,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             }
             return "";
         } catch (IllegalAccessException e) {
-            LOGGER.error("Error accessing field " + fieldDetails.getName(), e);
+            OSMLogger.error(BaseServiceImpl.class, "Error accessing field " + fieldDetails.getName(), e);
             return "";
         }
     }

@@ -1,5 +1,6 @@
 package com.xdev.ooms.finance.oilcredit.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 
 import com.xdev.ooms.finance.oilcredit.dto.OilCreditDto;
 import com.xdev.ooms.finance.oilcredit.entity.OilCredit;
@@ -13,8 +14,6 @@ import com.xdev.ooms.sharedkernel.ports.OilTransactionPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,7 +22,6 @@ import java.util.UUID;
 
 @Service
 public class OilCreditService extends BaseServiceImpl<OilCredit, OilCreditDto, OilCreditDto> {
-   private static final Logger log = LoggerFactory.getLogger(OilCreditService.class);
 
    private final OilTransactionPort oilTransactionPort;
     private final OilCreditPort oilCreditPort;
@@ -53,19 +51,19 @@ public class OilCreditService extends BaseServiceImpl<OilCredit, OilCreditDto, O
 
         OilTransactionDTO created = oilTransactionPort.create(oilTransaction);
         if (created == null || created.getExternalId() == null) {
-            log.error("Oil transaction creation failed for oil credit request");
+            OSMLogger.error(OilCreditService.class, "Oil transaction creation failed for oil credit request");
             throw new RuntimeException("Failed to create oil transaction");
         }
 
         UUID createdId = created.getExternalId();
-        log.info("Successfully created oil transaction with ID: {}", createdId);
+        OSMLogger.info(OilCreditService.class, "Successfully created oil transaction with ID: {}", createdId);
 
         OilCredit oilCredit = modelMapper.map(request, OilCredit.class);
         oilCredit.setTransaction_id_out(createdId);
         BaseType baseType = baseTypeService.handelBaseType(request.getOil_type());
         oilCredit.setOil_type(baseType);
         oilCredit = repository.save(oilCredit);
-        log.info("Saved oil credit with ID: {} and transaction ID: {}",
+        OSMLogger.info(OilCreditService.class, "Saved oil credit with ID: {} and transaction ID: {}",
                 oilCredit.getId(), createdId);
 
         return modelMapper.map(oilCredit, OilCreditDto.class);

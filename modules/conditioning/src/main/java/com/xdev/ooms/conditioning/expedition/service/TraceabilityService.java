@@ -1,5 +1,7 @@
 package com.xdev.ooms.conditioning.expedition.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.conditioning.expedition.dto.GenealogyDto;
@@ -13,8 +15,6 @@ import com.xdev.ooms.conditioning.ordrefabrication.entity.OrdreFabrication;
 import com.xdev.ooms.conditioning.ordrefabrication.repository.OrdreFabricationRepository;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
 import com.xdev.ooms.conditioning.support.ConditioningProductionSupport;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +37,7 @@ public class TraceabilityService {
             List<OrdreFabrication> ofs = ofRepository.findAllByProjetIdAndIsDeletedFalse(projectId);
             return buildTraceabilityMap(projectId, ofs, null);
         } catch (Exception e) {
-            log.error("Failed to get live project traceability", e);
+            OSMLogger.error(TraceabilityService.class, "Failed to get live project traceability", e);
             throw new IllegalStateException("Impossible de charger la traçabilité en direct du projet", e);
         }
     }
@@ -56,7 +56,7 @@ public class TraceabilityService {
                 refreshRuntimeEventChains(snapshot, projectId, ofs, expedition);
                 return snapshot;
             } catch (Exception e) {
-                log.warn("Snapshot JSON invalide pour expedition {}, reconstruction live", expedition.getId());
+                OSMLogger.warn(TraceabilityService.class, "Snapshot JSON invalide pour expedition {}, reconstruction live", expedition.getId());
             }
         }
         return buildTraceabilityMap(projectId, ofs, expedition);
@@ -158,10 +158,10 @@ public class TraceabilityService {
             String json = objectMapper.writeValueAsString(snapshot);
             expedition.setTraceabilitySnapshotJson(json);
 
-            log.info("Traceability snapshot captured for expedition {}", expedition.getId());
+            OSMLogger.info(TraceabilityService.class, "Traceability snapshot captured for expedition {}", expedition.getId());
             return json;
         } catch (Exception e) {
-            log.error("Failed to capture traceability snapshot", e);
+            OSMLogger.error(TraceabilityService.class, "Failed to capture traceability snapshot", e);
             throw new IllegalStateException("Impossible de capturer la tracabilite complete de l'expedition", e);
         }
     }
@@ -184,7 +184,7 @@ public class TraceabilityService {
                     ProduitFinalDto product = inventorySupport.getProduitFinalById(of.getProductId());
                     if (product != null) ofSnapshot.put("articleName", product.getName());
                 } catch (Exception e) {
-                    log.warn("Could not fetch article name for Product {}", of.getProductId());
+                    OSMLogger.warn(TraceabilityService.class, "Could not fetch article name for Product {}", of.getProductId());
                 }
             }
 
@@ -209,7 +209,7 @@ public class TraceabilityService {
                     packagedLabelsByLot.put(anchorKey, labelSnapshotsForLot(of));
                 }
             } catch (Exception e) {
-                log.warn("Genealogie huile introuvable ou erreur pour l'ancre {}", genealogyAnchor);
+                OSMLogger.warn(TraceabilityService.class, "Genealogie huile introuvable ou erreur pour l'ancre {}", genealogyAnchor);
             }
         }
 
@@ -272,7 +272,7 @@ public class TraceabilityService {
                 if (expeditionProjectId != null && Objects.equals(ofProjectId, expeditionProjectId)) {
                     ordered.put(of.getId(), of);
                 } else {
-                    log.warn("OF {} does not belong to project {}, skipping in traceability", of.getId(), expeditionProjectId);
+                    OSMLogger.warn(TraceabilityService.class, "OF {} does not belong to project {}, skipping in traceability", of.getId(), expeditionProjectId);
                 }
             });
         }
@@ -350,7 +350,7 @@ public class TraceabilityService {
                 ofRepository.save(of);
             }
         } catch (Exception e) {
-            log.warn("Impossible de retro-renseigner traceabilityLotId pour l'OF {}", of.getId());
+            OSMLogger.warn(TraceabilityService.class, "Impossible de retro-renseigner traceabilityLotId pour l'OF {}", of.getId());
         }
     }
 
@@ -366,11 +366,9 @@ public class TraceabilityService {
                 labelContentRepository.save(label);
             }
         } catch (Exception e) {
-            log.warn("Impossible de retro-renseigner traceabilityLotId pour l'etiquette {}", label.getId());
+            OSMLogger.warn(TraceabilityService.class, "Impossible de retro-renseigner traceabilityLotId pour l'etiquette {}", label.getId());
         }
     }
-
-    private static final Logger log = LoggerFactory.getLogger(TraceabilityService.class);
 
     public TraceabilityService(ConditioningProductionSupport productionSupport, ConditioningInventorySupport inventorySupport, OrdreFabricationRepository ofRepository, LabelContentRepository labelContentRepository, ExpeditionRepository expeditionRepository, ObjectMapper objectMapper) {
         this.productionSupport = productionSupport;

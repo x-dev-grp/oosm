@@ -2,6 +2,7 @@ package com.xdev.ooms.sharedkernel.notifications;
 
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
 import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -62,7 +63,7 @@ public class OneSignalService  implements OneSignalServiceImpl {
         try {
             ResponseEntity<String> response = restTemplate.postForEntity(endpoint, request, String.class);
             String responseBody = response.getBody();
-            System.out.println("OneSignal response body: " + responseBody);
+            OSMLogger.debug(OneSignalService.class, "OneSignal response received: {}", responseBody);
 
             if (responseBody != null && responseBody.contains("\"recipients\":0")) {
                 return "ONESIGNAL_WARNING: 0 recipients (Player ID is invalid or unsubscribed) - " + responseBody;
@@ -73,10 +74,11 @@ public class OneSignalService  implements OneSignalServiceImpl {
 
             return "SUCCESS";
         } catch (org.springframework.web.client.HttpStatusCodeException e) {
-            System.err.println("OneSignal error: " + e.getResponseBodyAsString());
+            OSMLogger.error(OneSignalService.class, "OneSignal request failed with status {}: {}",
+                    e.getStatusCode(), e.getResponseBodyAsString(), e);
             return "ONESIGNAL_ERROR: " + e.getStatusCode() + " - " + e.getResponseBodyAsString();
         } catch (Exception e) {
-            System.err.println("OneSignal error: " + e.getMessage());
+            OSMLogger.logException(OneSignalService.class, "Unexpected OneSignal request failure", e);
             return "INTERNAL_ERROR: " + e.getMessage();
         }
     }

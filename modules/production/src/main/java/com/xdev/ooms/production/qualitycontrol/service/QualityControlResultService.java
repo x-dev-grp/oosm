@@ -1,5 +1,6 @@
 package com.xdev.ooms.production.qualitycontrol.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 
 import com.xdev.ooms.production.genealogy.entity.TraceabilityLot;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
@@ -25,10 +26,7 @@ import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,8 +36,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class QualityControlResultService extends BaseServiceImpl<QualityControlResult, QualityControlResultDto, QualityControlResultDto> {
-
-    private static final Logger log = LoggerFactory.getLogger(QualityControlResultService.class);
     private final DeliveryRepository deliveryRepository;
     private final QualityControlResultRepository repository;
     private final QualityControlRuleRepository ruleRepository;
@@ -165,7 +161,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             return Collections.emptyList();
         }
         UnifiedDelivery newOIlRec = unifiedDeliveryService.createOilRecFromOliveRecImpl(idx, true, std);
-        log.info("Saving QC results for idx: {} ({} results)", idx, dtos.size());
+        OSMLogger.info(QualityControlResultService.class, "Saving QC results for idx: {} ({} results)", idx, dtos.size());
         // Validate rules
         Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos);
         // Map each DTO → entity (no delivery linkage)
@@ -310,14 +306,14 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     public List<QualityControlResultDto> findByDeliveryId(UUID deliveryId) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "findByDeliveryId", deliveryId);
-        log.debug("Fetching quality control results for deliveryId: {}", deliveryId);
+        OSMLogger.debug(QualityControlResultService.class, "Fetching quality control results for deliveryId: {}", deliveryId);
         if (deliveryId == null) {
-            log.error("Delivery ID is null");
+            OSMLogger.error(QualityControlResultService.class, "Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID is required");
         }
 
         List<QualityControlResult> results = repository.findByDeliveryId(deliveryId);
-        log.debug("Found {} quality control results for deliveryId: {}", results.size(), deliveryId);
+        OSMLogger.debug(QualityControlResultService.class, "Found {} quality control results for deliveryId: {}", results.size(), deliveryId);
 
         List<QualityControlResultDto> resultDtos = results.stream().map(entity -> modelMapper.map(entity, QualityControlResultDto.class)).collect(Collectors.toList());
         OSMLogger.logMethodExit(this.getClass(), "findByDeliveryId", resultDtos);
@@ -408,7 +404,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                     null,
                     null));
         } catch (Exception ex) {
-            log.warn("Failed to publish QC completed notification: {}", ex.getMessage());
+            OSMLogger.warn(QualityControlResultService.class, "Failed to publish QC completed notification: {}", ex.getMessage());
         }
     }
 

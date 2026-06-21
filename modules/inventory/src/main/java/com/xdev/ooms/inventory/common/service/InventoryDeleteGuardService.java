@@ -1,5 +1,7 @@
 package com.xdev.ooms.inventory.common.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.InventoryUsageBlockersDto;
 import com.xdev.ooms.sharedkernel.ports.ConditioningUsagePort;
@@ -10,8 +12,6 @@ import com.xdev.ooms.inventory.bom.repository.BomLineRepository;
 import com.xdev.ooms.inventory.bom.repository.BomRepository;
 import com.xdev.ooms.inventory.boncommande.repository.LigneBonCommandeRepository;
 import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,8 +20,6 @@ import java.util.UUID;
 
 @Service
 public class InventoryDeleteGuardService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(InventoryDeleteGuardService.class);
 
     private static final EnumSet<StatutBonCommande> OPEN_BON_COMMANDE_STATUSES = EnumSet.of(
             StatutBonCommande.EN_ATTENTE,
@@ -138,7 +136,7 @@ public class InventoryDeleteGuardService {
         try {
             return conditioningUsagePort.getArticleUsageBlockers(articleId);
         } catch (RuntimeException ex) {
-            LOGGER.warn("Conditioning article usage check failed for {}: {}", articleId, ex.getMessage());
+            OSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning article usage check failed for {}: {}", articleId, ex.getMessage());
             throw usageCheckUnavailable();
         }
     }
@@ -147,7 +145,7 @@ public class InventoryDeleteGuardService {
         try {
             return conditioningUsagePort.getProductUsageBlockers(productId);
         } catch (RuntimeException ex) {
-            LOGGER.warn("Conditioning product usage check failed for {}: {}", productId, ex.getMessage());
+            OSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning product usage check failed for {}: {}", productId, ex.getMessage());
             throw usageCheckUnavailable();
         }
     }

@@ -1,5 +1,7 @@
 package com.xdev.ooms.production.planning.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 
 import com.xdev.ooms.production.genealogy.dto.GlobalLotDto;
@@ -26,13 +28,10 @@ import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionD
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,7 +50,6 @@ public class PlanningService {
     public static final String MILL_NOT_FOUND = "Mill not found: ";
     public static final String DELIVERY_NOT_FOUND = "Delivery not found: ";
     public static final String NO_DELIVERIES_FOUND_FOR_GLOBAL_LOT = "No deliveries found for global lot: ";
-    private static final Logger log = LoggerFactory.getLogger(PlanningService.class);
     private final MillMachineRepository millRepo;
     private final DeliveryRepository deliveryRepo;
     private final ModelMapper modelMapper;
@@ -82,7 +80,7 @@ public class PlanningService {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "savePlanning", req);
         try {
-            log.info("Saving planning at {}", new Date());
+            OSMLogger.info(PlanningService.class, "Saving planning at {}", new Date());
 
             validateRequest(req);
 
@@ -100,7 +98,7 @@ public class PlanningService {
 
             // 4. If no lots are assigned in the request, clear all mill assignments
             if (req.getMills().stream().allMatch(m -> m.getItems().isEmpty())) {
-                log.info("No lots assigned in request, clearing all mill assignments");
+                OSMLogger.info(PlanningService.class, "No lots assigned in request, clearing all mill assignments");
                 deliveryMap.values().forEach(d -> {
                     d.setMillMachine(null);
                     if (d.getOperationType() == OperationType.BASE || d.getOperationType() == OperationType.EXCHANGE) {
@@ -173,7 +171,7 @@ public class PlanningService {
             // 7. Save all changes
             deliveryRepo.saveAll(deliveryMap.values());
 
-            log.info("Planning saved successfully. {} lots assigned to mills, {} lots unassigned", processedLotNumbers.size(), deliveryMap.size() - processedLotNumbers.size());
+            OSMLogger.info(PlanningService.class, "Planning saved successfully. {} lots assigned to mills, {} lots unassigned", processedLotNumbers.size(), deliveryMap.size() - processedLotNumbers.size());
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "savePlanning", e);
             throw e;
@@ -247,7 +245,7 @@ public class PlanningService {
     public PlanningSaveRequest getPlanning() {
         long startTime = System.currentTimeMillis();
         try {
-            log.info("Fetching current planning state at {}", new Date());
+            OSMLogger.info(PlanningService.class, "Fetching current planning state at {}", new Date());
 
             // Get all mills
             List<MillMachine> mills = millRepo.findAll();
@@ -410,7 +408,7 @@ public class PlanningService {
 
 
             publishCrushingCompletedNotification(lot, oilQuantity, rendement);
-            log.info("Lot {} marked as completed with oilQuantity: {}, rendement: {}, unpaidPrice: {}", lotNumber, oilQuantity, rendement, unpaidPrice);
+            OSMLogger.info(PlanningService.class, "Lot {} marked as completed with oilQuantity: {}, rendement: {}, unpaidPrice: {}", lotNumber, oilQuantity, rendement, unpaidPrice);
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "markLotCompleted", e);
             throw e;
@@ -443,7 +441,7 @@ public class PlanningService {
             }
             // delegate each child
             childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree, trtDateIso, finalObservation));
-            log.info("Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
+            OSMLogger.info(PlanningService.class, "Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
             if (existing.getFirst().getOperationType() == OperationType.BASE || existing.getFirst().getOperationType() == OperationType.OLIVE_PURCHASE) {
                 createGlobalOilReception(globalLotNumber, oilQuantity, rendement);
             }
@@ -599,7 +597,7 @@ public class PlanningService {
                     null,
                     null));
         } catch (Exception ex) {
-            log.warn("Failed to publish crushing completed notification: {}", ex.getMessage());
+            OSMLogger.warn(PlanningService.class, "Failed to publish crushing completed notification: {}", ex.getMessage());
         }
     }
 

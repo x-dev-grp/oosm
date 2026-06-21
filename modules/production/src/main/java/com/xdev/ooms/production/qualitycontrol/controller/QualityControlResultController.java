@@ -1,5 +1,7 @@
 package com.xdev.ooms.production.qualitycontrol.controller;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.production.qualitycontrol.dto.QualityControlResultDto;
 
 
@@ -9,10 +11,7 @@ import com.xdev.ooms.production.qualitycontrol.service.QualityControlResultServi
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import org.modelmapper.ModelMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotWritableException;
 import org.springframework.web.bind.annotation.*;
@@ -23,8 +22,6 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/production/qualitycontrolresult")
 public class QualityControlResultController extends BaseControllerImpl<QualityControlResult, QualityControlResultDto, QualityControlResultDto> {
-
-    private static final Logger log = LoggerFactory.getLogger(QualityControlResultController.class);
     private final QualityControlResultService qualityControlResultService;
 
 
@@ -43,13 +40,13 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
             ApiResponse<QualityControlResult, QualityControlResultDto> ff = new ApiResponse<>(true, "", qualityControlResultService.saveAll(dtos));
             return ResponseEntity.ok(ff);
         } catch (IllegalArgumentException e) {
-            log.error("Bad request: {}", e.getMessage());
+            OSMLogger.error(QualityControlResultController.class, "Bad request: {}", e.getMessage());
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error saving quality control results: " + e.getMessage(), null));
         } catch (HttpMessageNotWritableException e) {
-            log.error("Serialization error: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Serialization error: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error serializing response: " + e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         } finally {
             OSMLogger.logMethodExit(this.getClass(), "saveBatch", null);
@@ -68,13 +65,13 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
             ApiResponse<QualityControlResult, QualityControlResultDto> response = new ApiResponse<>(true, "", qualityControlResultService.saveOilQcForOliveRec(idx, dtos,std));
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            log.error("Bad request: {}", e.getMessage());
+            OSMLogger.error(QualityControlResultController.class, "Bad request: {}", e.getMessage());
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error saving quality control results: " + e.getMessage(), null));
         } catch (HttpMessageNotWritableException e) {
-            log.error("Serialization error: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Serialization error: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error serializing response: " + e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error: {}", e.getMessage(), e);
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         } finally {
             OSMLogger.logMethodExit(this.getClass(), "saveBatchDirect", null);
@@ -88,13 +85,13 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
         OSMLogger.logMethodEntry(this.getClass(), "getResultsByDelivery", deliveryId);
         try {
             List<QualityControlResultDto> results = qualityControlResultService.findByDeliveryId(deliveryId);
-            log.debug("Successfully fetched {} results for deliveryId: {}", results.size(), deliveryId);
+            OSMLogger.debug(QualityControlResultController.class, "Successfully fetched {} results for deliveryId: {}", results.size(), deliveryId);
             return ResponseEntity.ok(new ApiResponse<>(true, "", results));
         } catch (IllegalArgumentException e) {
-            log.error("Bad request: {}", e.getMessage());
+            OSMLogger.error(QualityControlResultController.class, "Bad request: {}", e.getMessage());
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error fetching quality control results: " + e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         } finally {
             OSMLogger.logMethodExit(this.getClass(), "getResultsByDelivery", null);
@@ -115,7 +112,7 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error while saving filtration QC results: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error while saving filtration QC results: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         }
     }
@@ -132,7 +129,7 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error while fetching filtration QC results: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error while fetching filtration QC results: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         }
     }
@@ -149,7 +146,7 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
-            log.error("Unexpected error while fetching traceability lot QC results: {}", e.getMessage(), e);
+            OSMLogger.error(QualityControlResultController.class, "Unexpected error while fetching traceability lot QC results: {}", e.getMessage(), e);
             return ResponseEntity.status(500).body(new ApiResponse<>(false, "Unexpected error: " + e.getMessage(), null));
         }
     }

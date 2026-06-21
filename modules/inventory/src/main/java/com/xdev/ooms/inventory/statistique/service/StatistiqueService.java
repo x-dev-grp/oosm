@@ -1,5 +1,7 @@
 package com.xdev.ooms.inventory.statistique.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleCritiqueDto;
 import com.xdev.ooms.inventory.stocksec.dto.MouvementRecentDto;
@@ -12,8 +14,6 @@ import com.xdev.ooms.inventory.articlesec.repository.ArticleSecRepository;
 import com.xdev.ooms.inventory.boncommande.repository.BonCommandeRepository;
 import com.xdev.ooms.inventory.stocksec.repository.MouvementStockSecRepository;
 import com.xdev.ooms.inventory.stocksec.repository.StockSecRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -215,7 +215,7 @@ public class StatistiqueService {
         try {
             return bonCommandeRepository.countByStatusNotDeleted(StatutBonCommande.EN_ATTENTE);
         } catch (Exception ex) {
-            log.warn("Impossible de compter les bons en attente: {}", ex.getMessage());
+            OSMLogger.warn(StatistiqueService.class, "Impossible de compter les bons en attente: {}", ex.getMessage());
             try {
                 Long legacy = bonCommandeRepository.countBonCommandesByStatus(StatutBonCommande.EN_ATTENTE);
                 return legacy != null ? legacy : 0L;
@@ -228,8 +228,6 @@ public class StatistiqueService {
     private int safe(Integer value) {
         return value == null ? 0 : value;
     }
-
-    private static final Logger log = LoggerFactory.getLogger(StatistiqueService.class);
 
     public StatistiqueService(ArticleSecRepository articleRepository, StockSecRepository stockRepository, MouvementStockSecRepository mouvementRepository, BonCommandeRepository bonCommandeRepository) {
         this.articleRepository = articleRepository;

@@ -1,5 +1,7 @@
 package com.xdev.ooms.inventory.articlesec.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.inventory.Enum.CategorieArticle;
@@ -106,7 +108,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
         try {
             stockSecService.createStockForArticle(savedArticle.getId());
         } catch (Exception e) {
-            System.err.println("Erreur lors de la création du stock: " + e.getMessage());
+            OSMLogger.logException(ArticleSecService.class, "Failed to create stock for article " + savedArticle.getId(), e);
         }
 
         return convertToDto(savedArticle);

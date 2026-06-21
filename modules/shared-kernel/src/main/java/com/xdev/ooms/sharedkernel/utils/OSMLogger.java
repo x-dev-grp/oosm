@@ -35,6 +35,26 @@ public class OSMLogger {
         return loggerCache.computeIfAbsent(name, LoggerFactory::getLogger);
     }
 
+    public static void trace(Class<?> clazz, String message, Object... args) {
+        getLogger(clazz).trace(message, args);
+    }
+
+    public static void debug(Class<?> clazz, String message, Object... args) {
+        getLogger(clazz).debug(message, args);
+    }
+
+    public static void info(Class<?> clazz, String message, Object... args) {
+        getLogger(clazz).info(message, args);
+    }
+
+    public static void warn(Class<?> clazz, String message, Object... args) {
+        getLogger(clazz).warn(message, args);
+    }
+
+    public static void error(Class<?> clazz, String message, Object... args) {
+        getLogger(clazz).error(message, args);
+    }
+
     /**
      * Log an exception with detailed analysis and stack trace
      */
@@ -301,4 +321,4 @@ public class OSMLogger {
     public enum ExceptionSeverity {
         LOW, MEDIUM, HIGH, CRITICAL
     }
-} 
+}

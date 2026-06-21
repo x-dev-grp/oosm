@@ -1,5 +1,7 @@
 package com.xdev.ooms.conditioning.projet.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.conditioning.inventoryusage.dto.*;
 import com.xdev.ooms.conditioning.label.entity.LabelContent;
 import com.xdev.ooms.conditioning.label.repository.LabelContentRepository;
@@ -423,7 +425,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                         }
                     }
                 } catch (Exception e) {
-                    System.err.println("Error fetching BOM for product: " + pp.getProductId() + " - " + e.getMessage());
+                    OSMLogger.logException(ProjetService.class, "Failed to fetch BOM for product " + pp.getProductId(), e);
                 }
             }
         }
@@ -443,12 +445,8 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 pr.setStatut("CONFIRMED");
                 confirmedReservations.put(entry.getKey(), quantiteArrondie);
             } catch (Exception e) {
-                System.err.println(
-                        "Failed to reserve stock for article "
-                                + describeArticle(entry.getKey(), articleCache)
-                                + " - "
-                                + resolveReservationErrorMessage(e)
-                );
+                OSMLogger.warn(ProjetService.class, "Failed to reserve stock for article {}: {}",
+                        describeArticle(entry.getKey(), articleCache), resolveReservationErrorMessage(e));
                 pr.setStatut("FAILED");
                 hasFailure = true;
             }
@@ -699,7 +697,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 payload.put("quantite", entry.getValue());
                 inventorySupport.annulerReservation(entry.getKey(), payload);
             } catch (Exception e) {
-                System.err.println("Rollback reservation failed for article " + entry.getKey() + ": " + e.getMessage());
+                OSMLogger.logException(ProjetService.class, "Rollback reservation failed for article " + entry.getKey(), e);
             }
         }
     }

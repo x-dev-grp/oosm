@@ -131,12 +131,12 @@ app:
     jwt:
       secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
     bootstrap:
-      enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
+      enabled: ${SECURITY_BOOTSTRAP_ENABLED:true}
       username: ${SECURITY_BOOTSTRAP_USERNAME:osmAdmin}
-      password: ${SECURITY_BOOTSTRAP_PASSWORD:}
+      password: ${SECURITY_BOOTSTRAP_PASSWORD:osmAdmin123&}
       email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
       phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
-      reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:true}
+      reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:false}
     permissions:
       # Always seeds when the permission table is empty. Set true to re-sync on every startup.
       sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}

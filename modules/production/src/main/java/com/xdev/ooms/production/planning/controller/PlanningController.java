@@ -1,5 +1,7 @@
 package com.xdev.ooms.production.planning.controller;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.production.parameter.entity.Parameter;
 import com.xdev.ooms.production.planning.dto.PlanningSaveRequest;
 
@@ -7,9 +9,6 @@ import com.xdev.ooms.production.planning.dto.PlanningSaveRequest;
 
 import com.xdev.ooms.production.planning.service.PlanningService;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionDto;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,8 +23,6 @@ import static org.apache.commons.math3.util.Precision.round;
 @RestController
 @RequestMapping("/api/production")
 public class PlanningController {
-
-    private static final Logger log = LoggerFactory.getLogger(PlanningController.class);
     public static final String OIL_QUANTITY = "oilQuantity";
     public static final String RENDEMENT = "rendement";
     public static final String UNPAID_PRICE = "unpaidPrice";
@@ -43,7 +40,7 @@ public class PlanningController {
 
     @GetMapping("/planning")
     public ResponseEntity<PlanningSaveRequest> getPlanning() {
-        log.info("Fetching planning");
+        OSMLogger.info(PlanningController.class, "Fetching planning");
         return ResponseEntity.ok(planningService.getPlanning());
     }
 
@@ -52,12 +49,12 @@ public class PlanningController {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "savePlanning", request);
         try {
-            log.info("Saving planning");
+            OSMLogger.info(PlanningController.class, "Saving planning");
             planningService.savePlanning(request);
             return ResponseEntity.ok("Planning saved successfully");
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "savePlanning", e);
-            log.error("Error saving planning: {}", e.getMessage());
+            OSMLogger.error(PlanningController.class, "Error saving planning: {}", e.getMessage());
             return ResponseEntity.badRequest().body("Failed to save planning: " + e.getMessage());
         } finally {
             OSMLogger.logMethodExit(this.getClass(), "savePlanning", null);
@@ -99,13 +96,13 @@ public class PlanningController {
                     .ok("Lot completed successfully");
 
         } catch (EntityNotFoundException e) {
-            log.error("Lot not found: {}", e.getMessage());
+            OSMLogger.error(PlanningController.class, "Lot not found: {}", e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body("Lot not found: " + e.getMessage());
 
         } catch (Exception e) {
-            log.error("Error completing lot: {}", e.getMessage());
+            OSMLogger.error(PlanningController.class, "Error completing lot: {}", e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to complete lot: " + e.getMessage());
@@ -143,14 +140,14 @@ public class PlanningController {
                     .ok("Global lot completed successfully");
 
         } catch (EntityNotFoundException e) {
-            log.error("Global lot not found: {}", e.getMessage());
+            OSMLogger.error(PlanningController.class, "Global lot not found: {}", e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body("Global lot not found: " + e.getMessage());
 
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(), "completeGlobalLot", e);
-            log.error("Error completing global lot {}: {}", globalLotNumber, e.getMessage());
+            OSMLogger.error(PlanningController.class, "Error completing global lot {}: {}", globalLotNumber, e.getMessage());
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Failed to complete global lot: " + e.getMessage());

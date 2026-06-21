@@ -1,5 +1,7 @@
 package com.xdev.ooms.conditioning.analytics.service;
 
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+
 import com.xdev.ooms.conditioning.Enum.ResultStatus;
 import com.xdev.ooms.conditioning.Enum.StatutOF;
 import com.xdev.ooms.conditioning.support.ConditioningInventorySupport;
@@ -13,8 +15,6 @@ import com.xdev.ooms.conditioning.qualitycontrol.entity.QCResult;
 import com.xdev.ooms.conditioning.ordrefabrication.repository.OrdreFabricationRepository;
 import com.xdev.ooms.conditioning.qualitycontrol.repository.QCResultRepository;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +40,10 @@ public class AnalyticsService {
     // ─────────────────────────────────────────────
     public List<OfYieldDto> getOfYieldsReport(ReportRequestDto request) {
         UUID tenantId = TenantContext.getCurrentTenant();
-        log.debug("Fetching yields report for tenant: {}, request: {}", tenantId, request);
+        OSMLogger.debug(AnalyticsService.class, "Fetching yields report for tenant: {}, request: {}", tenantId, request);
 
         List<OfAnalyticsProjection> results = ofRepository.findByTenantIdAndIsDeletedFalse(tenantId);
-        log.debug("Found {} OFs for analytics", results.size());
+        OSMLogger.debug(AnalyticsService.class, "Found {} OFs for analytics", results.size());
 
         return results.stream()
                 .filter(of -> of.getQuantiteCible() != null && of.getQuantiteCible().compareTo(BigDecimal.ZERO) > 0)
@@ -63,7 +63,7 @@ public class AnalyticsService {
     // ─────────────────────────────────────────────
     public GlobalOfReportDto getGlobalOfReport(ReportRequestDto request) {
         UUID tenantId = TenantContext.getCurrentTenant();
-        log.debug("Fetching global report for tenant: {}", tenantId);
+        OSMLogger.debug(AnalyticsService.class, "Fetching global report for tenant: {}", tenantId);
         
         List<OfAnalyticsProjection> all = ofRepository.findByTenantIdAndIsDeletedFalse(tenantId);
         List<OfAnalyticsProjection> filtered = all.stream()
@@ -76,7 +76,7 @@ public class AnalyticsService {
                 })
                 .collect(Collectors.toList());
         
-        log.debug("Filtered {} OFs from total {}", filtered.size(), all.size());
+        OSMLogger.debug(AnalyticsService.class, "Filtered {} OFs from total {}", filtered.size(), all.size());
 
         GlobalOfReportDto dto = new GlobalOfReportDto();
         dto.setTotalOf(filtered.size());
@@ -118,7 +118,7 @@ public class AnalyticsService {
                     try {
                         return qcResultRepository.findByOfIdAndTenantIdOrderByDateControleDesc(of.getId(), tenantId).stream();
                     } catch (Exception e) {
-                        log.warn("Impossible de récupérer les QCResults pour OF {}: {}", of.getId(), e.getMessage());
+                        OSMLogger.warn(AnalyticsService.class, "Impossible de récupérer les QCResults pour OF {}: {}", of.getId(), e.getMessage());
                         return java.util.stream.Stream.empty();
                     }
                 })
@@ -200,7 +200,7 @@ public class AnalyticsService {
                     result.add(dto);
                 }
             } catch (Exception e) {
-                log.warn("Impossible de récupérer le BOM {} pour OF {}: {}", of.getBomId(), of.getCode(), e.getMessage());
+                OSMLogger.warn(AnalyticsService.class, "Impossible de récupérer le BOM {} pour OF {}: {}", of.getBomId(), of.getCode(), e.getMessage());
             }
         }
 
@@ -222,7 +222,7 @@ public class AnalyticsService {
                     .map(this::mapFiltrationReport)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("Erreur lors de la recuperation des donnees de filtrage: {}", e.getMessage());
+            OSMLogger.error(AnalyticsService.class, "Erreur lors de la recuperation des donnees de filtrage: {}", e.getMessage());
             return Collections.emptyList();
         }
     }
@@ -281,8 +281,6 @@ public class AnalyticsService {
         }
         return dto;
     }
-
-    private static final Logger log = LoggerFactory.getLogger(AnalyticsService.class);
 
     public AnalyticsService(OrdreFabricationRepository ofRepository, QCResultRepository qcResultRepository, ConditioningInventorySupport inventorySupport, FiltrationOperationRepo filtrationOperationRepo) {
         this.ofRepository = ofRepository;
