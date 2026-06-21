@@ -21,6 +21,21 @@ public class OsmMailProperties {
     @Value("${app.mail.debug:false}")
     private boolean debug;
 
+    @Value("${app.mail.enabled:true}")
+    private boolean enabled;
+
+    @Value("${spring.mail.host:}")
+    private String host;
+
+    public boolean isEnabled() {
+        return enabled;
+    }
+
+    public boolean isDeliveryEnabled() {
+        return enabled && host != null && !host.isBlank()
+                && fromAddress != null && !fromAddress.isBlank();
+    }
+
     public String getFromAddress() {
         return fromAddress;
     }

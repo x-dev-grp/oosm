@@ -223,10 +223,11 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
 
             String rawPassword = generateSecureCode(8);
             String hashedPassword = passwordEncoder.encode(rawPassword);
+            boolean mailEnabled = mailService.isDeliveryEnabled();
 
             OSMUser user = modelMapper.map(userDTO, OSMUser.class);
             user.setPassword(hashedPassword);
-            user.setNewUser(true);
+            user.setNewUser(mailEnabled);
             user.setEnabled(true);
 
             OSMUser savedUser = userRepository.save(user);
@@ -237,7 +238,11 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
             OSMLogger.logSecurityEvent(this.getClass(), "USER_ADDED",
                     "New user added successfully: " + username);
 
-            return modelMapper.map(savedUser, OSMUserOUTDTO.class);
+            OSMUserOUTDTO result = modelMapper.map(savedUser, OSMUserOUTDTO.class);
+            if (!mailEnabled) {
+                result.setInitialPassword(rawPassword);
+            }
+            return result;
 
         } catch (Exception e) {
             OSMLogger.logException(this.getClass(),

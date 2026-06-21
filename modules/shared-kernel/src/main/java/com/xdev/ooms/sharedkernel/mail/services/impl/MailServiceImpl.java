@@ -3,6 +3,7 @@ package com.xdev.ooms.sharedkernel.mail.services.impl;
 import com.xdev.ooms.sharedkernel.mail.config.OsmMailProperties;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
+import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -25,7 +26,18 @@ public class MailServiceImpl implements MailService {
     }
 
     @Override
+    public boolean isDeliveryEnabled() {
+        return mailProperties.isDeliveryEnabled();
+    }
+
+    @Override
     public void sendEmail(MailRequest request) throws MessagingException {
+        if (!isDeliveryEnabled()) {
+            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                    "Mail delivery disabled; skipped email to {}", request.getTo());
+            return;
+        }
+
         MimeMessage message = mailSender.createMimeMessage();
         boolean multipart = request.hasHtmlBody();
         MimeMessageHelper helper = new MimeMessageHelper(message, multipart, "UTF-8");

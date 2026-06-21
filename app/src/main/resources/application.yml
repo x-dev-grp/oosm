@@ -96,6 +96,7 @@ spring:
             enable: ${MAIL_STARTTLS:true}
           timeout: ${MAIL_TIMEOUT:5000}
           connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
+          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
 
 oauth2:
   client:
@@ -122,6 +123,7 @@ app:
     from-name: ${MAIL_FROM_NAME:OSM}
     support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_USER:}}
     debug: ${MAIL_DEBUG:false}
+    enabled: ${MAIL_ENABLED:true}
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}

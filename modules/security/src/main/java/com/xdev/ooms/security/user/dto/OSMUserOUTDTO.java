@@ -18,6 +18,7 @@ public class OSMUserOUTDTO extends BaseDto<OSMUser> {
     private String tenantName;
     private String photoData;
     private String photoContentType;
+    private String initialPassword;
 
     public boolean isNewUser() {
         return isNewUser;
@@ -113,5 +114,13 @@ public class OSMUserOUTDTO extends BaseDto<OSMUser> {
 
     public void setPhotoContentType(String photoContentType) {
         this.photoContentType = photoContentType;
+    }
+
+    public String getInitialPassword() {
+        return initialPassword;
+    }
+
+    public void setInitialPassword(String initialPassword) {
+        this.initialPassword = initialPassword;
     }
 }
