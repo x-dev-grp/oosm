@@ -1,20 +1,14 @@
 package com.xdev.ooms.security.securityConfig;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
 import com.xdev.ooms.security.user.entity.OSMUser;
-import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
@@ -25,20 +19,15 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.token.*;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Configuration
 @EnableMethodSecurity
 public class SecurityConfig {
-    private static final ObjectMapper JWT_CLAIM_MAPPER = new ObjectMapper()
-            .registerModule(new JavaTimeModule())
-            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-
-    private final ModelMapper modelMapper;
     private final JwtKeyLoader jwtKeyLoader;
 
-    public SecurityConfig(ModelMapper modelMapper, JwtKeyLoader jwtKeyLoader) {
-        this.modelMapper = modelMapper;
+    public SecurityConfig(JwtKeyLoader jwtKeyLoader) {
         this.jwtKeyLoader = jwtKeyLoader;
     }
 
@@ -96,18 +85,18 @@ public class SecurityConfig {
 
             Authentication principal = context.getPrincipal();
             if (principal.getPrincipal() instanceof OSMUser user) {
-                OSMUserOUTDTO dto = modelMapper.map(user, OSMUserOUTDTO.class);
-                dto.getRole().setPermissions(null);
-                dto.setPhotoData(null);
-                dto.setPhotoContentType(null);
+                Map<String, Object> slimUser = new LinkedHashMap<>();
+                slimUser.put("id", user.getId());
+                slimUser.put("tenantId", user.getTenantId());
+                slimUser.put("username", user.getUsername());
+                slimUser.put("firstName", user.getFirstName());
+                slimUser.put("lastName", user.getLastName());
+                slimUser.put("email", user.getEmail());
+                slimUser.put("isNewUser", user.isNewUser());
+
                 context.getClaims()
-                        .claim("osmUser",
-                                JWT_CLAIM_MAPPER.convertValue(dto, Map.class)
-                        )
-                        .claim("role", user.getRole().getRoleName())
-                        .claim("authorities", user.getAuthorities().stream()
-                                .map(GrantedAuthority::getAuthority)
-                                .toList());
+                        .claim("osmUser", slimUser)
+                        .claim("role", user.getRole().getRoleName());
             }
         };
     }

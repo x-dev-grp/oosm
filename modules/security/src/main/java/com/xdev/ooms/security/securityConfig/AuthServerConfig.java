@@ -29,13 +29,16 @@ public class AuthServerConfig {
     private final CustomTokenRequestConverter customTokenRequestConverter;
     private final UserService userService;
     private final CompanyProfileRepository companyProfileRepository;
+    private final OsmJwtAuthenticationConverter osmJwtAuthenticationConverter;
+
     public AuthServerConfig(AuthenticationEntryPoint authenticationEntryPoint,
                             RegisteredClientRepository registeredClientRepository,
                             OAuth2AuthorizationService authorizationService,
                             OAuth2TokenGenerator<?> tokenGenerator,CompanyProfileRepository companyProfileRepository,
                             AuthenticationManager authenticationManager,
                             CustomTokenRequestConverter customTokenRequestConverter,
-                            UserService userService) {
+                            UserService userService,
+                            OsmJwtAuthenticationConverter osmJwtAuthenticationConverter) {
         long startTime = System.currentTimeMillis();
         OSMLogger.logMethodEntry(this.getClass(), "AuthServerConfig", "Initializing AuthServerConfig");
 
@@ -48,6 +51,7 @@ public class AuthServerConfig {
             this.customTokenRequestConverter = customTokenRequestConverter;
             this.userService = userService;
             this.companyProfileRepository = companyProfileRepository;
+            this.osmJwtAuthenticationConverter = osmJwtAuthenticationConverter;
 
             OSMLogger.logMethodExit(this.getClass(), "AuthServerConfig", "AuthServerConfig initialized successfully");
             OSMLogger.logPerformance(this.getClass(), "AuthServerConfig", startTime, System.currentTimeMillis());
@@ -125,7 +129,8 @@ public class AuthServerConfig {
                     .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                     .with(authorizationServerConfigurer, configurer -> {
                     })
-                    .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
+                    .oauth2ResourceServer(oauth -> oauth.jwt(
+                            jwt -> jwt.jwtAuthenticationConverter(osmJwtAuthenticationConverter)));
 
             SecurityFilterChain filterChain = http.build();
 
@@ -154,7 +159,8 @@ public class AuthServerConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(oauth -> oauth.jwt(Customizer.withDefaults()));
+                .oauth2ResourceServer(oauth -> oauth.jwt(
+                        jwt -> jwt.jwtAuthenticationConverter(osmJwtAuthenticationConverter)));
 
         return http.build();
     }
