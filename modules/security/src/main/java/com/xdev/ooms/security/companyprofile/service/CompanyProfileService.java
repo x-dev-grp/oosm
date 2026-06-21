@@ -97,7 +97,7 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         eventPublisher.publishEvent(new TenantCreatedEvent(companyProfile.getId()));
 
         CompanyUserDTO companyUserDTO = new CompanyUserDTO();
-        companyUserDTO.setLegalName(companyProfile.getLegalForm());
+        companyUserDTO.setLegalName(companyProfile.getLegalName());
         companyUserDTO.setCompanyUser(userDto);
         return companyUserDTO;
     }

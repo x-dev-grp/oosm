@@ -30,7 +30,6 @@ import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
-import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
@@ -39,9 +38,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.CompletableFuture;
 
 import javax.security.auth.login.AccountLockedException;
 import javax.security.auth.login.CredentialExpiredException;
@@ -227,9 +227,10 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
             OSMUser user = modelMapper.map(userDTO, OSMUser.class);
             user.setPassword(hashedPassword);
             user.setNewUser(true);
+            user.setEnabled(true);
 
-            sendConfirmation(userDTO, rawPassword);
             OSMUser savedUser = userRepository.save(user);
+            dispatchConfirmationAsync(userDTO, rawPassword);
 
             OSMLogger.logMethodExit(this.getClass(), "addUser", "User added successfully: " + username);
             OSMLogger.logPerformance(this.getClass(), "addUser", startTime, System.currentTimeMillis());
@@ -288,7 +289,9 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
 
             if (usernameChanged || emailChanged || phoneChanged) {
                 String rawPassword = generateSecureCode(8);
-                sendConfirmation(userDTO, rawPassword);
+                user.setPassword(passwordEncoder.encode(rawPassword));
+                userRepository.save(user);
+                dispatchConfirmationAsync(userDTO, rawPassword);
                 OSMLogger.logSecurityEvent(this.getClass(), "USER_CREDENTIALS_UPDATED",
                         "User credentials updated and new password sent: " + username);
             }
@@ -384,8 +387,22 @@ public class UserService extends BaseServiceImpl<OSMUser, OSMUserDTO, OSMUserOUT
                 .orElse(null);
     }
 
-    public void sendWelcomeCredentials(OSMUserOUTDTO userDTO, String rawPassword) throws Exception {
-        sendConfirmation(userDTO, rawPassword);
+    public void sendWelcomeCredentials(OSMUserOUTDTO userDTO, String rawPassword) {
+        dispatchConfirmationAsync(userDTO, rawPassword);
+    }
+
+    private void dispatchConfirmationAsync(OSMUserOUTDTO userDTO, String rawPassword) {
+        if (userDTO == null) {
+            return;
+        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                sendConfirmation(userDTO, rawPassword);
+            } catch (Exception e) {
+                OSMLogger.logException(this.getClass(),
+                        "Async confirmation failed for user: " + userDTO.getUsername(), e);
+            }
+        });
     }
 
     private EmailBranding resolveBranding(UUID tenantId) {
