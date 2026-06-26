@@ -6,7 +6,7 @@ import com.xdev.ooms.hr.contract.service.ContractService;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,35 +37,35 @@ public class ContractController extends BaseControllerImpl<Contract, ContractDto
             @PathVariable UUID employeeId,
             @RequestBody ContractDto contractDto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "addContractToEmployee", employeeId);
+        OOSMLogger.logMethodEntry(this.getClass(), "addContractToEmployee", employeeId);
         try {
             return ResponseEntity.ok(new ApiResponse<>(true, "", List.of(contractService.addContractToEmployee(employeeId, contractDto))));
 
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "addContractToEmployee", e);
+            OOSMLogger.logException(this.getClass(), "addContractToEmployee", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "addContractToEmployee", null);
-            OSMLogger.logPerformance(this.getClass(), "addContractToEmployee", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "addContractToEmployee", null);
+            OOSMLogger.logPerformance(this.getClass(), "addContractToEmployee", startTime, System.currentTimeMillis());
         }  }
 
     //  Récupérer tous les contrats d'un employé
     @GetMapping("/employee/{employeeId}")
     public ResponseEntity<ApiResponse<Contract, ContractDto>> getContractsByEmployee(@PathVariable UUID employeeId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getContractsByEmployee", employeeId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getContractsByEmployee", employeeId);
         try {
             List<ContractDto> contracts = contractService.getContractsByEmployee(employeeId);
             return ResponseEntity.ok(new ApiResponse<>(true, "", contracts));
 
 
          } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getContractsByEmployee", e);
+            OOSMLogger.logException(this.getClass(), "getContractsByEmployee", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "getContractsByEmployee", null);
-            OSMLogger.logPerformance(this.getClass(), "getContractsByEmployee", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getContractsByEmployee", null);
+            OOSMLogger.logPerformance(this.getClass(), "getContractsByEmployee", startTime, System.currentTimeMillis());
         }
 
 
@@ -87,16 +87,16 @@ public class ContractController extends BaseControllerImpl<Contract, ContractDto
             @PathVariable UUID employeeId,
             @PathVariable UUID contractId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "deleteEmployeeContract", employeeId, contractId);
+        OOSMLogger.logMethodEntry(this.getClass(), "deleteEmployeeContract", employeeId, contractId);
         try {
             contractService.deleteEmployeeContract(employeeId, contractId);
             return ResponseEntity.ok(new ApiResponse<>(true, "Contract deleted successfully", List.of()));
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "deleteEmployeeContract", e);
+            OOSMLogger.logException(this.getClass(), "deleteEmployeeContract", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "deleteEmployeeContract", null);
-            OSMLogger.logPerformance(this.getClass(), "deleteEmployeeContract", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "deleteEmployeeContract", null);
+            OOSMLogger.logPerformance(this.getClass(), "deleteEmployeeContract", startTime, System.currentTimeMillis());
         }
     }
 

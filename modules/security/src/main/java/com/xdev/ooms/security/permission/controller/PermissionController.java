@@ -7,7 +7,7 @@ import com.xdev.ooms.security.permission.dto.PermissionDTO;
 import com.xdev.ooms.security.permission.entity.Permission;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -29,16 +29,16 @@ public class PermissionController extends BaseControllerImpl<Permission, Permiss
         this.permissionCatalogSyncService = permissionCatalogSyncService;
         
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "PermissionController", "Initializing PermissionController");
+        OOSMLogger.logMethodEntry(this.getClass(), "PermissionController", "Initializing PermissionController");
         
         try {
-            OSMLogger.logMethodExit(this.getClass(), "PermissionController", "PermissionController initialized successfully");
-            OSMLogger.logPerformance(this.getClass(), "PermissionController", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "PERMISSION_CONTROLLER_INITIALIZED", 
+            OOSMLogger.logMethodExit(this.getClass(), "PermissionController", "PermissionController initialized successfully");
+            OOSMLogger.logPerformance(this.getClass(), "PermissionController", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "PERMISSION_CONTROLLER_INITIALIZED", 
                 "Permission controller initialized successfully");
             
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error initializing PermissionController", e);
+            OOSMLogger.logException(this.getClass(), "Error initializing PermissionController", e);
             throw e;
         }
     }

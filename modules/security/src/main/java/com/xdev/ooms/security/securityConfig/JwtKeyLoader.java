@@ -19,7 +19,7 @@ import java.nio.charset.StandardCharsets;
 @Component
 public class JwtKeyLoader {
 
-    private static final String KEY_ID = "osm-jwt-secret";
+    private static final String KEY_ID = "oosm-jwt-secret";
 
     private final SecretKey secretKey;
     private final byte[] secretBytes;

@@ -1,7 +1,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: osm-monolith-postgres
+    container_name: OOSM-monolith-postgres
     environment:
       POSTGRES_DB: osm
       POSTGRES_USER: postgres

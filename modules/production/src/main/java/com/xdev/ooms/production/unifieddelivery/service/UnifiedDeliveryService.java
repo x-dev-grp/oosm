@@ -1,7 +1,5 @@
 package com.xdev.ooms.production.unifieddelivery.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
-
 import com.xdev.ooms.production.oiltransaction.entity.OilTransaction;
 
 import com.xdev.ooms.sharedkernel.basetype.entity.BaseType;
@@ -35,9 +33,12 @@ import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +50,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, UnifiedDeliveryDTO, UnifiedDeliveryDTO> {
+
+    private static final Logger log = LoggerFactory.getLogger(UnifiedDeliveryService.class);
 
     public static final String DELIVERY_NUMBER = "deliveryNumber";
     public static final String D = "%03d";
@@ -105,7 +108,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
      */
     private boolean isFullyPaid(UnifiedDelivery delivery) {
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[isFullyPaid] Delivery is null, returning false");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[isFullyPaid] Delivery is null, returning false");
             return false;
         }
 
@@ -115,12 +118,12 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         double unpaid = Optional.ofNullable(delivery.getUnpaidAmount()).orElse(price - paid); // fallback calculation
 
         // Log payment details for debugging
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[isFullyPaid] Payment check for delivery %s: price=%.2f, paid=%.2f, unpaid=%.2f", delivery.getLotNumber(), price, paid, unpaid);
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[isFullyPaid] Payment check for delivery %s: price=%.2f, paid=%.2f, unpaid=%.2f", delivery.getLotNumber(), price, paid, unpaid);
 
         // Use tolerance for floating point comparison (0.0001 TND = 0.01 centimes)
         boolean fullyPaid = unpaid <= 0.0001;
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[isFullyPaid] Delivery %s is %s", delivery.getLotNumber(), fullyPaid ? "FULLY PAID" : "NOT FULLY PAID");
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[isFullyPaid] Delivery %s is %s", delivery.getLotNumber(), fullyPaid ? "FULLY PAID" : "NOT FULLY PAID");
 
         return fullyPaid;
     }
@@ -129,7 +132,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public UnifiedDeliveryDTO save(UnifiedDeliveryDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "save", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "save", dto);
         // Map DTO to entity
 
         UnifiedDelivery delivery = modelMapper.map(dto, UnifiedDelivery.class);
@@ -154,8 +157,8 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         publishReceptionCreatedNotification(savedDelivery);
 
         // Map back to DTO and return
-        OSMLogger.logMethodExit(this.getClass(), "save", savedDelivery);
-        OSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "save", savedDelivery);
+        OOSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
         return mapToDto(savedDelivery);
     }
 
@@ -163,7 +166,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public UnifiedDeliveryDTO update(UnifiedDeliveryDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "update", dto);
         // 1. Load existing or fail
         UnifiedDelivery existing = deliveryRepository.findByIdAndIsDeletedFalse(dto.getId()).orElseThrow(() -> new RuntimeException("UnifiedDelivery not found with id: " + dto.getId()));
 
@@ -193,10 +196,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             BaseType oliveVariety = genericRepository.findById(dto.getOliveVariety().getId())
                     .orElseThrow(() -> new RuntimeException("OliveVariety not found with id: " + dto.getOliveVariety().getId()));
             existing.setOliveVariety(oliveVariety);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[update] Set oliveVariety to: %s (ID: %s)", oliveVariety.getName(), oliveVariety.getId());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[update] Set oliveVariety to: %s (ID: %s)", oliveVariety.getName(), oliveVariety.getId());
         } else {
             existing.setOliveVariety(null);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[update] Set oliveVariety to null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[update] Set oliveVariety to null");
         }
 
         // 6. Merge poidsCamionVide explicitly (do NOT clear it when DTO omits it)
@@ -222,54 +225,54 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 boolean poidsValid = isValidPoids(existing.getPoidsCamionVide() != null ? BigDecimal.valueOf(existing.getPoidsCamionVide()) : null);
                 if (poidsValid && prev == OliveLotStatus.WAITING) {
                     existing.setStatus(OliveLotStatus.NEW);
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                             "[update] poidsCamionVide valid (>0) and previous status WAITING: status -> NEW (prev=%s, poids=%s)",
                             prev, existing.getPoidsCamionVide());
                 } else if (!poidsValid && prev == OliveLotStatus.NEW) {
                     existing.setStatus(OliveLotStatus.WAITING);
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                             "[update] poidsCamionVide invalid (null/0/<=0) and previous status NEW: status -> WAITING (prev=%s, poids=%s)",
                             prev, existing.getPoidsCamionVide());
                 } else {
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                             "[update] Status unchanged: poidsValid=%s, prev=%s", poidsValid, prev);
                 }
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                         "[update] No update to poidsCamionVide or status: retaining status %s", prev);
             }
         } else if (dto.getStatus() != null) {
             // For non-OLIVE deliveries, allow direct status update
             existing.setStatus(dto.getStatus());
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                     "[update] Non-OLIVE delivery: status updated to %s", dto.getStatus());
         }
 
         // 9. Persist
         UnifiedDelivery updated = deliveryRepository.save(existing);
 
-        OSMLogger.logMethodExit(this.getClass(), "update", updated);
-        OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "update", updated);
+        OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
         return mapToDto(updated);
     }
 
     @Transactional(readOnly = true)
     public List<UnifiedDeliveryDTO> getForPlanning() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getForPlanning", null);
+        OOSMLogger.logMethodEntry(this.getClass(), "getForPlanning", null);
         List<UnifiedDeliveryDTO> result = deliveryRepository.findOliveDeliveriesControlled().stream().map(this::mapToDto).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "getForPlanning", result);
-        OSMLogger.logPerformance(this.getClass(), "getForPlanning", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "getForPlanning", result);
+        OOSMLogger.logPerformance(this.getClass(), "getForPlanning", startTime, System.currentTimeMillis());
         return result;
     }
 
     @Transactional(readOnly = true)
     public List<UnifiedDeliveryDTO> findByDeliveryTypeInAndQualityControlResultsIsNull(List<String> types) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", types);
+        OOSMLogger.logMethodEntry(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", types);
         List<UnifiedDeliveryDTO> result = deliveryRepository.findByDeliveryTypeInAndQualityControlResultsIsNull(types).stream().map(this::mapToDto).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", result);
-        OSMLogger.logPerformance(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", result);
+        OOSMLogger.logPerformance(this.getClass(), "findByDeliveryTypeInAndQualityControlResultsIsNull", startTime, System.currentTimeMillis());
         return result;
     }
 
@@ -277,10 +280,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional(readOnly = true)
     public List<UnifiedDeliveryDTO> getDeliveriesBySupplier(UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getDeliveriesBySupplier", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getDeliveriesBySupplier", supplierId);
         List<UnifiedDeliveryDTO> result = deliveryRepository.findBySupplierId(supplierId).stream().map(this::mapToDto).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "getDeliveriesBySupplier", result);
-        OSMLogger.logPerformance(this.getClass(), "getDeliveriesBySupplier", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "getDeliveriesBySupplier", result);
+        OOSMLogger.logPerformance(this.getClass(), "getDeliveriesBySupplier", startTime, System.currentTimeMillis());
         return result;
     }
 
@@ -288,10 +291,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional(readOnly = true)
     public List<UnifiedDeliveryDTO> getPaidDeliveriesBySupplier(UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getPaidDeliveriesBySupplier", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getPaidDeliveriesBySupplier", supplierId);
         List<UnifiedDeliveryDTO> result = deliveryRepository.findFullyPaidDeliveriesBySupplierId(supplierId).stream().map(this::mapToDto).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "getPaidDeliveriesBySupplier", result);
-        OSMLogger.logPerformance(this.getClass(), "getPaidDeliveriesBySupplier", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "getPaidDeliveriesBySupplier", result);
+        OOSMLogger.logPerformance(this.getClass(), "getPaidDeliveriesBySupplier", startTime, System.currentTimeMillis());
         return result;
     }
 
@@ -299,26 +302,26 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional(readOnly = true)
     public List<UnifiedDeliveryDTO> getUnpaidDeliveriesBySupplier(UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getUnpaidDeliveriesBySupplier", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getUnpaidDeliveriesBySupplier", supplierId);
         List<UnifiedDeliveryDTO> result = deliveryRepository.findUnpaidDeliveriesBySupplierId(supplierId).stream().map(this::mapToDto).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "getUnpaidDeliveriesBySupplier", result);
-        OSMLogger.logPerformance(this.getClass(), "getUnpaidDeliveriesBySupplier", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "getUnpaidDeliveriesBySupplier", result);
+        OOSMLogger.logPerformance(this.getClass(), "getUnpaidDeliveriesBySupplier", startTime, System.currentTimeMillis());
         return result;
     }
 
     @Override
     public Set<Action> actionsMapping(UnifiedDelivery delivery) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", delivery);
         if (delivery.getDeliveryType() == DeliveryType.OIL) {
             Set<Action> actions = mapOilDeliveryActions(delivery);
-            OSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
-            OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
+            OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
             return actions;
         } else {
             Set<Action> actions = mapOliveDeliveryActions(delivery);
-            OSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
-            OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
+            OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
             return actions;
         }
     }
@@ -332,10 +335,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
      */
     private Set<Action> mapOliveDeliveryActions(UnifiedDelivery delivery) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "mapOliveDeliveryActions", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "mapOliveDeliveryActions", delivery);
 
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[mapOliveDeliveryActions] Delivery is null, returning empty action set");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[mapOliveDeliveryActions] Delivery is null, returning empty action set");
             return new HashSet<>();
         }
 
@@ -374,21 +377,21 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 switch (delivery.getOperationType()) {
                     case SIMPLE_RECEPTION -> {
                         // CRITICAL: Check payment status for simple reception
-                        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] SIMPLE_RECEPTION payment check for delivery %s: fullyPaid=%s", delivery.getLotNumber(), delivery.getPaid());
+                        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] SIMPLE_RECEPTION payment check for delivery %s: fullyPaid=%s", delivery.getLotNumber(), delivery.getPaid());
                         actions.add(Action.GEN_PDF);
 
                         if (!delivery.getPaid()) {
                             actions.add(Action.PAY);
                             if (!hasActivePaymentOilLeg(delivery)) {
                                 actions.add(Action.OIL_QUALITY);
-                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
+                                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
                             } else {
-                                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Skipped OIL_QUALITY — payment oil leg already exists for " + delivery.getLotNumber());
+                                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Skipped OIL_QUALITY — payment oil leg already exists for " + delivery.getLotNumber());
                             }
                         }
                     }
                     case BASE, OLIVE_PURCHASE -> {
-                        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Adding OIL_RECEPTION for %s operation delivery %s", delivery.getOperationType(), delivery.getLotNumber());
+                        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Adding OIL_RECEPTION for %s operation delivery %s", delivery.getOperationType(), delivery.getLotNumber());
 
                         actions.add(Action.OIL_RECEPTION);
                         actions.add(Action.GEN_PDF_QC_OIL);
@@ -396,7 +399,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
                         if (!delivery.getPaid()) {
                             actions.add(Action.PAY);
-                            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
+                            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Added OIL_QUALITY action for unpaid delivery " + delivery.getLotNumber());
                         }
                     }
                 }
@@ -410,9 +413,9 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             }
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Final actions for delivery %s: %s", delivery.getLotNumber(), actions);
-        OSMLogger.logMethodExit(this.getClass(), "mapOliveDeliveryActions", actions);
-        OSMLogger.logPerformance(this.getClass(), "mapOliveDeliveryActions", startTime, System.currentTimeMillis());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Final actions for delivery %s: %s", delivery.getLotNumber(), actions);
+        OOSMLogger.logMethodExit(this.getClass(), "mapOliveDeliveryActions", actions);
+        OOSMLogger.logPerformance(this.getClass(), "mapOliveDeliveryActions", startTime, System.currentTimeMillis());
         return actions;
     }
 
@@ -426,10 +429,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
      */
     private Set<Action> mapOilDeliveryActions(UnifiedDelivery delivery) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "mapOilDeliveryActions", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "mapOilDeliveryActions", delivery);
 
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[mapOilDeliveryActions] Delivery is null, returning empty action set");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[mapOilDeliveryActions] Delivery is null, returning empty action set");
             return new HashSet<>();
         }
 
@@ -437,16 +440,16 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         actions.add(Action.READ);
 
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Mapping actions for oil delivery %s (Status: %s, Operation: %s)", delivery.getLotNumber(), delivery.getStatus(), delivery.getOperationType());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Mapping actions for oil delivery %s (Status: %s, Operation: %s)", delivery.getLotNumber(), delivery.getStatus(), delivery.getOperationType());
 
         switch (delivery.getStatus()) {
             case NEW -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding NEW status actions for oil delivery " + delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding NEW status actions for oil delivery " + delivery.getLotNumber());
                 actions.addAll(Set.of(Action.DELETE, Action.UPDATE, Action.OIL_QUALITY));
                 actions.add(Action.GEN_PDF);
             }
             case OIL_CONTROLLED -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding OIL_CONTROLLED status actions for oil delivery " + delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding OIL_CONTROLLED status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.GEN_PDF_QC_OIL);
                 actions.add(Action.GEN_PDF);
                 if (delivery.getOperationType() == OperationType.PAYMENT) {
@@ -456,7 +459,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 }
             }
             case WAITING_FOR_PAYMENT_DETAILS -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding WAITING_FOR_PAYMENT_DETAILS status actions for oil delivery " + delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding WAITING_FOR_PAYMENT_DETAILS status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.COMPLETE_PAYMENT_DETAILS);
                 actions.add(Action.GEN_PDF);
             }
@@ -465,7 +468,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 actions.add(Action.GEN_PDF_QC_OIL);
             }
             case COMPLETED, IN_STOCK -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding GEN_PDF_BON_PROD status actions for oil delivery " + delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Adding GEN_PDF_BON_PROD status actions for oil delivery " + delivery.getLotNumber());
                 actions.add(Action.GEN_PDF_PRODUCTION);
                 actions.add(Action.GEN_PDF_QC_OIL);
                 actions.add(Action.GEN_PDF);
@@ -476,9 +479,9 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             }
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Final actions for oil delivery %s: %s", delivery.getLotNumber(), actions);
-        OSMLogger.logMethodExit(this.getClass(), "mapOilDeliveryActions", actions);
-        OSMLogger.logPerformance(this.getClass(), "mapOilDeliveryActions", startTime, System.currentTimeMillis());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOilDeliveryActions] Final actions for oil delivery %s: %s", delivery.getLotNumber(), actions);
+        OOSMLogger.logMethodExit(this.getClass(), "mapOilDeliveryActions", actions);
+        OOSMLogger.logPerformance(this.getClass(), "mapOilDeliveryActions", startTime, System.currentTimeMillis());
         return actions;
     }
 
@@ -496,37 +499,37 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public UnifiedDelivery createOilRecFromOliveRecImpl(UUID uuid, Boolean isPayment, String std) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createOilRecFromOliveRecImpl", String.format("uuid=%s, isPayment=%s", uuid, isPayment));
+        OOSMLogger.logMethodEntry(this.getClass(), "createOilRecFromOliveRecImpl", String.format("uuid=%s, isPayment=%s", uuid, isPayment));
 
         // Validate input parameters
         if (uuid == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] UUID is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] UUID is null");
             throw new IllegalArgumentException("UUID cannot be null");
         }
 
         if (isPayment == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] isPayment flag is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] isPayment flag is null");
             throw new IllegalArgumentException("isPayment flag cannot be null");
         }
 
         try {
             // Find the original delivery
             UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(uuid).orElseThrow(() -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Original delivery not found with UUID: " + uuid);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Original delivery not found with UUID: " + uuid);
                 return new EntityNotFoundException("Original delivery not found: " + uuid);
             });
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Found original delivery %s (Type: %s, Operation: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getOperationType(), delivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Found original delivery %s (Type: %s, Operation: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getOperationType(), delivery.getStatus());
 
             // Validate delivery type
             if (delivery.getDeliveryType() != DeliveryType.OLIVE) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Invalid delivery type for oil reception creation: %s (expected OLIVE)", delivery.getDeliveryType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Invalid delivery type for oil reception creation: %s (expected OLIVE)", delivery.getDeliveryType());
                 throw new IllegalArgumentException("Oil reception can only be created from OLIVE deliveries");
             }
 
             // Validate delivery status
             if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[createOilRecFromOliveRecImpl] Creating oil reception for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createOilRecFromOliveRecImpl] Creating oil reception for delivery %s that is already IN_STOCK", delivery.getLotNumber());
             }
 
             UnifiedDelivery oilDelivery = null;
@@ -534,36 +537,36 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             // Process based on operation type and payment flag
             if (delivery.getOperationType() == OperationType.EXCHANGE || delivery.getOperationType() == OperationType.BASE || delivery.getOperationType() == OperationType.OLIVE_PURCHASE) {
 
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Creating oil reception for %s operation", delivery.getOperationType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Creating oil reception for %s operation", delivery.getOperationType());
                 oilDelivery = creatOilRecForOtherOPS(delivery);
 
             } else if (isPayment) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Creating oil reception for payment purposes");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Creating oil reception for payment purposes");
                 oilDelivery = createOilRecForPayment(delivery, std);
 
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[createOilRecFromOliveRecImpl] No oil reception created for delivery %s (Operation: %s, isPayment: %s)", delivery.getLotNumber(), delivery.getOperationType(), isPayment);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createOilRecFromOliveRecImpl] No oil reception created for delivery %s (Operation: %s, isPayment: %s)", delivery.getLotNumber(), delivery.getOperationType(), isPayment);
                 throw new IllegalArgumentException("No oil reception can be created for this operation type and payment flag combination");
             }
 
             if (oilDelivery != null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Successfully created oil reception %s from olive delivery %s", oilDelivery.getLotNumber(), delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecFromOliveRecImpl] Successfully created oil reception %s from olive delivery %s", oilDelivery.getLotNumber(), delivery.getLotNumber());
             }
 
             return oilDelivery;
 
         } catch (EntityNotFoundException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Entity not found error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Entity not found error: " + e.getMessage());
             throw e;
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Validation error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Validation error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Unexpected error during oil reception creation: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Unexpected error during oil reception creation: " + e.getMessage(), e);
             throw new RuntimeException("Failed to create oil reception from olive delivery", e);
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "createOilRecFromOliveRecImpl", null);
-            OSMLogger.logPerformance(this.getClass(), "createOilRecFromOliveRecImpl", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createOilRecFromOliveRecImpl", null);
+            OOSMLogger.logPerformance(this.getClass(), "createOilRecFromOliveRecImpl", startTime, System.currentTimeMillis());
         }
     }
 
@@ -578,14 +581,14 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
      */
     private UnifiedDelivery creatOilRecForOtherOPS(UnifiedDelivery delivery) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "creatOilRecForOtherOPS", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "creatOilRecForOtherOPS", delivery);
 
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[creatOilRecForOtherOPS] Original delivery is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[creatOilRecForOtherOPS] Original delivery is null");
             throw new IllegalArgumentException("Original delivery cannot be null");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Creating oil reception for %s operation from olive delivery %s", delivery.getOperationType(), delivery.getLotNumber());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Creating oil reception for %s operation from olive delivery %s", delivery.getOperationType(), delivery.getLotNumber());
 
         try {
             UnifiedDelivery newDelivery = new UnifiedDelivery();
@@ -599,7 +602,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             // Set oil quantity with null safety
             Double oilQuantity = delivery.getOilQuantity();
             if (oilQuantity == null || oilQuantity <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[creatOilRecForOtherOPS] Invalid oil quantity for delivery %s: %s, setting to 0.0", delivery.getLotNumber(), oilQuantity);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[creatOilRecForOtherOPS] Invalid oil quantity for delivery %s: %s, setting to 0.0", delivery.getLotNumber(), oilQuantity);
                 oilQuantity = 0.0;
             }
             newDelivery.setOilQuantity(oilQuantity);
@@ -618,25 +621,25 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             newDelivery.setOperationType(delivery.getOperationType());
             newDelivery.setOilVariety(delivery.getOliveVariety());
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Created oil reception with operation type INTERNAL_RECEPTION, linked to olive lot: %s", delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Created oil reception with operation type INTERNAL_RECEPTION, linked to olive lot: %s", delivery.getLotNumber());
 
             // Save both deliveries to maintain consistency
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Saving original olive delivery to maintain consistency");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Saving original olive delivery to maintain consistency");
             repository.save(delivery);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Saving new oil reception");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Saving new oil reception");
             UnifiedDelivery savedOilDelivery = repository.save(newDelivery);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Successfully created oil reception %s from olive delivery %s", savedOilDelivery.getLotNumber(), delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Successfully created oil reception %s from olive delivery %s", savedOilDelivery.getLotNumber(), delivery.getLotNumber());
 
             return savedOilDelivery;
 
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[creatOilRecForOtherOPS] Error creating oil reception for other operations: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[creatOilRecForOtherOPS] Error creating oil reception for other operations: " + e.getMessage(), e);
             throw new RuntimeException("Failed to create oil reception for other operations", e);
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "creatOilRecForOtherOPS", null);
-            OSMLogger.logPerformance(this.getClass(), "creatOilRecForOtherOPS", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "creatOilRecForOtherOPS", null);
+            OOSMLogger.logPerformance(this.getClass(), "creatOilRecForOtherOPS", startTime, System.currentTimeMillis());
         }
     }
 
@@ -652,26 +655,26 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     protected UnifiedDelivery createOilRecForPayment(UnifiedDelivery delivery, String std) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createOilRecForPayment", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "createOilRecForPayment", delivery);
 
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Original delivery is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Original delivery is null");
             throw new IllegalArgumentException("Original delivery cannot be null");
         }
 
         // Validate delivery type
         if (delivery.getDeliveryType() != DeliveryType.OLIVE) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Invalid delivery type for payment oil reception: %s (expected OLIVE)", delivery.getDeliveryType());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Invalid delivery type for payment oil reception: %s (expected OLIVE)", delivery.getDeliveryType());
             throw new IllegalArgumentException("Payment oil reception can only be created from OLIVE deliveries");
         }
 
         // Validate supplier
         if (delivery.getSupplier() == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Cannot create payment oil reception for delivery without supplier");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Cannot create payment oil reception for delivery without supplier");
             throw new IllegalArgumentException("Delivery must have a supplier for payment oil reception");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] Creating oil reception for payment from olive delivery %s (Supplier: %s)", delivery.getLotNumber(), delivery.getSupplier().getName());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] Creating oil reception for payment from olive delivery %s (Supplier: %s)", delivery.getLotNumber(), delivery.getSupplier().getName());
 
         try {
 
@@ -691,7 +694,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 if (existing.isHasQualityControl() || existing.getStatus() == OliveLotStatus.STOCK_READY) {
                     throw new IllegalArgumentException("Payment oil reception already exists for olive lot " + delivery.getLotNumber());
                 }
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                         "[createOilRecForPayment] Reusing existing payment oil reception %s for olive lot %s",
                         existing.getLotNumber(), delivery.getLotNumber());
                 applyStorageUnitToPaymentLeg(existing, std);
@@ -700,7 +703,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             newDelivery.setDeliveryType(DeliveryType.OIL);
             newDelivery.setStatus(OliveLotStatus.NEW);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] used the original olive reception lot number as new lot number: %s, delivery number: %s", delivery.getLotNumber(), delivery.getDeliveryNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] used the original olive reception lot number as new lot number: %s, delivery number: %s", delivery.getLotNumber(), delivery.getDeliveryNumber());
 
             // Set basic delivery information
             newDelivery.setLotNumber(delivery.getLotNumber());
@@ -722,25 +725,25 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             newDelivery.setOilVariety(delivery.getOliveVariety());
             newDelivery.setOliveVariety(delivery.getOliveVariety());
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] Created oil reception with operation type PAYMENT, linked to olive lot: %s", delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] Created oil reception with operation type PAYMENT, linked to olive lot: %s", delivery.getLotNumber());
 
             // Save both deliveries to maintain consistency
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] Saving original olive delivery to maintain consistency");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] Saving original olive delivery to maintain consistency");
             repository.save(delivery);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] Saving new oil reception for payment");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] Saving new oil reception for payment");
             UnifiedDelivery savedOilDelivery = repository.save(newDelivery);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createOilRecForPayment] Successfully created oil reception %s for payment from olive delivery %s", savedOilDelivery.getLotNumber(), delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createOilRecForPayment] Successfully created oil reception %s for payment from olive delivery %s", savedOilDelivery.getLotNumber(), delivery.getLotNumber());
 
             return savedOilDelivery;
 
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Error creating oil reception for payment: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecForPayment] Error creating oil reception for payment: " + e.getMessage(), e);
             throw new RuntimeException("Failed to create oil reception for payment", e);
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "createOilRecForPayment", null);
-            OSMLogger.logPerformance(this.getClass(), "createOilRecForPayment", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createOilRecForPayment", null);
+            OOSMLogger.logPerformance(this.getClass(), "createOilRecForPayment", startTime, System.currentTimeMillis());
         }
     }
 
@@ -835,34 +838,34 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public void updateStatus(UUID id, OliveLotStatus status, String cause) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "updateStatus", String.format("id=%s, status=%s", id, status));
+        OOSMLogger.logMethodEntry(this.getClass(), "updateStatus", String.format("id=%s, status=%s", id, status));
 
         // Validate input parameters
         if (id == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Delivery ID is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID cannot be null");
         }
 
         if (status == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Status is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Status is null");
             throw new IllegalArgumentException("Status cannot be null");
         }
 
         try {
             // Find the delivery
             UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Delivery not found with ID: " + id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Delivery not found with ID: " + id);
                 return new EntityNotFoundException("Delivery not found: " + id);
             });
             if (cause != null) {
                 delivery.setDescription(cause);
             }
             OliveLotStatus oldStatus = delivery.getStatus();
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateStatus] Found delivery %s (Type: %s, Old Status: %s, New Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), oldStatus, status);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateStatus] Found delivery %s (Type: %s, Old Status: %s, New Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), oldStatus, status);
 
             // Validate status transition
             if (oldStatus == status) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[updateStatus] Delivery %s status is already %s, no update needed", delivery.getLotNumber(), status);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[updateStatus] Delivery %s status is already %s, no update needed", delivery.getLotNumber(), status);
                 return;
             }
 
@@ -870,21 +873,21 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             delivery.setStatus(status);
             UnifiedDelivery savedDelivery = deliveryRepository.save(delivery);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateStatus] Successfully updated delivery %s status from %s to %s", savedDelivery.getLotNumber(), oldStatus, savedDelivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateStatus] Successfully updated delivery %s status from %s to %s", savedDelivery.getLotNumber(), oldStatus, savedDelivery.getStatus());
 
         } catch (EntityNotFoundException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Entity not found error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Entity not found error: " + e.getMessage());
             throw e;
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Validation error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Validation error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateStatus] Unexpected error during status update: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Unexpected error during status update: " + e.getMessage(), e);
             throw new RuntimeException("Failed to update delivery status", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "updateStatus", null);
-        OSMLogger.logPerformance(this.getClass(), "updateStatus", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "updateStatus", null);
+        OOSMLogger.logPerformance(this.getClass(), "updateStatus", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -900,36 +903,36 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public void updateprice(UUID id, Double unitPrice) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "updateprice", String.format("id=%s, unitPrice=%.2f", id, unitPrice));
+        OOSMLogger.logMethodEntry(this.getClass(), "updateprice", String.format("id=%s, unitPrice=%.2f", id, unitPrice));
 
         // Validate input parameters
         if (id == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Delivery ID is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID cannot be null");
         }
 
         if (unitPrice == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Unit price is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Unit price is null");
             throw new IllegalArgumentException("Unit price cannot be null");
         }
 
         if (unitPrice <= 0) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Unit price must be positive: " + unitPrice);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Unit price must be positive: " + unitPrice);
             throw new IllegalArgumentException("Unit price must be positive");
         }
 
         try {
             // Find the delivery
             UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Delivery not found with ID: " + id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Delivery not found with ID: " + id);
                 return new EntityNotFoundException("Delivery not found: " + id);
             });
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Found delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Found delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
 
             // Validate delivery state
             if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[updateprice] Updating price for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[updateprice] Updating price for delivery %s that is already IN_STOCK", delivery.getLotNumber());
             }
 
             // Update unit price
@@ -939,23 +942,23 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             switch (delivery.getDeliveryType()) {
                 case OIL -> {
                     if (delivery.getOilQuantity() == null || delivery.getOilQuantity() <= 0) {
-                        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Invalid oil quantity for delivery %s: %s", delivery.getLotNumber(), delivery.getOilQuantity());
+                        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Invalid oil quantity for delivery %s: %s", delivery.getLotNumber(), delivery.getOilQuantity());
                         throw new IllegalArgumentException("Oil quantity must be positive for OIL deliveries");
                     }
                     double totalPrice = unitPrice * delivery.getOilQuantity();
                     delivery.setPrice(totalPrice);
                     delivery.setStatus(OliveLotStatus.IN_STOCK);
                     delivery.setUnpaidAmount(totalPrice);
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Updated OIL delivery %s: unitPrice=%.2f, oilQuantity=%.2f, totalPrice=%.2f", delivery.getLotNumber(), unitPrice, delivery.getOilQuantity(), totalPrice);
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Updated OIL delivery %s: unitPrice=%.2f, oilQuantity=%.2f, totalPrice=%.2f", delivery.getLotNumber(), unitPrice, delivery.getOilQuantity(), totalPrice);
 
                     // Create oil transaction
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Creating oil transaction for delivery " + delivery.getLotNumber());
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Creating oil transaction for delivery " + delivery.getLotNumber());
                     oilTransactionService.createSingleOilTransactionIn(delivery);
                     recordOilPurchaseFinancialTransaction(delivery, totalPrice);
                 }
                 case OLIVE -> {
                     if (delivery.getPoidsNet() == null || delivery.getPoidsNet() <= 0) {
-                        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Invalid poids net for delivery %s: %s", delivery.getLotNumber(), delivery.getPoidsNet());
+                        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Invalid poids net for delivery %s: %s", delivery.getLotNumber(), delivery.getPoidsNet());
                         throw new IllegalArgumentException("Poids net must be positive for OLIVE deliveries");
                     }
 
@@ -964,31 +967,31 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     delivery.setStatus(OliveLotStatus.PROD_READY);
                     delivery.setUnpaidAmount(totalPrice);
 
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Updated OLIVE delivery %s: unitPrice=%.2f, poidsNet=%.2f, totalPrice=%.2f", delivery.getLotNumber(), unitPrice, delivery.getPoidsNet(), totalPrice);
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Updated OLIVE delivery %s: unitPrice=%.2f, poidsNet=%.2f, totalPrice=%.2f", delivery.getLotNumber(), unitPrice, delivery.getPoidsNet(), totalPrice);
                 }
                 case null, default -> {
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Unsupported delivery type for delivery %s: %s", delivery.getLotNumber(), delivery.getDeliveryType());
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Unsupported delivery type for delivery %s: %s", delivery.getLotNumber(), delivery.getDeliveryType());
                     throw new IllegalArgumentException("Unsupported delivery type: " + delivery.getDeliveryType());
                 }
             }
 
             // Save the updated delivery
             UnifiedDelivery savedDelivery = deliveryRepository.save(delivery);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateprice] Successfully saved delivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Successfully saved delivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
 
         } catch (EntityNotFoundException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Entity not found error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Entity not found error: " + e.getMessage());
             throw e;
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Validation error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Validation error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateprice] Unexpected error during price update: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Unexpected error during price update: " + e.getMessage(), e);
             throw new RuntimeException("Failed to update delivery price", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "updateprice", null);
-        OSMLogger.logPerformance(this.getClass(), "updateprice", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "updateprice", null);
+        OOSMLogger.logPerformance(this.getClass(), "updateprice", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -1002,34 +1005,34 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public void updatePrincingForPaymentreception(ExchangePricingDto dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "updatePrincingForPaymentreception", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "updatePrincingForPaymentreception", dto);
 
         // Validate input parameters
         if (dto == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] ExchangePricingDto is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] ExchangePricingDto is null");
             throw new IllegalArgumentException("ExchangePricingDto cannot be null");
         }
 
         if (dto.getDeliveryId() == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Delivery ID is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID cannot be null");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Processing payment reception for delivery %s with unit price %.2f and total price %.2f", dto.getDeliveryId(), dto.getUnitPrice(), dto.getPrice());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Processing payment reception for delivery %s with unit price %.2f and total price %.2f", dto.getDeliveryId(), dto.getUnitPrice(), dto.getPrice());
 
         try {
             // Find the oilDelivery
             UnifiedDelivery oilDelivery = deliveryRepository.findById(dto.getDeliveryId()).orElseThrow(() -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Delivery not found with ID: " + dto.getDeliveryId());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Delivery not found with ID: " + dto.getDeliveryId());
                 return new EntityNotFoundException("Delivery not found: " + dto.getDeliveryId());
             });
             UnifiedDelivery originalOliveDelivery = this.deliveryRepository.findByLotNumberAndDeliveryType(oilDelivery.getLotOliveNumber(), DeliveryType.OLIVE);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Found oilDelivery %s (Status: %s, Type: %s)", oilDelivery.getLotNumber(), oilDelivery.getStatus(), oilDelivery.getDeliveryType());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Found oilDelivery %s (Status: %s, Type: %s)", oilDelivery.getLotNumber(), oilDelivery.getStatus(), oilDelivery.getDeliveryType());
 
             // Validate oilDelivery type
             if (oilDelivery.getDeliveryType() != DeliveryType.OIL) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid oilDelivery type for payment reception: %s (expected OIL)", oilDelivery.getDeliveryType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid oilDelivery type for payment reception: %s (expected OIL)", oilDelivery.getDeliveryType());
                 throw new IllegalArgumentException("Payment reception can only be processed for OIL deliveries");
             }
 
@@ -1052,12 +1055,12 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             // Validate pricing data
             if (dto.getUnitPrice() == null || dto.getUnitPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid unit price: " + dto.getUnitPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid unit price: " + dto.getUnitPrice());
                 throw new IllegalArgumentException("Unit price must be positive");
             }
 
             if (dto.getPrice() == null || dto.getPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid total price: " + dto.getPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Invalid total price: " + dto.getPrice());
                 throw new IllegalArgumentException("Total price must be positive");
             }
 
@@ -1068,7 +1071,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             }
 
             // Update pricing on the oil leg
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Updating pricing for oilDelivery %s: unitPrice=%.2f, price=%.2f", oilDelivery.getLotNumber(), dto.getUnitPrice(), dto.getPrice());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Updating pricing for oilDelivery %s: unitPrice=%.2f, price=%.2f", oilDelivery.getLotNumber(), dto.getUnitPrice(), dto.getPrice());
 
             oilDelivery.setUnitPrice(dto.getUnitPrice());
             oilDelivery.setOilQuantity(dto.getOilQuantity());
@@ -1086,10 +1089,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             // Save the updated oilDelivery
             UnifiedDelivery savedDelivery = deliveryRepository.save(oilDelivery);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully saved oilDelivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully saved oilDelivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
 
             // Create oil transaction
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Creating oil transaction for oilDelivery " + oilDelivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Creating oil transaction for oilDelivery " + oilDelivery.getLotNumber());
             oilTransactionService.createSingleOilTransactionIn(savedDelivery);
 
             PaymentDTO paymentDTO = new PaymentDTO();
@@ -1101,18 +1104,18 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             }
             prepareFinanacalTransaction(paymentDTO, paymentAmount, originalOliveDelivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.SIMPLE_RECEPTION);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully completed payment reception processing for oilDelivery %s", oilDelivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updatePrincingForPaymentreception] Successfully completed payment reception processing for oilDelivery %s", oilDelivery.getLotNumber());
 
         } catch (EntityNotFoundException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Entity not found error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Entity not found error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Unexpected error during payment reception processing: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Unexpected error during payment reception processing: " + e.getMessage(), e);
             throw new RuntimeException("Failed to process payment reception", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "updatePrincingForPaymentreception", null);
-        OSMLogger.logPerformance(this.getClass(), "updatePrincingForPaymentreception", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "updatePrincingForPaymentreception", null);
+        OOSMLogger.logPerformance(this.getClass(), "updatePrincingForPaymentreception", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -1126,49 +1129,49 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Transactional
     public void updateExchangePricingAndCreateOilTransactionOut(ExchangePricingDto dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", dto);
 
         // Validate input parameters
         if (dto == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] ExchangePricingDto is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] ExchangePricingDto is null");
             throw new IllegalArgumentException("ExchangePricingDto cannot be null");
         }
 
         if (dto.getDeliveryId() == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Delivery ID is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID cannot be null");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Processing exchange pricing for delivery %s with unit price %.2f and total price %.2f", dto.getDeliveryId(), dto.getUnitPrice(), dto.getPrice());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Processing exchange pricing for delivery %s with unit price %.2f and total price %.2f", dto.getDeliveryId(), dto.getUnitPrice(), dto.getPrice());
 
         try {
             // Find the delivery
             UnifiedDelivery delivery = deliveryRepository.findById(dto.getDeliveryId()).orElseThrow(() -> {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Delivery not found with ID: " + dto.getDeliveryId());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Delivery not found with ID: " + dto.getDeliveryId());
                 return new EntityNotFoundException("Delivery not found: " + dto.getDeliveryId());
             });
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Found delivery %s (Status: %s, Type: %s, Operation: %s)", delivery.getLotNumber(), delivery.getStatus(), delivery.getDeliveryType(), delivery.getOperationType());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Found delivery %s (Status: %s, Type: %s, Operation: %s)", delivery.getLotNumber(), delivery.getStatus(), delivery.getDeliveryType(), delivery.getOperationType());
 
 
             // Validate operation type for exchange
             if (delivery.getOperationType() != OperationType.EXCHANGE) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[updateExchangePricingAndCreateOilTransactionOut] Processing exchange pricing for non-exchange operation: %s", delivery.getOperationType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[updateExchangePricingAndCreateOilTransactionOut] Processing exchange pricing for non-exchange operation: %s", delivery.getOperationType());
             }
 
             // Validate pricing data
             if (dto.getUnitPrice() == null || dto.getUnitPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Invalid unit price: " + dto.getUnitPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Invalid unit price: " + dto.getUnitPrice());
                 throw new IllegalArgumentException("Unit price must be positive");
             }
 
             if (dto.getPrice() == null || dto.getPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Invalid total price: " + dto.getPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Invalid total price: " + dto.getPrice());
                 throw new IllegalArgumentException("Total price must be positive");
             }
 
             // Update pricing on the Delivery
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Updating exchange pricing for delivery %s: unitPrice=%.2f, price=%.2f", delivery.getLotNumber(), dto.getUnitPrice(), dto.getPrice());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Updating exchange pricing for delivery %s: unitPrice=%.2f, price=%.2f", delivery.getLotNumber(), dto.getUnitPrice(), dto.getPrice());
 
             delivery.setUnitPrice(dto.getUnitPrice());
             delivery.setPrice(dto.getPrice());
@@ -1181,24 +1184,24 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             // Save the updated delivery
             UnifiedDelivery savedDelivery = deliveryRepository.save(delivery);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Successfully saved delivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Successfully saved delivery %s with new status: %s", savedDelivery.getLotNumber(), savedDelivery.getStatus());
 
             // Create oil transaction out
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Creating oil transaction out for delivery " + delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Creating oil transaction out for delivery " + delivery.getLotNumber());
             oilTransactionService.createSingleOilTransactionOut(savedDelivery, dto);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Successfully completed exchange pricing processing for delivery %s", delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateExchangePricingAndCreateOilTransactionOut] Successfully completed exchange pricing processing for delivery %s", delivery.getLotNumber());
 
         } catch (EntityNotFoundException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Entity not found error: " + e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Entity not found error: " + e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Unexpected error during exchange pricing processing: " + e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Unexpected error during exchange pricing processing: " + e.getMessage(), e);
             throw new RuntimeException("Failed to process exchange pricing", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", null);
-        OSMLogger.logPerformance(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", null);
+        OOSMLogger.logPerformance(this.getClass(), "updateExchangePricingAndCreateOilTransactionOut", startTime, System.currentTimeMillis());
     }
 
     @Transactional(readOnly = true)
@@ -1302,7 +1305,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         }
 
         OperationType operationType = resolveOilPurchaseOperationType(delivery);
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                 "[recordOilPurchaseFinancialTransaction] Recording outbound purchase for delivery %s, amount=%.2f, operation=%s",
                 delivery.getLotNumber(), amount, operationType);
         prepareFinanacalTransaction(paymentDTO, amount, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, operationType);
@@ -1345,15 +1348,15 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Override
     @Transactional
     public UnifiedDeliveryDTO delete(UUID id) {
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
         try {
             if (id == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
             UnifiedDelivery entity = repository.findByIdAndIsDeletedFalse(id).orElse(null);
             if (entity == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
             }
             entity.setDeleted(true);
@@ -1369,7 +1372,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             qualityControlResultRepository.saveAll(controlResults);
             return mapToDto(updatedEntity);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
             throw e;
         }
     }
@@ -1388,7 +1391,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             return mapToDto(matches.get(0));
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error getByLotNumberAndType  : ", e);
+            OOSMLogger.logException(this.getClass(), "Error getByLotNumberAndType  : ", e);
             return null;
         }
     }
@@ -1505,7 +1508,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     null,
                     null));
         } catch (Exception ex) {
-            OSMLogger.warn(UnifiedDeliveryService.class, "Failed to publish reception created notification: {}", ex.getMessage());
+            log.warn("Failed to publish reception created notification: {}", ex.getMessage());
         }
     }
 

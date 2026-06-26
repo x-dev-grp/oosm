@@ -3,9 +3,9 @@ package com.xdev.ooms.security.securityConfig;
 
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.service.UserService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -38,7 +38,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                                                     OAuth2TokenGenerator<?> tokenGenerator,
                                                     UserService userService,CompanyProfileRepository companyProfileRepository) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "CustomRefreshTokenAuthenticationProvider", "Initializing refresh token authentication provider");
+        OOSMLogger.logMethodEntry(this.getClass(), "CustomRefreshTokenAuthenticationProvider", "Initializing refresh token authentication provider");
 
         try {
             this.authorizationService = authorizationService;
@@ -46,13 +46,13 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             this.userService = userService;
             this.companyProfileRepository = companyProfileRepository;
 
-            OSMLogger.logMethodExit(this.getClass(), "CustomRefreshTokenAuthenticationProvider", "Refresh token authentication provider initialized");
-            OSMLogger.logPerformance(this.getClass(), "CustomRefreshTokenAuthenticationProvider", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_PROVIDER_INITIALIZED",
+            OOSMLogger.logMethodExit(this.getClass(), "CustomRefreshTokenAuthenticationProvider", "Refresh token authentication provider initialized");
+            OOSMLogger.logPerformance(this.getClass(), "CustomRefreshTokenAuthenticationProvider", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_PROVIDER_INITIALIZED",
                 "Custom refresh token authentication provider initialized");
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error initializing refresh token authentication provider", e);
+            OOSMLogger.logException(this.getClass(), "Error initializing refresh token authentication provider", e);
             throw e;
         }
     }
@@ -80,7 +80,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
         OAuth2RefreshTokenAuthenticationToken refreshTokenAuth = (OAuth2RefreshTokenAuthenticationToken) authentication;
         String refreshTokenValue = refreshTokenAuth.getRefreshToken();
 
-        OSMLogger.logMethodEntry(this.getClass(), "authenticate",
+        OOSMLogger.logMethodEntry(this.getClass(), "authenticate",
             "Refresh token authentication attempt - Token: " + (refreshTokenValue != null ? refreshTokenValue.substring(0, Math.min(10, refreshTokenValue.length())) + "..." : "null"));
 
         try {
@@ -89,7 +89,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                     refreshTokenAuth.getRefreshToken(), OAuth2TokenType.REFRESH_TOKEN);
 
             if (authorization == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_NOT_FOUND",
+                OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_NOT_FOUND",
                     "Refresh token not found in authorization service");
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_TOKEN);
             }
@@ -102,33 +102,33 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             OAuth2Authorization.Token<OAuth2RefreshToken> refreshToken = authorization.getRefreshToken();
             assert refreshToken != null;
             if (!refreshToken.isActive()) {
-                OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_INACTIVE",
+                OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_INACTIVE",
                     "Refresh token is not active for user: " + authorization.getPrincipalName());
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_GRANT);
             }
 
             // Check if the user account is locked
             String username = authorization.getPrincipalName();
-            OSMUser user = userService.getByUsernameWithFreshPermissions(username);
+            OOSMUser user = userService.getByUsernameWithFreshPermissions(username);
 
             if (user == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_USER_NOT_FOUND",
+                OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_USER_NOT_FOUND",
                     "User not found during refresh token authentication: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
 
             if (user.isLocked()) {
-                OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_ACCOUNT_LOCKED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_ACCOUNT_LOCKED",
                     "Account locked during refresh token authentication: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
-            if(!user.getRole().getRoleName().equalsIgnoreCase("OSMADMIN")) {
+            if(!user.getRole().getRoleName().equalsIgnoreCase("OOSMADMIN")) {
                 CompanyProfile companyProfile =companyProfileRepository.findById(user.getTenantId()).orElse(null);
                 if ( companyProfile ==null || !companyProfile.isActive() ) {
                     throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
                 }
             }
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "User validation passed for refresh token: {}", username);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "User validation passed for refresh token: {}", username);
 
             UsernamePasswordAuthenticationToken freshPrincipal =
                     new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
@@ -152,7 +152,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             // Generate access token
             OAuth2Token generatedAccessToken = tokenGenerator.generate(tokenContext);
             if (generatedAccessToken == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_GENERATION_FAILED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_GENERATION_FAILED",
                     "Access token generation failed during refresh for user: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
             }
@@ -161,7 +161,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                     generatedAccessToken.getTokenValue(), generatedAccessToken.getIssuedAt(),
                     generatedAccessToken.getExpiresAt(), tokenContext.getAuthorizedScopes());
 
-            OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_ACCESS_TOKEN_GENERATED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_ACCESS_TOKEN_GENERATED",
                 "New access token generated from refresh token for user: " + username);
 
             if (generatedAccessToken instanceof ClaimAccessor) {
@@ -175,7 +175,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             OAuth2Authorization updatedAuthorization = authorizationBuilder.build();
             authorizationService.save(updatedAuthorization);
 
-            OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_AUTHORIZATION_UPDATED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_AUTHORIZATION_UPDATED",
                 "Authorization updated with new access token for user: " + username);
 
             // Prepare additional parameters with scopes
@@ -191,20 +191,20 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                     additionalParameters
             );
 
-            OSMLogger.logMethodExit(this.getClass(), "authenticate",
+            OOSMLogger.logMethodExit(this.getClass(), "authenticate",
                 "Refresh token authentication successful for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "authenticate", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_SUCCESS",
+            OOSMLogger.logPerformance(this.getClass(), "authenticate", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_SUCCESS",
                 "Refresh token authentication completed successfully for user: " + username);
 
             return result;
 
         } catch (OAuth2AuthenticationException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_FAILED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_TOKEN_FAILED",
                 "Refresh token authentication failed - Error: " + e.getError().getErrorCode());
             throw e;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during refresh token authentication", e);
             throw e;
         }
@@ -225,7 +225,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             return clientPrincipal;
         }
 
-        OSMLogger.logSecurityEvent(this.getClass(), "REFRESH_CLIENT_NOT_AUTHENTICATED",
+        OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_CLIENT_NOT_AUTHENTICATED",
             "Client not authenticated during refresh token authentication");
         throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
     }

@@ -5,7 +5,7 @@ import com.xdev.ooms.inventory.emplacementstock.entity.EmplacementStock;
 import com.xdev.ooms.inventory.emplacementstock.repository.EmplacementStockRepository;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.validation.ValidationException;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -87,7 +87,7 @@ public class EmplacementStockService extends BaseServiceImpl<EmplacementStock, E
 
         emplacement.setActif(true);
         EmplacementStock savedEmplacement = emplacementRepository.save(emplacement);
-        OSMLogger.log(this.getClass(),OSMLogger.LogLevel.INFO,"Emplacement créé avec succès - ID: {}, Code: {}, Type: {}, Catégorie: {}",
+        OOSMLogger.log(this.getClass(),OOSMLogger.LogLevel.INFO,"Emplacement créé avec succès - ID: {}, Code: {}, Type: {}, Catégorie: {}",
                 savedEmplacement.getId(),
                 savedEmplacement.getCode(),
                 savedEmplacement.getTypeEmplacement(),

@@ -525,7 +525,7 @@
       "section": "security_entities",
       "profile": "CRUD_PDF"
     },
-    "OSMUSER": {
+    "OOSMUSER": {
       "module": "HABILITATION",
       "description": "User management",
       "section": "security_entities",

@@ -7,6 +7,7 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,7 +16,8 @@ import java.io.Serial;
 import java.util.Collection;
 
 @Entity
-public class OSMUser extends BaseEntity implements UserDetails {
+@Table(name = "oosmuser")
+public class OOSMUser extends BaseEntity implements UserDetails {
     @Serial
     private static final long serialVersionUID = -7954089139215121063L;
 

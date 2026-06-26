@@ -34,6 +34,6 @@ jobs:
         if: github.event_name != 'pull_request'
         uses: actions/upload-artifact@v4
         with:
-          name: osm-monolith-jar
-          path: app/target/osm-monolith.jar
+          name: oosm-monolith-jar
+          path: app/target/oosm-monolith.jar
           retention-days: 3

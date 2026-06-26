@@ -33,7 +33,7 @@ public class CompanyProfileController extends BaseControllerImpl<CompanyProfile,
     }
 
     @PostMapping("/save")
-    @PreAuthorize("authentication.tokenAttributes['role'] == 'OSMADMIN' or hasAnyAuthority('OSMADMIN', 'ROLE_OSMADMIN')")
+    @PreAuthorize("authentication.tokenAttributes['role'] == 'OOSMADMIN' or hasAnyAuthority('OOSMADMIN', 'ROLE_OOSMADMIN')")
     public ResponseEntity<?> saveCompany(@RequestBody CompanyUserDTO userDTO) {
         try {
             CompanyUserDTO companyUser = companyProfileService.save(userDTO);

@@ -1,6 +1,6 @@
-# OSM Permission Catalog
+# OOSM Permission Catalog
 
-Single source of truth for which `(module, entity, action)` permissions exist in OSM.
+Single source of truth for which `(module, entity, action)` permissions exist in OOSM.
 
 ## Files
 

@@ -6,7 +6,7 @@ Deploy the full OSM stack on a Linux VPS: PostgreSQL, Spring Boot backend, Angul
 
 - Ubuntu 22.04+ (or similar) with Docker Engine and Compose plugin
 - DNS A/AAAA record pointing to the VPS
-- GitHub Container Registry access to `ghcr.io/x-dev-grp/oosm-backend` and `osm-frontend`
+- GitHub Container Registry access to `ghcr.io/x-dev-grp/OOSM-backend` and `oosm-frontend`
 
 ## One-time VPS setup
 
@@ -14,13 +14,13 @@ Deploy the full OSM stack on a Linux VPS: PostgreSQL, Spring Boot backend, Angul
 # On the VPS (as root)
 curl -fsSL https://raw.githubusercontent.com/x-dev-grp/oosm/main/deploy/vps/setup-vps.sh | bash
 
-mkdir -p /opt/osm
-# Copy these files from the oosm repo into /opt/osm:
+mkdir -p /opt/oosm
+# Copy these files from the oosm repo into /opt/oosm:
 #   deploy/vps/docker-compose.yml
 #   deploy/vps/.env.example
 #   deploy/vps/deploy.sh
 
-cd /opt/osm
+cd /opt/oosm
 cp .env.example .env
 nano .env
 
@@ -50,7 +50,7 @@ See `.env.example` for the full list.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | PR / push | Maven verify |
-| `docker-publish.yml` | push `main` / `release`, tags `v*` | Push `ghcr.io/x-dev-grp/oosm-backend` |
+| `docker-publish.yml` | push `main` / `release`, tags `v*` | Push `ghcr.io/x-dev-grp/OOSM-backend` |
 | `deploy-vps.yml` | Manual | SSH deploy to VPS |
 
 ### Frontend repo (`osm-ms-fe`)
@@ -58,7 +58,7 @@ See `.env.example` for the full list.
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
 | `ci.yml` | PR / push | npm ci + production build |
-| `docker-publish.yml` | push `main` / `release` | Push `ghcr.io/x-dev-grp/osm-frontend` |
+| `docker-publish.yml` | push `main` / `release` | Push `ghcr.io/x-dev-grp/oosm-frontend` |
 
 ### GitHub secrets (backend repo, environment `vps`)
 
@@ -67,7 +67,7 @@ See `.env.example` for the full list.
 | `VPS_HOST` | VPS IP or hostname |
 | `VPS_USER` | SSH user (e.g. `deploy`) |
 | `VPS_SSH_PRIVATE_KEY` | Private key for SSH |
-| `VPS_DEPLOY_PATH` | e.g. `/opt/osm` |
+| `VPS_DEPLOY_PATH` | e.g. `/opt/oosm` |
 | `VPS_SSH_PORT` | Optional, default 22 |
 | `GHCR_DEPLOY_USER` | GitHub user or bot for GHCR pull |
 | `GHCR_DEPLOY_TOKEN` | PAT with `read:packages` |
@@ -90,7 +90,7 @@ docker compose --env-file .env up -d
 ## Updating
 
 ```bash
-cd /opt/osm
+cd /opt/oosm
 docker compose pull
 ./deploy.sh
 ```

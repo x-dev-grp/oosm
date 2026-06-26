@@ -31,9 +31,17 @@ public class TenantFilter extends OncePerRequestFilter {
                 Jwt jwt = jwtAuth.getToken();
                 Map<String, Object> claims = jwt.getClaims();
 
-                if (claims.containsKey("osmUser")) {
-                    Map<String, Object> osmUser = (Map<String, Object>) claims.get("osmUser");
-                    Object tenantIdObj = osmUser.get("tenantId");
+                if (claims.containsKey("oosmUser")) {
+                    Map<String, Object> oosmUser = (Map<String, Object>) claims.get("oosmUser");
+                    Object tenantIdObj = oosmUser.get("tenantId");
+
+                    if (tenantIdObj != null) {
+                        UUID tenantId = UUID.fromString(tenantIdObj.toString());
+                        TenantContext.setCurrentTenant(tenantId);
+                    }
+                } else if (claims.containsKey("osmUser")) {
+                    Map<String, Object> legacyUser = (Map<String, Object>) claims.get("osmUser");
+                    Object tenantIdObj = legacyUser.get("tenantId");
 
                     if (tenantIdObj != null) {
                         UUID tenantId = UUID.fromString(tenantIdObj.toString());

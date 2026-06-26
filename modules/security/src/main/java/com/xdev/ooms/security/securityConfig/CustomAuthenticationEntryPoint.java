@@ -1,7 +1,7 @@
 package com.xdev.ooms.security.securityConfig;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.HttpStatus;
@@ -30,7 +30,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
         String clientIP = getClientIP(request);
         String userAgent = request.getHeader("User-Agent");
         
-        OSMLogger.logMethodEntry(this.getClass(), "commence", 
+        OOSMLogger.logMethodEntry(this.getClass(), "commence", 
             "Authentication failed for URI: " + requestURI + ", IP: " + clientIP);
         
         try {
@@ -46,7 +46,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 errorCode = "INVALID_CREDENTIALS";
                 message = "Invalid username or password.";
                 
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_BAD_CREDENTIALS", 
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_BAD_CREDENTIALS", 
                     "Invalid credentials attempt from IP: " + clientIP + ", URI: " + requestURI);
                     
             } else if (authException instanceof LockedException) {
@@ -54,7 +54,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 errorCode = "ACCOUNT_LOCKED";
                 message = "Your account is locked.";
                 
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_LOCKED", 
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_LOCKED", 
                     "Locked account access attempt from IP: " + clientIP + ", URI: " + requestURI);
                     
             } else if (authException instanceof DisabledException) {
@@ -62,7 +62,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 errorCode = "ACCOUNT_DISABLED";
                 message = "Your account is disabled.";
                 
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_DISABLED", 
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_DISABLED", 
                     "Disabled account access attempt from IP: " + clientIP + ", URI: " + requestURI);
                     
             } else {
@@ -70,7 +70,7 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
                 errorCode = "AUTH_FAILED";
                 message = "Authentication failed try again later.";
                 
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_GENERAL_FAILURE", 
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_GENERAL_FAILURE", 
                     "General authentication failure from IP: " + clientIP + ", URI: " + requestURI + 
                     ", Exception: " + authException.getClass().getSimpleName());
             }
@@ -85,14 +85,14 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
             String errorResponse = objectMapper.writeValueAsString(error);
             response.getWriter().write(errorResponse);
             
-            OSMLogger.logMethodExit(this.getClass(), "commence", 
+            OOSMLogger.logMethodExit(this.getClass(), "commence", 
                 "Authentication failure handled - Status: " + status + ", Error: " + errorCode);
-            OSMLogger.logPerformance(this.getClass(), "commence", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_RESPONSE_SENT", 
+            OOSMLogger.logPerformance(this.getClass(), "commence", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_RESPONSE_SENT", 
                 "Authentication failure response sent - Status: " + status + ", IP: " + clientIP);
             
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), 
+            OOSMLogger.logException(this.getClass(), 
                 "Error handling authentication failure for URI: " + requestURI + ", IP: " + clientIP, e);
             throw e;
         }

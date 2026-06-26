@@ -1,6 +1,6 @@
 package com.xdev.ooms.security.securityConfig;
 
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.service.UserService;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -17,12 +17,12 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class OsmJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
+public class OosmJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private final UserService userService;
     private final JwtAuthenticationConverter delegate;
 
-    public OsmJwtAuthenticationConverter(UserService userService) {
+    public OosmJwtAuthenticationConverter(UserService userService) {
         this.userService = userService;
         this.delegate = new JwtAuthenticationConverter();
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
@@ -39,7 +39,7 @@ public class OsmJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
             return token;
         }
 
-        OSMUser user = userService.getByUsernameWithFreshPermissions(username);
+        OOSMUser user = userService.getByUsernameWithFreshPermissions(username);
         if (user == null || user.getRole() == null) {
             return token;
         }
@@ -59,8 +59,13 @@ public class OsmJwtAuthenticationConverter implements Converter<Jwt, AbstractAut
             return subject;
         }
 
-        Object osmUserClaim = jwt.getClaim("osmUser");
-        if (osmUserClaim instanceof Map<?, ?> map && map.get("username") != null) {
+        Object oosmUserClaim = jwt.getClaim("oosmUser");
+        if (oosmUserClaim instanceof Map<?, ?> map && map.get("username") != null) {
+            return map.get("username").toString();
+        }
+
+        Object legacyUserClaim = jwt.getClaim("osmUser");
+        if (legacyUserClaim instanceof Map<?, ?> map && map.get("username") != null) {
             return map.get("username").toString();
         }
 

@@ -1,9 +1,9 @@
 package com.xdev.ooms.sharedkernel.mail.services.impl;
 
-import com.xdev.ooms.sharedkernel.mail.config.OsmMailProperties;
+import com.xdev.ooms.sharedkernel.mail.config.OosmMailProperties;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.InternetAddress;
 import jakarta.mail.internet.MimeMessage;
@@ -18,9 +18,9 @@ import java.io.UnsupportedEncodingException;
 public class MailServiceImpl implements MailService {
 
     private final JavaMailSender mailSender;
-    private final OsmMailProperties mailProperties;
+    private final OosmMailProperties mailProperties;
 
-    public MailServiceImpl(JavaMailSender mailSender, OsmMailProperties mailProperties) {
+    public MailServiceImpl(JavaMailSender mailSender, OosmMailProperties mailProperties) {
         this.mailSender = mailSender;
         this.mailProperties = mailProperties;
     }
@@ -33,7 +33,7 @@ public class MailServiceImpl implements MailService {
     @Override
     public void sendEmail(MailRequest request) throws MessagingException {
         if (!isDeliveryEnabled()) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                     "Mail delivery disabled; skipped email to {}", request.getTo());
             return;
         }

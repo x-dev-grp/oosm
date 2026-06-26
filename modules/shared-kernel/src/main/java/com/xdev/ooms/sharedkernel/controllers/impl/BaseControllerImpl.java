@@ -14,7 +14,7 @@ import com.xdev.ooms.sharedkernel.qr.model.QrCodeInfo;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -60,14 +60,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<ApiSingleResponse<E, OUTDTO>> findDtoByUuid(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findDtoByUuid", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "findDtoByUuid", id);
 
         try {
             OUTDTO result = baseService.findById(id);
             attachPermittedActions(result, currentAuthentication());
-            OSMLogger.logMethodExit(this.getClass(), "findDtoByUuid", result);
-            OSMLogger.logPerformance(this.getClass(), "findDtoByUuid", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ", this.getClass().getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findDtoByUuid", result);
+            OOSMLogger.logPerformance(this.getClass(), "findDtoByUuid", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ", this.getClass().getSimpleName());
 
             return ResponseEntity.ok(new ApiSingleResponse<E, OUTDTO>(true, "Entity found successfully", result));
         } catch (Exception e) {
@@ -78,14 +78,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<ApiResponse<E, OUTDTO>> fetchAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "fetchAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "fetchAll");
 
         try {
             List<OUTDTO> list = baseService.findAll();
             attachPermittedActions(list, currentAuthentication());
-            OSMLogger.logMethodExit(this.getClass(), "fetchAll", "Found " + list.size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "fetchAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL", this.getClass().getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "fetchAll", "Found " + list.size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "fetchAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", this.getClass().getSimpleName());
 
             return ResponseEntity.ok(new ApiResponse<E, OUTDTO>(true, "Retrieved " + list.size() + " entities successfully", list));
         } catch (Exception e) {
@@ -98,14 +98,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "fetchAllPageable", page, size, sort, direction);
+        OOSMLogger.logMethodEntry(this.getClass(), "fetchAllPageable", page, size, sort, direction);
 
         try {
             Page<OUTDTO> pageResult = baseService.findAll(page, size, sort, direction);
             List<OUTDTO> content = attachPermittedActions(pageResult.toList(), currentAuthentication());
-            OSMLogger.logMethodExit(this.getClass(), "fetchAllPageable", "Page " + page + " with " + pageResult.getContent().size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "fetchAllPageable", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", this.getClass().getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "fetchAllPageable", "Page " + page + " with " + pageResult.getContent().size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "fetchAllPageable", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", this.getClass().getSimpleName());
 
             return ResponseEntity.ok(new ApiResponse<E, OUTDTO>(true, "Retrieved page " + page + " successfully", content));
         } catch (Exception e) {
@@ -118,15 +118,15 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
             @RequestBody INDTO dto
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "create", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "create", dto);
 
         try {
             OUTDTO savedEntity = baseService.save(dto);
             attachPermittedActions(savedEntity, currentAuthentication());
-            OSMLogger.logMethodExit(this.getClass(), "create", savedEntity);
-            OSMLogger.logPerformance(this.getClass(), "create", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "CREATE", this.getClass().getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_CREATED", "Created entity with ID: " + savedEntity.getId());
+            OOSMLogger.logMethodExit(this.getClass(), "create", savedEntity);
+            OOSMLogger.logPerformance(this.getClass(), "create", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "CREATE", this.getClass().getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_CREATED", "Created entity with ID: " + savedEntity.getId());
 
             return ResponseEntity.ok(new ApiSingleResponse<E, OUTDTO>(true, "Entity created successfully", savedEntity));
         } catch (Exception e) {
@@ -138,15 +138,15 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
             @RequestBody INDTO dto
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "update", dto);
 
         try {
             OUTDTO savedEntity = baseService.update(dto);
             attachPermittedActions(savedEntity, currentAuthentication());
-            OSMLogger.logMethodExit(this.getClass(), "update", savedEntity);
-            OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "UPDATE", this.getClass().getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_UPDATED", "Updated entity with ID: " + savedEntity.getId());
+            OOSMLogger.logMethodExit(this.getClass(), "update", savedEntity);
+            OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "UPDATE", this.getClass().getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_UPDATED", "Updated entity with ID: " + savedEntity.getId());
 
             return ResponseEntity.ok(new ApiSingleResponse<E, OUTDTO>(true, "Entity updated successfully", savedEntity));
         } catch (Exception e) {
@@ -159,14 +159,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
             @PathVariable UUID id
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "remove", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "remove", id);
 
         try {
             baseService.remove(id);
-            OSMLogger.logMethodExit(this.getClass(), "remove");
-            OSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "REMOVE", this.getClass().getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_REMOVED", "Removed entity with ID: " + id);
+            OOSMLogger.logMethodExit(this.getClass(), "remove");
+            OOSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "REMOVE", this.getClass().getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_REMOVED", "Removed entity with ID: " + id);
 
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -177,14 +177,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<?> delete(UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
 
         try {
             OUTDTO deletedEntity = baseService.delete(id);
-            OSMLogger.logMethodExit(this.getClass(), "delete", deletedEntity);
-            OSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "DELETE", this.getClass().getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_DELETED", "Deleted entity with ID: " + id);
+            OOSMLogger.logMethodExit(this.getClass(), "delete", deletedEntity);
+            OOSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "DELETE", this.getClass().getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_DELETED", "Deleted entity with ID: " + id);
 
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -198,14 +198,14 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<SearchResponse<E, OUTDTO>> advancedSearch(@RequestBody SearchData searchData, Authentication authentication) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "advancedSearch", searchData, authentication != null ? authentication.getName() : "anonymous");
+        OOSMLogger.logMethodEntry(this.getClass(), "advancedSearch", searchData, authentication != null ? authentication.getName() : "anonymous");
 
         try {
             final String resource = getResourceName();
             Set<String> actions = extractResourcePermissions(authentication, resource);
             String role = extractResourceRole(authentication);
 
-            OSMLogger.logSecurityEvent(this.getClass(), "SEARCH_PERMISSIONS",
+            OOSMLogger.logSecurityEvent(this.getClass(), "SEARCH_PERMISSIONS",
                     "User: " + (authentication != null ? authentication.getName() : "anonymous") +
                             ", Role: " + role + ", Resource: " + resource + ", Permissions: " + actions);
 
@@ -216,16 +216,16 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                     .toList();
             response.setData(dtos);
 
-            OSMLogger.logMethodExit(this.getClass(), "advancedSearch", "Found " + dtos.size() + " entities with filtered actions");
-            OSMLogger.logPerformance(this.getClass(), "advancedSearch", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "ADVANCED_SEARCH", this.getClass().getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ADVANCED_SEARCH_EXECUTED",
+            OOSMLogger.logMethodExit(this.getClass(), "advancedSearch", "Found " + dtos.size() + " entities with filtered actions");
+            OOSMLogger.logPerformance(this.getClass(), "advancedSearch", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "ADVANCED_SEARCH", this.getClass().getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ADVANCED_SEARCH_EXECUTED",
                     "Advanced search executed by " + (authentication != null ? authentication.getName() : "anonymous") +
                             " with " + dtos.size() + " results");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error during advanced search", e);
+            OOSMLogger.logException(this.getClass(), "Error during advanced search", e);
             throw e;
         }
     }
@@ -263,9 +263,9 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                 .filter(Objects::nonNull)
                 .map(String::toUpperCase)
                 .filter(authority -> authority.equals("ADMIN")
-                        || authority.equals("OSMADMIN")
+                        || authority.equals("OOSMADMIN")
                         || authority.equals("ROLE_ADMIN")
-                        || authority.equals("ROLE_OSMADMIN"))
+                        || authority.equals("ROLE_OOSMADMIN"))
                 .map(authority -> authority.replace("ROLE_", ""))
                 .findFirst()
                 .orElse("");
@@ -348,7 +348,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
         if (availableActions == null || availableActions.isEmpty()) {
             return Collections.emptySet();
         }
-        Set<String> adminRoles = Set.of("ADMIN", "OSMADMIN");
+        Set<String> adminRoles = Set.of("ADMIN", "OOSMADMIN");
         if (adminRoles.contains(role)) {
             return new HashSet<>(availableActions);
         }
@@ -427,7 +427,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<byte[]> exportPdf(@RequestBody ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportPdf", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportPdf", exportDetails);
 
         try {
             byte[] content = baseService.exportToPdf(exportDetails);
@@ -442,9 +442,9 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                     MediaType.parseMediaType("application/zip") :
                     MediaType.APPLICATION_PDF;
 
-            OSMLogger.logMethodExit(this.getClass(), "exportPdf", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "PDF"));
-            OSMLogger.logPerformance(this.getClass(), "exportPdf", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "PDF_EXPORT",
+            OOSMLogger.logMethodExit(this.getClass(), "exportPdf", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "PDF"));
+            OOSMLogger.logPerformance(this.getClass(), "exportPdf", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "PDF_EXPORT",
                     "PDF export completed: " + fileName + " (" + content.length + " bytes)");
 
             return ResponseEntity.ok()
@@ -452,7 +452,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                     .contentType(mediaType)
                     .body(content);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error during PDF export", e);
+            OOSMLogger.logException(this.getClass(), "Error during PDF export", e);
             throw e;
         }
     }
@@ -467,7 +467,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<byte[]> exportCsv(@RequestBody ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportCsv", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportCsv", exportDetails);
 
         try {
             byte[] content = baseService.exportToCsv(exportDetails);
@@ -490,9 +490,9 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                 headers.set(HttpHeaders.CONTENT_TYPE, "text/csv;charset=UTF-8");
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "exportCsv", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "CSV"));
-            OSMLogger.logPerformance(this.getClass(), "exportCsv", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "CSV_EXPORT",
+            OOSMLogger.logMethodExit(this.getClass(), "exportCsv", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "CSV"));
+            OOSMLogger.logPerformance(this.getClass(), "exportCsv", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "CSV_EXPORT",
                     "CSV export completed: " + fileName + " (" + content.length + " bytes)");
 
             return ResponseEntity.ok()
@@ -500,7 +500,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                     .contentType(mediaType)
                     .body(content);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error during CSV export", e);
+            OOSMLogger.logException(this.getClass(), "Error during CSV export", e);
             throw e;
         }
     }
@@ -512,7 +512,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Override
     public ResponseEntity<byte[]> exportExcel(@RequestBody ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportExcel", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportExcel", exportDetails);
 
         try {
             byte[] content = baseService.exportToExcel(exportDetails);
@@ -532,9 +532,9 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                 mediaType = MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "exportExcel", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "Excel"));
-            OSMLogger.logPerformance(this.getClass(), "exportExcel", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "EXCEL_EXPORT",
+            OOSMLogger.logMethodExit(this.getClass(), "exportExcel", "Exported " + content.length + " bytes as " + (isZipped ? "ZIP" : "Excel"));
+            OOSMLogger.logPerformance(this.getClass(), "exportExcel", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "EXCEL_EXPORT",
                     "Excel export completed: " + fileName + " (" + content.length + " bytes)");
 
             return ResponseEntity.ok()
@@ -542,7 +542,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
                     .contentType(mediaType)
                     .body(content);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error during Excel export", e);
+            OOSMLogger.logException(this.getClass(), "Error during Excel export", e);
             throw e;
         }
     }
@@ -568,7 +568,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
             QrCodeInfo qrInfo = baseService.generateQrInfo(entityType, entityId);
              return ResponseEntity.ok(qrInfo);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error generating QR", e);
+            OOSMLogger.logException(this.getClass(), "Error generating QR", e);
             throw e;
         }
     }

@@ -8,7 +8,7 @@ import com.xdev.ooms.production.supplier.entity.Supplier;
 import com.xdev.ooms.production.supplier.service.SupplierTypeService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -36,16 +36,16 @@ public class SupplierTypeController extends BaseControllerImpl<Supplier, Supplie
     @GetMapping("/{supplierId}/payments/paid/count")
     public ResponseEntity<Long> getPaidPaymentsCount(@PathVariable UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
         try {
             long count = supplierTypeService.getPaidPaymentsCount(supplierId);
             return ResponseEntity.ok(count);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getPaidPaymentsCount", e);
+            OOSMLogger.logException(this.getClass(), "getPaidPaymentsCount", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "getPaidPaymentsCount", null);
-            OSMLogger.logPerformance(this.getClass(), "getPaidPaymentsCount", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getPaidPaymentsCount", null);
+            OOSMLogger.logPerformance(this.getClass(), "getPaidPaymentsCount", startTime, System.currentTimeMillis());
         }
     }
 
@@ -53,16 +53,16 @@ public class SupplierTypeController extends BaseControllerImpl<Supplier, Supplie
     @GetMapping("/{supplierId}/payments/unpaid/count")
     public ResponseEntity<Long> getUnpaidPaymentsCount(@PathVariable UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);
         try {
             long count = supplierTypeService.getUnpaidPaymentsCount(supplierId);
             return ResponseEntity.ok(count);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getUnpaidPaymentsCount", e);
+            OOSMLogger.logException(this.getClass(), "getUnpaidPaymentsCount", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "getUnpaidPaymentsCount", null);
-            OSMLogger.logPerformance(this.getClass(), "getUnpaidPaymentsCount", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getUnpaidPaymentsCount", null);
+            OOSMLogger.logPerformance(this.getClass(), "getUnpaidPaymentsCount", startTime, System.currentTimeMillis());
         }
     }
 

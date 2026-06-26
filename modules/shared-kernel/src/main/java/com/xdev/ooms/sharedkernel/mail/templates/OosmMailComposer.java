@@ -1,6 +1,6 @@
 package com.xdev.ooms.sharedkernel.mail.templates;
 
-import com.xdev.ooms.sharedkernel.mail.config.OsmMailProperties;
+import com.xdev.ooms.sharedkernel.mail.config.OosmMailProperties;
 import com.xdev.ooms.sharedkernel.mail.models.EmailBranding;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import org.springframework.stereotype.Component;
@@ -11,14 +11,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Component
-public class OsmMailComposer {
+public class OosmMailComposer {
 
     private static final int RESET_CODE_EXPIRY_MINUTES = 10;
 
     private final EmailTemplateRenderer templateRenderer;
-    private final OsmMailProperties mailProperties;
+    private final OosmMailProperties mailProperties;
 
-    public OsmMailComposer(EmailTemplateRenderer templateRenderer, OsmMailProperties mailProperties) {
+    public OosmMailComposer(EmailTemplateRenderer templateRenderer, OosmMailProperties mailProperties) {
         this.templateRenderer = templateRenderer;
         this.mailProperties = mailProperties;
     }
@@ -42,7 +42,7 @@ public class OsmMailComposer {
         variables.put("USERNAME", username);
         variables.put("TEMP_PASSWORD", temporaryPassword);
         variables.put("LOGIN_URL", resolved.loginUrl());
-        variables.put("PREHEADER", "Vos identifiants de connexion OSM");
+        variables.put("PREHEADER", "Vos identifiants de connexion OOSM");
 
         String htmlBody = templateRenderer.render("mail/welcome-credentials.html", variables);
         String plainBody = """

@@ -1,7 +1,5 @@
 package com.xdev.ooms.production.planning.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
-
 import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 
 import com.xdev.ooms.production.genealogy.dto.GlobalLotDto;
@@ -28,10 +26,13 @@ import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionD
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,6 +51,7 @@ public class PlanningService {
     public static final String MILL_NOT_FOUND = "Mill not found: ";
     public static final String DELIVERY_NOT_FOUND = "Delivery not found: ";
     public static final String NO_DELIVERIES_FOUND_FOR_GLOBAL_LOT = "No deliveries found for global lot: ";
+    private static final Logger log = LoggerFactory.getLogger(PlanningService.class);
     private final MillMachineRepository millRepo;
     private final DeliveryRepository deliveryRepo;
     private final ModelMapper modelMapper;
@@ -78,9 +80,9 @@ public class PlanningService {
     @Transactional
     public void savePlanning(PlanningSaveRequest req) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "savePlanning", req);
+        OOSMLogger.logMethodEntry(this.getClass(), "savePlanning", req);
         try {
-            OSMLogger.info(PlanningService.class, "Saving planning at {}", new Date());
+            log.info("Saving planning at {}", new Date());
 
             validateRequest(req);
 
@@ -98,7 +100,7 @@ public class PlanningService {
 
             // 4. If no lots are assigned in the request, clear all mill assignments
             if (req.getMills().stream().allMatch(m -> m.getItems().isEmpty())) {
-                OSMLogger.info(PlanningService.class, "No lots assigned in request, clearing all mill assignments");
+                log.info("No lots assigned in request, clearing all mill assignments");
                 deliveryMap.values().forEach(d -> {
                     d.setMillMachine(null);
                     if (d.getOperationType() == OperationType.BASE || d.getOperationType() == OperationType.EXCHANGE) {
@@ -171,35 +173,35 @@ public class PlanningService {
             // 7. Save all changes
             deliveryRepo.saveAll(deliveryMap.values());
 
-            OSMLogger.info(PlanningService.class, "Planning saved successfully. {} lots assigned to mills, {} lots unassigned", processedLotNumbers.size(), deliveryMap.size() - processedLotNumbers.size());
+            log.info("Planning saved successfully. {} lots assigned to mills, {} lots unassigned", processedLotNumbers.size(), deliveryMap.size() - processedLotNumbers.size());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "savePlanning", e);
+            OOSMLogger.logException(this.getClass(), "savePlanning", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "savePlanning", null);
-            OSMLogger.logPerformance(this.getClass(), "savePlanning", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "savePlanning", null);
+            OOSMLogger.logPerformance(this.getClass(), "savePlanning", startTime, System.currentTimeMillis());
         }
     }
 
     private void validateRequest(PlanningSaveRequest req) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "validateRequest", req);
+        OOSMLogger.logMethodEntry(this.getClass(), "validateRequest", req);
         try {
             if (req.getMills() == null || req.getMills().isEmpty()) {
                 throw new IllegalArgumentException("No mills provided");
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "validateRequest", e);
+            OOSMLogger.logException(this.getClass(), "validateRequest", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "validateRequest", null);
-            OSMLogger.logPerformance(this.getClass(), "validateRequest", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "validateRequest", null);
+            OOSMLogger.logPerformance(this.getClass(), "validateRequest", startTime, System.currentTimeMillis());
         }
     }
 
     private Map<String, UnifiedDelivery> loadDeliveries(PlanningSaveRequest req) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "loadDeliveries", req);
+        OOSMLogger.logMethodEntry(this.getClass(), "loadDeliveries", req);
         try {
             // Load all available deliveries for planning (those that can be assigned to mills)
             List<UnifiedDelivery> allAvailableDeliveries = deliveryRepo.findOliveDeliveriesControlled();
@@ -209,17 +211,17 @@ public class PlanningService {
 
             return deliveries.stream().collect(Collectors.toMap(UnifiedDelivery::getLotNumber, d -> d));
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "loadDeliveries", e);
+            OOSMLogger.logException(this.getClass(), "loadDeliveries", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "loadDeliveries", null);
-            OSMLogger.logPerformance(this.getClass(), "loadDeliveries", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "loadDeliveries", null);
+            OOSMLogger.logPerformance(this.getClass(), "loadDeliveries", startTime, System.currentTimeMillis());
         }
     }
 
     private void clearAssignments(Collection<UnifiedDelivery> deliveries) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "clearAssignments", deliveries);
+        OOSMLogger.logMethodEntry(this.getClass(), "clearAssignments", deliveries);
         try {
             deliveries.forEach(d -> {
                 d.setMillMachine(null);
@@ -233,11 +235,11 @@ public class PlanningService {
                 }
             });
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "clearAssignments", e);
+            OOSMLogger.logException(this.getClass(), "clearAssignments", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "clearAssignments", null);
-            OSMLogger.logPerformance(this.getClass(), "clearAssignments", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "clearAssignments", null);
+            OOSMLogger.logPerformance(this.getClass(), "clearAssignments", startTime, System.currentTimeMillis());
         }
     }
 
@@ -245,7 +247,7 @@ public class PlanningService {
     public PlanningSaveRequest getPlanning() {
         long startTime = System.currentTimeMillis();
         try {
-            OSMLogger.info(PlanningService.class, "Fetching current planning state at {}", new Date());
+            log.info("Fetching current planning state at {}", new Date());
 
             // Get all mills
             List<MillMachine> mills = millRepo.findAll();
@@ -315,11 +317,11 @@ public class PlanningService {
 
             return new PlanningSaveRequest(millPlans, globalLots);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getPlanning", e);
+            OOSMLogger.logException(this.getClass(), "getPlanning", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "getPlanning", null);
-            OSMLogger.logPerformance(this.getClass(), "getPlanning", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getPlanning", null);
+            OOSMLogger.logPerformance(this.getClass(), "getPlanning", startTime, System.currentTimeMillis());
         }
     }
 
@@ -353,7 +355,7 @@ public class PlanningService {
     @Transactional
     public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "markLotCompleted", lotNumber, oilQuantity, rendement);
+        OOSMLogger.logMethodEntry(this.getClass(), "markLotCompleted", lotNumber, oilQuantity, rendement);
         try {
 
             List<UnifiedDelivery> delivery = deliveryRepo.findByLotNumberIn(Set.of(lotNumber));
@@ -408,13 +410,13 @@ public class PlanningService {
 
 
             publishCrushingCompletedNotification(lot, oilQuantity, rendement);
-            OSMLogger.info(PlanningService.class, "Lot {} marked as completed with oilQuantity: {}, rendement: {}, unpaidPrice: {}", lotNumber, oilQuantity, rendement, unpaidPrice);
+            log.info("Lot {} marked as completed with oilQuantity: {}, rendement: {}, unpaidPrice: {}", lotNumber, oilQuantity, rendement, unpaidPrice);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "markLotCompleted", e);
+            OOSMLogger.logException(this.getClass(), "markLotCompleted", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "markLotCompleted", null);
-            OSMLogger.logPerformance(this.getClass(), "markLotCompleted", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "markLotCompleted", null);
+            OOSMLogger.logPerformance(this.getClass(), "markLotCompleted", startTime, System.currentTimeMillis());
         }
     }
 
@@ -431,7 +433,7 @@ public class PlanningService {
         List<ChildLotCompletionDto> childLots = new ObjectMapper().convertValue(body.get("childLots"), new TypeReference<>() {
                 }
         );
-        OSMLogger.logMethodEntry(this.getClass(), "markGlobalLotCompleted", globalLotNumber, childLots);
+        OOSMLogger.logMethodEntry(this.getClass(), "markGlobalLotCompleted", globalLotNumber, childLots);
 
         try {
             // verify global lot exists
@@ -441,18 +443,18 @@ public class PlanningService {
             }
             // delegate each child
             childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree, trtDateIso, finalObservation));
-            OSMLogger.info(PlanningService.class, "Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
+            log.info("Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
             if (existing.getFirst().getOperationType() == OperationType.BASE || existing.getFirst().getOperationType() == OperationType.OLIVE_PURCHASE) {
                 createGlobalOilReception(globalLotNumber, oilQuantity, rendement);
             }
             updateMachinWorkTime(existing.getFirst().getMillMachine(), duree);
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "markGlobalLotCompleted", e);
+            OOSMLogger.logException(this.getClass(), "markGlobalLotCompleted", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "markGlobalLotCompleted", null);
-            OSMLogger.logPerformance(this.getClass(), "markGlobalLotCompleted", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "markGlobalLotCompleted", null);
+            OOSMLogger.logPerformance(this.getClass(), "markGlobalLotCompleted", startTime, System.currentTimeMillis());
         }
 
     }
@@ -484,7 +486,7 @@ public class PlanningService {
     @Transactional
     protected void createGlobalOilReception(String globalLotNumber, Double oilQuantity, Double rendement) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", globalLotNumber);
+        OOSMLogger.logMethodEntry(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", globalLotNumber);
 
         try {
             // Fetch child lots
@@ -569,14 +571,14 @@ public class PlanningService {
             deliveryRepo.save(savedGlobal);
 
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[GLOBAL_RECEPTION] Created global oil reception gln={} totalOliveKg={} totalOilKg={} rendement={} totalUnpaid={} trtDurationMin={}",
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[GLOBAL_RECEPTION] Created global oil reception gln={} totalOliveKg={} totalOilKg={} rendement={} totalUnpaid={} trtDurationMin={}",
                     gln, round(totalOliveKg, 3), round(totalOilKg, 3), rendement, round(totalUnpaid, 3), totalDuration);
 
-            OSMLogger.logMethodExit(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", savedDto);
-            OSMLogger.logPerformance(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", savedDto);
+            OOSMLogger.logPerformance(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", startTime, System.currentTimeMillis());
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", e);
+            OOSMLogger.logException(this.getClass(), "createAggregatedOilReceptionFromGlobalLot", e);
             throw e;
         }
     }
@@ -597,7 +599,7 @@ public class PlanningService {
                     null,
                     null));
         } catch (Exception ex) {
-            OSMLogger.warn(PlanningService.class, "Failed to publish crushing completed notification: {}", ex.getMessage());
+            log.warn("Failed to publish crushing completed notification: {}", ex.getMessage());
         }
     }
 

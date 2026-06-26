@@ -2,7 +2,7 @@ package com.xdev.ooms.security.securityConfig;
 
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -84,7 +84,7 @@ public class SecurityConfig {
             context.getJwsHeader().algorithm(MacAlgorithm.HS256);
 
             Authentication principal = context.getPrincipal();
-            if (principal.getPrincipal() instanceof OSMUser user) {
+            if (principal.getPrincipal() instanceof OOSMUser user) {
                 Map<String, Object> slimUser = new LinkedHashMap<>();
                 slimUser.put("id", user.getId());
                 slimUser.put("tenantId", user.getTenantId());
@@ -95,7 +95,7 @@ public class SecurityConfig {
                 slimUser.put("isNewUser", user.isNewUser());
 
                 context.getClaims()
-                        .claim("osmUser", slimUser)
+                        .claim("oosmUser", slimUser)
                         .claim("role", user.getRole().getRoleName());
             }
         };

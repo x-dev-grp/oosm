@@ -4,7 +4,7 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: osm-postgres
+    container_name: oosm-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-osm}
@@ -21,8 +21,8 @@ services:
       - osm
 
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/x-dev-grp/oosm-backend:release-latest}
-    container_name: osm-backend
+    image: ${BACKEND_IMAGE:-ghcr.io/x-dev-grp/OOSM-backend:release-latest}
+    container_name: oosm-backend
     restart: unless-stopped
     depends_on:
       postgres:
@@ -58,8 +58,8 @@ services:
       - osm
 
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/x-dev-grp/osm-frontend:release-latest}
-    container_name: osm-frontend
+    image: ${FRONTEND_IMAGE:-ghcr.io/x-dev-grp/oosm-frontend:release-latest}
+    container_name: oosm-frontend
     restart: unless-stopped
     depends_on:
       backend:

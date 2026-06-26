@@ -1,7 +1,5 @@
 package com.xdev.ooms.sharedkernel.services.impl;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
-
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,6 +32,7 @@ import com.xdev.ooms.sharedkernel.services.GlobalCodeSearchContributor;
 import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import com.xdev.ooms.sharedkernel.utils.BusinessCodeGenerator;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
@@ -41,6 +40,8 @@ import org.apache.poi.ss.usermodel.HorizontalAlignment;
 import org.apache.poi.ss.usermodel.IndexedColors;
 import org.apache.poi.xssf.usermodel.*;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -72,6 +73,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     private static final int MAX_RECORDS_PER_DOCUMENT = 1000;
     protected final BaseRepository<E> repository;
     protected final ModelMapper modelMapper;
+    private final Logger LOGGER = LoggerFactory.getLogger(this.getClass());
     protected Class<E> entityClass;
     protected Class<INDTO> inDTOClass;
     protected Class<OUTDTO> outDTOClass;
@@ -163,22 +165,22 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public OUTDTO findById(UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findById", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "findById", id);
 
         try {
             Optional<E> data = repository.findByIdAndIsDeletedFalse(id);
             if (data.isEmpty()) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
                 throw new EntityNotFoundException("Entity not found with this id " + id);
             } else {
                 OUTDTO result = modelMapper.map(data.get(), outDTOClass);
-                OSMLogger.logMethodExit(this.getClass(), "findById", result);
-                OSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
+                OOSMLogger.logMethodExit(this.getClass(), "findById", result);
+                OOSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
                 return result;
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding entity by ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error finding entity by ID: " + id, e);
             throw e;
         }
     }
@@ -187,18 +189,18 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public List<OUTDTO> findAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll");
 
         try {
             UUID tenantId = TenantContext.getCurrentTenant();
             List<E> data = repository.findAllByTenantIdAndIsDeletedFalse(tenantId);
             List<OUTDTO> result = data.stream().map(item -> modelMapper.map(item, outDTOClass)).toList();
-            OSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding all entities", e);
+            OOSMLogger.logException(this.getClass(), "Error finding all entities", e);
             throw e;
         }
     }
@@ -207,7 +209,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public Page<OUTDTO> findAll(int page, int size, String sort, String direction) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll", page, size, sort, direction);
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll", page, size, sort, direction);
 
         try {
             UUID tenantId = TenantContext.getCurrentTenant();
@@ -217,12 +219,12 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             Page<E> data = repository.findAllByTenantIdAndIsDeletedFalse(tenantId, pageable);
 
             Page<OUTDTO> result = data.map(item -> modelMapper.map(item, outDTOClass));
-            OSMLogger.logMethodExit(this.getClass(), "findAll", "Page " + page + " with " + result.getContent().size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", "Page " + page + " with " + result.getContent().size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", entityClass.getSimpleName());
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding entities with pagination", e);
+            OOSMLogger.logException(this.getClass(), "Error finding entities with pagination", e);
             throw e;
         }
     }
@@ -230,11 +232,11 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public OUTDTO save(INDTO request) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "save", request);
+        OOSMLogger.logMethodEntry(this.getClass(), "save", request);
 
         try {
             if (request == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Save request is null");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Save request is null");
                 return null;
             } else {
                 E entity = this.modelMapper.map(request, this.entityClass);
@@ -245,15 +247,15 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                 savedEntity = ensureQrCodeIfSupported(savedEntity);
                 OUTDTO result = this.modelMapper.map(savedEntity, this.outDTOClass);
 
-                OSMLogger.logMethodExit(this.getClass(), "save", result);
-                OSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "CREATE", entityClass.getSimpleName());
-                OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_SAVED", "Saved entity with ID: " + savedEntity.getId());
+                OOSMLogger.logMethodExit(this.getClass(), "save", result);
+                OOSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "CREATE", entityClass.getSimpleName());
+                OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_SAVED", "Saved entity with ID: " + savedEntity.getId());
 
                 return result;
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error saving entity", e);
+            OOSMLogger.logException(this.getClass(), "Error saving entity", e);
             throw e;
         }
     }
@@ -261,7 +263,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public List<OUTDTO> save(List<INDTO> request) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "save", "List with " + (request != null ? request.size() : 0) + " items");
+        OOSMLogger.logMethodEntry(this.getClass(), "save", "List with " + (request != null ? request.size() : 0) + " items");
 
         try {
             if (request != null && !request.isEmpty()) {
@@ -275,18 +277,18 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     return this.modelMapper.map(item, this.outDTOClass); // return value
                 }).toList();
 
-                OSMLogger.logMethodExit(this.getClass(), "save", "Saved " + result.size() + " entities");
-                OSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "CREATE_BATCH", entityClass.getSimpleName());
-                OSMLogger.logBusinessEvent(this.getClass(), "ENTITIES_SAVED", "Saved " + result.size() + " entities");
+                OOSMLogger.logMethodExit(this.getClass(), "save", "Saved " + result.size() + " entities");
+                OOSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "CREATE_BATCH", entityClass.getSimpleName());
+                OOSMLogger.logBusinessEvent(this.getClass(), "ENTITIES_SAVED", "Saved " + result.size() + " entities");
 
                 return result;
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Save request list is empty or null");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Save request list is empty or null");
                 return Collections.emptyList();
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error saving entities", e);
+            OOSMLogger.logException(this.getClass(), "Error saving entities", e);
             throw e;
         }
     }
@@ -294,13 +296,13 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public OUTDTO update(INDTO request) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update", request);
+        OOSMLogger.logMethodEntry(this.getClass(), "update", request);
 
         try {
             if (request != null && request.getId() != null) {
                 Optional<E> existedOptEntity = this.repository.findById(request.getId());
                 if (existedOptEntity.isEmpty()) {
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity with ID {} not found for update", request.getId());
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for update", request.getId());
                     return null;
                 } else {
                     E existedEntity = existedOptEntity.get();
@@ -313,19 +315,19 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     E updatedEntity = this.repository.save(existedEntity);
                     OUTDTO result = this.modelMapper.map(updatedEntity, this.outDTOClass);
 
-                    OSMLogger.logMethodExit(this.getClass(), "update", result);
-                    OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
-                    OSMLogger.logDataAccess(this.getClass(), "UPDATE", entityClass.getSimpleName());
-                    OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_UPDATED", "Updated entity with ID: " + updatedEntity.getId());
+                    OOSMLogger.logMethodExit(this.getClass(), "update", result);
+                    OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+                    OOSMLogger.logDataAccess(this.getClass(), "UPDATE", entityClass.getSimpleName());
+                    OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_UPDATED", "Updated entity with ID: " + updatedEntity.getId());
 
                     return result;
                 }
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Update request or ID is null: {}", request);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Update request or ID is null: {}", request);
                 return null;
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error updating entity", e);
+            OOSMLogger.logException(this.getClass(), "Error updating entity", e);
             throw e;
         }
     }
@@ -333,15 +335,15 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public void resolveEntityRelations(E entity) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "resolveEntityRelations", entity);
+        OOSMLogger.logMethodEntry(this.getClass(), "resolveEntityRelations", entity);
 
         try {
             // This method is meant to be overridden by subclasses
             // Default implementation does nothing
-            OSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations");
-            OSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations");
+            OOSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error resolving entity relations", e);
+            OOSMLogger.logException(this.getClass(), "Error resolving entity relations", e);
             throw e;
         }
     }
@@ -349,20 +351,20 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public void remove(UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "remove", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "remove", id);
 
         try {
             if (id != null) {
                 repository.deleteById(id);
-                OSMLogger.logMethodExit(this.getClass(), "remove");
-                OSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "REMOVE", entityClass.getSimpleName());
-                OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_REMOVED", "Removed entity with ID: " + id);
+                OOSMLogger.logMethodExit(this.getClass(), "remove");
+                OOSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "REMOVE", entityClass.getSimpleName());
+                OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_REMOVED", "Removed entity with ID: " + id);
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Remove ID is null");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Remove ID is null");
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error removing entity with ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error removing entity with ID: " + id, e);
             throw e;
         }
     }
@@ -370,16 +372,16 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public OUTDTO delete(UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
 
         try {
             if (id == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
             E entity = repository.findById(id).orElse(null);
             if (entity == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
             }
 
@@ -387,14 +389,14 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             E updatedEntity = repository.save(entity);
             OUTDTO result = modelMapper.map(updatedEntity, outDTOClass);
 
-            OSMLogger.logMethodExit(this.getClass(), "delete", result);
-            OSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "DELETE", entityClass.getSimpleName());
-            OSMLogger.logBusinessEvent(this.getClass(), "ENTITY_DELETED", "Deleted entity with ID: " + id);
+            OOSMLogger.logMethodExit(this.getClass(), "delete", result);
+            OOSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "DELETE", entityClass.getSimpleName());
+            OOSMLogger.logBusinessEvent(this.getClass(), "ENTITY_DELETED", "Deleted entity with ID: " + id);
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
             throw e;
         }
     }
@@ -402,21 +404,21 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public void removeAll(Collection<INDTO> entities) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "removeAll", "Collection with " + (entities != null ? entities.size() : 0) + " items");
+        OOSMLogger.logMethodEntry(this.getClass(), "removeAll", "Collection with " + (entities != null ? entities.size() : 0) + " items");
 
         try {
             if (entities != null) {
                 List<E> entitiesToDelete = entities.stream().map(item -> modelMapper.map(item, entityClass)).toList();
                 repository.deleteAll(entitiesToDelete);
-                OSMLogger.logMethodExit(this.getClass(), "removeAll");
-                OSMLogger.logPerformance(this.getClass(), "removeAll", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "REMOVE_ALL", entityClass.getSimpleName());
-                OSMLogger.logBusinessEvent(this.getClass(), "ENTITIES_REMOVED", "Removed " + entitiesToDelete.size() + " entities");
+                OOSMLogger.logMethodExit(this.getClass(), "removeAll");
+                OOSMLogger.logPerformance(this.getClass(), "removeAll", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "REMOVE_ALL", entityClass.getSimpleName());
+                OOSMLogger.logBusinessEvent(this.getClass(), "ENTITIES_REMOVED", "Removed " + entitiesToDelete.size() + " entities");
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entities to delete are null");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entities to delete are null");
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error removing entities", e);
+            OOSMLogger.logException(this.getClass(), "Error removing entities", e);
             throw e;
         }
     }
@@ -428,7 +430,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     @Override
     public SearchResponse<E, OUTDTO> search(SearchData searchData) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "search", searchData);
+        OOSMLogger.logMethodEntry(this.getClass(), "search", searchData);
 
         try {
             int page = (searchData.getPage() != null && searchData.getPage() >= 0) ? searchData.getPage() : 0;
@@ -505,20 +507,20 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
             SearchResponse<E, OUTDTO> response = new SearchResponse<>(result.getTotalElements(), dtos, result.getTotalPages(), result.getNumber() + 1, totals);
 
-            OSMLogger.logMethodExit(this.getClass(), "search", "Found " + dtos.size() + " entities out of " + result.getTotalElements());
-            OSMLogger.logPerformance(this.getClass(), "search", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "SEARCH", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "search", "Found " + dtos.size() + " entities out of " + result.getTotalElements());
+            OOSMLogger.logPerformance(this.getClass(), "search", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "SEARCH", entityClass.getSimpleName());
 
             return response;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error during search operation", e);
+            OOSMLogger.logException(this.getClass(), "Error during search operation", e);
             throw e instanceof RuntimeException runtime ? runtime : new IllegalStateException("Search operation failed", e);
         }
     }
 
     public byte[] exportToPdf(ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportToPdf", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportToPdf", exportDetails);
 
         try {
             this.currentExportDetails = exportDetails; // Store for dynamic field processing
@@ -548,19 +550,19 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             byte[] result;
             if (totalRecords > MAX_RECORDS_PER_DOCUMENT) {
                 result = createMultiplePdfs(exportDetails.getSearchData(), totalRecords, allFields, exportDetails.getFileName());
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple PDFs for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple PDFs for {} records", totalRecords);
             } else {
                 result = createSinglePdf(exportDetails.getSearchData(), allFields, exportDetails.getFileName());
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single PDF for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single PDF for {} records", totalRecords);
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "exportToPdf", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "exportToPdf", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED", "PDF generated for " + totalRecords + " records (" + result.length + " bytes)");
+            OOSMLogger.logMethodExit(this.getClass(), "exportToPdf", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "exportToPdf", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED", "PDF generated for " + totalRecords + " records (" + result.length + " bytes)");
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error generating PDF export", e);
+            OOSMLogger.logException(this.getClass(), "Error generating PDF export", e);
             throw e;
         } finally {
             this.currentExportDetails = null; // Clear after use
@@ -570,7 +572,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
 //    public byte[] exportToPdf(ExportDetails exportDetails) {
 //        long startTime = System.currentTimeMillis();
-//        OSMLogger.logMethodEntry(this.getClass(), "exportToPdf", exportDetails);
+//        OOSMLogger.logMethodEntry(this.getClass(), "exportToPdf", exportDetails);
 //
 //        try {
 //            if(exportDetails.getSearchData().isFilterTenant()) {
@@ -590,20 +592,20 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 //            // If total records exceed maximum per document, create multiple PDFs
 //            if (totalRecords > MAX_RECORDS_PER_DOCUMENT) {
 //                result = createMultiplePdfs(exportDetails.getSearchData(), totalRecords, exportDetails.getFieldDetails(), exportDetails.getFileName());
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple PDFs for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple PDFs for {} records", totalRecords);
 //            } else {
 //                result = createSinglePdf(exportDetails.getSearchData(), exportDetails.getFieldDetails(), exportDetails.getFileName());
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single PDF for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single PDF for {} records", totalRecords);
 //            }
 //
-//            OSMLogger.logMethodExit(this.getClass(), "exportToPdf", "Generated " + result.length + " bytes");
-//            OSMLogger.logPerformance(this.getClass(), "exportToPdf", startTime, System.currentTimeMillis());
-//            OSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED",
+//            OOSMLogger.logMethodExit(this.getClass(), "exportToPdf", "Generated " + result.length + " bytes");
+//            OOSMLogger.logPerformance(this.getClass(), "exportToPdf", startTime, System.currentTimeMillis());
+//            OOSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED",
 //                    "PDF generated for " + totalRecords + " records (" + result.length + " bytes)");
 //
 //            return result;
 //        } catch (Exception e) {
-//            OSMLogger.logException(this.getClass(), "Error generating PDF export", e);
+//            OOSMLogger.logException(this.getClass(), "Error generating PDF export", e);
 //            throw e;
 //        }
 //    }
@@ -617,7 +619,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] createSinglePdf(SearchData searchData, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createSinglePdf", "fileName: " + fileName + ", fields: " + fieldsToExport.size());
+        OOSMLogger.logMethodEntry(this.getClass(), "createSinglePdf", "fileName: " + fileName + ", fields: " + fieldsToExport.size());
 
         try {
             // Retrieve all data for export
@@ -626,16 +628,16 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             SearchResponse<E, OUTDTO> response = search(searchData);
             List<OUTDTO> data = response.getData();
 
-            OSMLogger.logDataAccess(this.getClass(), "PDF_DATA_RETRIEVED", entityClass.getSimpleName());
+            OOSMLogger.logDataAccess(this.getClass(), "PDF_DATA_RETRIEVED", entityClass.getSimpleName());
 
             byte[] result = generatePdf(data, 1, 1, fieldsToExport, fileName);
 
-            OSMLogger.logMethodExit(this.getClass(), "createSinglePdf", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createSinglePdf", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createSinglePdf", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createSinglePdf", startTime, System.currentTimeMillis());
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating single PDF", e);
+            OOSMLogger.logException(this.getClass(), "Error creating single PDF", e);
             throw e;
         }
     }
@@ -650,13 +652,13 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] createMultiplePdfs(SearchData searchData, long totalRecords, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createMultiplePdfs", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
+        OOSMLogger.logMethodEntry(this.getClass(), "createMultiplePdfs", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
 
         try {
             ByteArrayOutputStream zipOutput = new ByteArrayOutputStream();
             int totalPages = (int) Math.ceil((double) totalRecords / MAX_RECORDS_PER_DOCUMENT);
 
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_PDF_START", "Creating " + totalPages + " PDF files for " + totalRecords + " records");
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_PDF_START", "Creating " + totalPages + " PDF files for " + totalRecords + " records");
 
             try (ZipOutputStream zipStream = new ZipOutputStream(zipOutput)) {
                 for (int pageNum = 0; pageNum < totalPages; pageNum++) {
@@ -670,7 +672,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     SearchResponse<E, OUTDTO> response = search(searchData);
                     List<OUTDTO> data = response.getData();
 
-                    OSMLogger.logDataAccess(this.getClass(), "PDF_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
+                    OOSMLogger.logDataAccess(this.getClass(), "PDF_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
 
                     // Generate PDF for current page
                     byte[] pdfData = generatePdf(data, pageNum + 1, totalPages, fieldsToExport, fileName);
@@ -681,20 +683,20 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     zipStream.write(pdfData);
                     zipStream.closeEntry();
 
-                    OSMLogger.logPerformance(this.getClass(), "PDF_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
-                    OSMLogger.logBusinessEvent(this.getClass(), "PDF_PAGE_COMPLETED", "Completed PDF page " + (pageNum + 1) + " of " + totalPages);
+                    OOSMLogger.logPerformance(this.getClass(), "PDF_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
+                    OOSMLogger.logBusinessEvent(this.getClass(), "PDF_PAGE_COMPLETED", "Completed PDF page " + (pageNum + 1) + " of " + totalPages);
                 }
             }
 
             byte[] result = zipOutput.toByteArray();
-            OSMLogger.logMethodExit(this.getClass(), "createMultiplePdfs", "Generated ZIP with " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createMultiplePdfs", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_PDF_COMPLETED", "Successfully created " + totalPages + " PDF files in ZIP archive");
+            OOSMLogger.logMethodExit(this.getClass(), "createMultiplePdfs", "Generated ZIP with " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createMultiplePdfs", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_PDF_COMPLETED", "Successfully created " + totalPages + " PDF files in ZIP archive");
 
             return result;
 
         } catch (IOException e) {
-            OSMLogger.logException(this.getClass(), "Error creating ZIP archive for PDFs", e);
+            OOSMLogger.logException(this.getClass(), "Error creating ZIP archive for PDFs", e);
             throw new RuntimeException("Failed to create PDF export", e);
         }
     }
@@ -710,7 +712,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] generatePdf(List<OUTDTO> data, int partNumber, int totalParts, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "generatePdf", "dataSize: " + data.size() + ", partNumber: " + partNumber + ", totalParts: " + totalParts + ", fields: " + fieldsToExport.size());
+        OOSMLogger.logMethodEntry(this.getClass(), "generatePdf", "dataSize: " + data.size() + ", partNumber: " + partNumber + ", totalParts: " + totalParts + ", fields: " + fieldsToExport.size());
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -762,13 +764,13 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             document.close();
 
             byte[] result = outputStream.toByteArray();
-            OSMLogger.logMethodExit(this.getClass(), "generatePdf", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "generatePdf", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED", "Generated PDF with " + data.size() + " records, " + fieldsToExport.size() + " fields");
+            OOSMLogger.logMethodExit(this.getClass(), "generatePdf", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "generatePdf", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "PDF_GENERATED", "Generated PDF with " + data.size() + " records, " + fieldsToExport.size() + " fields");
 
             return result;
         } catch (DocumentException e) {
-            OSMLogger.logException(this.getClass(), "Error creating PDF document", e);
+            OOSMLogger.logException(this.getClass(), "Error creating PDF document", e);
             throw new RuntimeException("Failed to create PDF", e);
         }
     }
@@ -781,7 +783,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
 //    public byte[] exportToCsv(ExportDetails exportDetails) {
 //        long startTime = System.currentTimeMillis();
-//        OSMLogger.logMethodEntry(this.getClass(), "exportToCsv", exportDetails);
+//        OOSMLogger.logMethodEntry(this.getClass(), "exportToCsv", exportDetails);
 //
 //        try {
 //            if(exportDetails.getSearchData().isFilterTenant()) {
@@ -800,26 +802,26 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 //            // If total records exceed maximum per document, create multiple CSVs
 //            if (totalRecords > MAX_RECORDS_PER_DOCUMENT) {
 //                result = createMultipleCsvs(exportDetails.getSearchData(), totalRecords, exportDetails.getFieldDetails(), exportDetails.getFileName());
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple CSVs for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple CSVs for {} records", totalRecords);
 //            } else {
 //                result = createSingleCsv(exportDetails.getSearchData(), exportDetails.getFieldDetails());
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single CSV for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single CSV for {} records", totalRecords);
 //            }
 //
-//            OSMLogger.logMethodExit(this.getClass(), "exportToCsv", "Generated " + result.length + " bytes");
-//            OSMLogger.logPerformance(this.getClass(), "exportToCsv", startTime, System.currentTimeMillis());
-//            OSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED",
+//            OOSMLogger.logMethodExit(this.getClass(), "exportToCsv", "Generated " + result.length + " bytes");
+//            OOSMLogger.logPerformance(this.getClass(), "exportToCsv", startTime, System.currentTimeMillis());
+//            OOSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED",
 //                    "CSV generated for " + totalRecords + " records (" + result.length + " bytes)");
 //
 //            return result;
 //        } catch (Exception e) {
-//            OSMLogger.logException(this.getClass(), "Error generating CSV export", e);
+//            OOSMLogger.logException(this.getClass(), "Error generating CSV export", e);
 //            throw e;
 //        }
 //    }
     public byte[] exportToCsv(ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportToCsv", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportToCsv", exportDetails);
 
         try {
             this.currentExportDetails = exportDetails; // Store for dynamic field processing
@@ -849,19 +851,19 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             byte[] result;
             if (totalRecords > MAX_RECORDS_PER_DOCUMENT) {
                 result = createMultipleCsvs(exportDetails.getSearchData(), totalRecords, allFields, exportDetails.getFileName());
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple CSVs for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple CSVs for {} records", totalRecords);
             } else {
                 result = createSingleCsv(exportDetails.getSearchData(), allFields);
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single CSV for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single CSV for {} records", totalRecords);
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "exportToCsv", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "exportToCsv", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED", "CSV generated for " + totalRecords + " records (" + result.length + " bytes)");
+            OOSMLogger.logMethodExit(this.getClass(), "exportToCsv", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "exportToCsv", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED", "CSV generated for " + totalRecords + " records (" + result.length + " bytes)");
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error generating CSV export", e);
+            OOSMLogger.logException(this.getClass(), "Error generating CSV export", e);
             throw e;
         } finally {
             this.currentExportDetails = null; // Clear after use
@@ -877,7 +879,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] createSingleCsv(SearchData searchData, List<FieldDetails> fieldsToExport) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createSingleCsv", "fields: " + fieldsToExport.size());
+        OOSMLogger.logMethodEntry(this.getClass(), "createSingleCsv", "fields: " + fieldsToExport.size());
 
         try {
             // Retrieve all data for export
@@ -886,16 +888,16 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             SearchResponse<E, OUTDTO> response = search(searchData);
             List<OUTDTO> data = response.getData();
 
-            OSMLogger.logDataAccess(this.getClass(), "CSV_DATA_RETRIEVED", entityClass.getSimpleName());
+            OOSMLogger.logDataAccess(this.getClass(), "CSV_DATA_RETRIEVED", entityClass.getSimpleName());
 
             byte[] result = generateCsv(data, fieldsToExport);
 
-            OSMLogger.logMethodExit(this.getClass(), "createSingleCsv", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createSingleCsv", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createSingleCsv", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createSingleCsv", startTime, System.currentTimeMillis());
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating single CSV", e);
+            OOSMLogger.logException(this.getClass(), "Error creating single CSV", e);
             throw e;
         }
     }
@@ -910,13 +912,13 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] createMultipleCsvs(SearchData searchData, long totalRecords, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createMultipleCsvs", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
+        OOSMLogger.logMethodEntry(this.getClass(), "createMultipleCsvs", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
 
         try {
             ByteArrayOutputStream zipOutput = new ByteArrayOutputStream();
             int totalPages = (int) Math.ceil((double) totalRecords / MAX_RECORDS_PER_DOCUMENT);
 
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_CSV_START", "Creating " + totalPages + " CSV files for " + totalRecords + " records");
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_CSV_START", "Creating " + totalPages + " CSV files for " + totalRecords + " records");
 
             try (ZipOutputStream zipStream = new ZipOutputStream(zipOutput)) {
                 for (int pageNum = 0; pageNum < totalPages; pageNum++) {
@@ -930,7 +932,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     SearchResponse<E, OUTDTO> response = search(searchData);
                     List<OUTDTO> data = response.getData();
 
-                    OSMLogger.logDataAccess(this.getClass(), "CSV_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
+                    OOSMLogger.logDataAccess(this.getClass(), "CSV_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
 
                     // Generate CSV for current page
                     byte[] csvData = generateCsv(data, fieldsToExport);
@@ -942,20 +944,20 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     zipStream.write(csvData);
                     zipStream.closeEntry();
 
-                    OSMLogger.logPerformance(this.getClass(), "CSV_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
-                    OSMLogger.logBusinessEvent(this.getClass(), "CSV_PAGE_COMPLETED", "Completed CSV page " + (pageNum + 1) + " of " + totalPages);
+                    OOSMLogger.logPerformance(this.getClass(), "CSV_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
+                    OOSMLogger.logBusinessEvent(this.getClass(), "CSV_PAGE_COMPLETED", "Completed CSV page " + (pageNum + 1) + " of " + totalPages);
                 }
             }
 
             byte[] result = zipOutput.toByteArray();
-            OSMLogger.logMethodExit(this.getClass(), "createMultipleCsvs", "Generated ZIP with " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createMultipleCsvs", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_CSV_COMPLETED", "Successfully created " + totalPages + " CSV files in ZIP archive");
+            OOSMLogger.logMethodExit(this.getClass(), "createMultipleCsvs", "Generated ZIP with " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createMultipleCsvs", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_CSV_COMPLETED", "Successfully created " + totalPages + " CSV files in ZIP archive");
 
             return result;
 
         } catch (IOException e) {
-            OSMLogger.logException(this.getClass(), "Error creating ZIP archive for CSVs", e);
+            OOSMLogger.logException(this.getClass(), "Error creating ZIP archive for CSVs", e);
             throw new RuntimeException("Failed to create CSV export", e);
         }
     }
@@ -969,7 +971,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
      */
     private byte[] generateCsv(List<OUTDTO> data, List<FieldDetails> fieldsToExport) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "generateCsv", "dataSize: " + data.size() + ", fields: " + fieldsToExport.size());
+        OOSMLogger.logMethodEntry(this.getClass(), "generateCsv", "dataSize: " + data.size() + ", fields: " + fieldsToExport.size());
 
         try {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
@@ -1009,14 +1011,14 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             outputStream.write(csv.toString().getBytes(StandardCharsets.UTF_8));
             byte[] result = outputStream.toByteArray();
 
-            OSMLogger.logMethodExit(this.getClass(), "generateCsv", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "generateCsv", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED", "Generated CSV with " + data.size() + " records, " + fieldsToExport.size() + " fields");
+            OOSMLogger.logMethodExit(this.getClass(), "generateCsv", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "generateCsv", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "CSV_GENERATED", "Generated CSV with " + data.size() + " records, " + fieldsToExport.size() + " fields");
 
             return result;
 
         } catch (IOException e) {
-            OSMLogger.logException(this.getClass(), "Error creating CSV document", e);
+            OOSMLogger.logException(this.getClass(), "Error creating CSV document", e);
             throw new RuntimeException("Failed to create CSV", e);
         }
     }
@@ -1112,14 +1114,14 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 //            return "";
 //        } catch (IllegalAccessException e) {
 //            // Log the error if needed
-//            OSMLogger.error(BaseServiceImpl.class, "Error accessing field " + fieldDetails.getName(), e);
+//            LOGGER.error("Error accessing field " + fieldDetails.getName(), e);
 //            return "";
 //        }
 //    }
 
     //    public byte[] exportToExcel(ExportDetails exportDetails) {
 //        long startTime = System.currentTimeMillis();
-//        OSMLogger.logMethodEntry(this.getClass(), "exportToExcel", exportDetails);
+//        OOSMLogger.logMethodEntry(this.getClass(), "exportToExcel", exportDetails);
 //
 //        try {
 //            // Get total count to determine if pagination is needed
@@ -1136,30 +1138,30 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 //                        exportDetails.getFieldDetails(),
 //                        exportDetails.getFileName()
 //                );
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple Excel files for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple Excel files for {} records", totalRecords);
 //            } else {
 //                result = createSingleExcelFile(
 //                        exportDetails.getSearchData(),
 //                        exportDetails.getFieldDetails(),
 //                        exportDetails.getFileName()
 //                );
-//                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single Excel file for {} records", totalRecords);
+//                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single Excel file for {} records", totalRecords);
 //            }
 //
-//            OSMLogger.logMethodExit(this.getClass(), "exportToExcel", "Generated " + result.length + " bytes");
-//            OSMLogger.logPerformance(this.getClass(), "exportToExcel", startTime, System.currentTimeMillis());
-//            OSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED",
+//            OOSMLogger.logMethodExit(this.getClass(), "exportToExcel", "Generated " + result.length + " bytes");
+//            OOSMLogger.logPerformance(this.getClass(), "exportToExcel", startTime, System.currentTimeMillis());
+//            OOSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED",
 //                    "Excel file generated for " + totalRecords + " records (" + result.length + " bytes)");
 //
 //            return result;
 //        } catch (Exception e) {
-//            OSMLogger.logException(this.getClass(), "Error generating Excel export", e);
+//            OOSMLogger.logException(this.getClass(), "Error generating Excel export", e);
 //            throw e;
 //        }
 //    }
     public byte[] exportToExcel(ExportDetails exportDetails) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "exportToExcel", exportDetails);
+        OOSMLogger.logMethodEntry(this.getClass(), "exportToExcel", exportDetails);
 
         try {
             this.currentExportDetails = exportDetails; // Store for dynamic field processing
@@ -1189,19 +1191,19 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             byte[] result;
             if (totalRecords > MAX_RECORDS_PER_DOCUMENT) {
                 result = createMultipleExcelFiles(exportDetails.getSearchData(), totalRecords, allFields, exportDetails.getFileName());
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created multiple Excel files for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created multiple Excel files for {} records", totalRecords);
             } else {
                 result = createSingleExcelFile(exportDetails.getSearchData(), allFields, exportDetails.getFileName());
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Created single Excel file for {} records", totalRecords);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Created single Excel file for {} records", totalRecords);
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "exportToExcel", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "exportToExcel", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED", "Excel file generated for " + totalRecords + " records (" + result.length + " bytes)");
+            OOSMLogger.logMethodExit(this.getClass(), "exportToExcel", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "exportToExcel", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED", "Excel file generated for " + totalRecords + " records (" + result.length + " bytes)");
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error generating Excel export", e);
+            OOSMLogger.logException(this.getClass(), "Error generating Excel export", e);
             throw e;
         } finally {
             this.currentExportDetails = null; // Clear after use
@@ -1210,7 +1212,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     private byte[] createSingleExcelFile(SearchData searchData, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createSingleExcelFile", "fileName: " + fileName + ", fields: " + fieldsToExport.size());
+        OOSMLogger.logMethodEntry(this.getClass(), "createSingleExcelFile", "fileName: " + fileName + ", fields: " + fieldsToExport.size());
 
         try {
             // Retrieve all data for export
@@ -1219,32 +1221,32 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             SearchResponse<E, OUTDTO> response = search(searchData);
             List<OUTDTO> data = response.getData();
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "Retrieved {} records for Excel export", data.size());
-            OSMLogger.logDataAccess(this.getClass(), "EXCEL_DATA_RETRIEVED", entityClass.getSimpleName());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "Retrieved {} records for Excel export", data.size());
+            OOSMLogger.logDataAccess(this.getClass(), "EXCEL_DATA_RETRIEVED", entityClass.getSimpleName());
 
             // Generate single Excel file
             byte[] result = generateExcelFile(data, fieldsToExport, fileName);
 
-            OSMLogger.logMethodExit(this.getClass(), "createSingleExcelFile", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createSingleExcelFile", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createSingleExcelFile", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createSingleExcelFile", startTime, System.currentTimeMillis());
 
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating single Excel file", e);
+            OOSMLogger.logException(this.getClass(), "Error creating single Excel file", e);
             throw new RuntimeException("Failed to create Excel export", e);
         }
     }
 
     private byte[] createMultipleExcelFiles(SearchData searchData, long totalRecords, List<FieldDetails> fieldsToExport, String fileName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createMultipleExcelFiles", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
+        OOSMLogger.logMethodEntry(this.getClass(), "createMultipleExcelFiles", "totalRecords: " + totalRecords + ", fields: " + fieldsToExport.size() + ", fileName: " + fileName);
 
         try {
             ByteArrayOutputStream zipOutput = new ByteArrayOutputStream();
             int totalPages = (int) Math.ceil((double) totalRecords / MAX_RECORDS_PER_DOCUMENT);
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "Creating {} Excel files for {} total records", totalPages, totalRecords);
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_EXCEL_START", "Creating " + totalPages + " Excel files for " + totalRecords + " records");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "Creating {} Excel files for {} total records", totalPages, totalRecords);
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_EXCEL_START", "Creating " + totalPages + " Excel files for " + totalRecords + " records");
 
             try (ZipOutputStream zipStream = new ZipOutputStream(zipOutput)) {
                 for (int pageNum = 0; pageNum < totalPages; pageNum++) {
@@ -1258,8 +1260,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     SearchResponse<E, OUTDTO> response = search(searchData);
                     List<OUTDTO> data = response.getData();
 
-                    OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "Processing page {} with {} records", pageNum + 1, data.size());
-                    OSMLogger.logDataAccess(this.getClass(), "EXCEL_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
+                    OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "Processing page {} with {} records", pageNum + 1, data.size());
+                    OOSMLogger.logDataAccess(this.getClass(), "EXCEL_PAGE_DATA_RETRIEVED", entityClass.getSimpleName());
 
                     // Generate Excel for current page
                     String safeFileName = (fileName != null && !fileName.isEmpty()) ? fileName : "file";
@@ -1272,34 +1274,34 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     zipStream.write(excelData);
                     zipStream.closeEntry();
 
-                    OSMLogger.logPerformance(this.getClass(), "EXCEL_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
-                    OSMLogger.logBusinessEvent(this.getClass(), "EXCEL_PAGE_COMPLETED", "Completed Excel page " + (pageNum + 1) + " of " + totalPages);
+                    OOSMLogger.logPerformance(this.getClass(), "EXCEL_PAGE_GENERATION", pageStartTime, System.currentTimeMillis());
+                    OOSMLogger.logBusinessEvent(this.getClass(), "EXCEL_PAGE_COMPLETED", "Completed Excel page " + (pageNum + 1) + " of " + totalPages);
                 }
             }
 
             byte[] result = zipOutput.toByteArray();
-            OSMLogger.logMethodExit(this.getClass(), "createMultipleExcelFiles", "Generated ZIP with " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "createMultipleExcelFiles", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_EXCEL_COMPLETED", "Successfully created " + totalPages + " Excel files in ZIP archive");
+            OOSMLogger.logMethodExit(this.getClass(), "createMultipleExcelFiles", "Generated ZIP with " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "createMultipleExcelFiles", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "MULTIPLE_EXCEL_COMPLETED", "Successfully created " + totalPages + " Excel files in ZIP archive");
 
             return result;
 
         } catch (IOException e) {
-            OSMLogger.logException(this.getClass(), "Error creating ZIP archive for Excel files", e);
+            OOSMLogger.logException(this.getClass(), "Error creating ZIP archive for Excel files", e);
             throw new RuntimeException("Failed to create Excel export", e);
         }
     }
 
     private byte[] generateExcelFile(List<OUTDTO> data, List<FieldDetails> fieldsToExport, String sheetName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "generateExcelFile", "dataSize: " + data.size() + ", fields: " + fieldsToExport.size() + ", sheetName: " + sheetName);
+        OOSMLogger.logMethodEntry(this.getClass(), "generateExcelFile", "dataSize: " + data.size() + ", fields: " + fieldsToExport.size() + ", sheetName: " + sheetName);
 
         try (XSSFWorkbook workbook = new XSSFWorkbook(); ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
 
             // Validate input
 
             if (fieldsToExport.isEmpty()) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "No fields specified for Excel export");
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "No fields specified for Excel export");
                 fieldsToExport = Collections.emptyList();
             }
 
@@ -1376,14 +1378,14 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             workbook.write(outputStream);
             byte[] result = outputStream.toByteArray();
 
-            OSMLogger.logMethodExit(this.getClass(), "generateExcelFile", "Generated " + result.length + " bytes");
-            OSMLogger.logPerformance(this.getClass(), "generateExcelFile", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED", "Generated Excel file with " + data.size() + " records, " + fieldsToExport.size() + " fields");
+            OOSMLogger.logMethodExit(this.getClass(), "generateExcelFile", "Generated " + result.length + " bytes");
+            OOSMLogger.logPerformance(this.getClass(), "generateExcelFile", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "EXCEL_GENERATED", "Generated Excel file with " + data.size() + " records, " + fieldsToExport.size() + " fields");
 
             return result;
 
         } catch (IOException e) {
-            OSMLogger.logException(this.getClass(), "Error creating Excel document", e);
+            OOSMLogger.logException(this.getClass(), "Error creating Excel document", e);
             throw new RuntimeException("Failed to create Excel export", e);
         }
     }
@@ -1435,7 +1437,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                     }
                 }
             } catch (Exception e) {
-                OSMLogger.logException(this.getClass(), "Error extracting column names from collection", e);
+                OOSMLogger.logException(this.getClass(), "Error extracting column names from collection", e);
             }
         }
 
@@ -1511,7 +1513,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
             return "";
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error getting dynamic collection field value", e);
+            OOSMLogger.logException(this.getClass(), "Error getting dynamic collection field value", e);
             return "";
         }
     }
@@ -1559,7 +1561,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             }
             return "";
         } catch (IllegalAccessException e) {
-            OSMLogger.error(BaseServiceImpl.class, "Error accessing field " + fieldDetails.getName(), e);
+            LOGGER.error("Error accessing field " + fieldDetails.getName(), e);
             return "";
         }
     }
@@ -1844,7 +1846,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         } catch (UnsupportedOperationException ex) {
             return Optional.empty();
         } catch (Exception ex) {
-            OSMLogger.logException(this.getClass(), "Global code search contributor failed", ex);
+            OOSMLogger.logException(this.getClass(), "Global code search contributor failed", ex);
             return Optional.empty();
         }
     }

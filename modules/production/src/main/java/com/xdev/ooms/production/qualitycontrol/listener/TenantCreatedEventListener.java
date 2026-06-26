@@ -2,7 +2,7 @@ package com.xdev.ooms.production.qualitycontrol.listener;
 
 import com.xdev.ooms.production.qualitycontrol.service.QualityControlProvisioningService;
 import com.xdev.ooms.sharedkernel.events.TenantCreatedEvent;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -24,10 +24,10 @@ public class TenantCreatedEventListener {
 
         try {
             int created = provisioningService.provisionDefaultRulesForTenant(event.tenantId());
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO,
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                     "Provisioned {} Tunisia QC rules for tenant {}", created, event.tenantId());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Failed to provision QC rules for tenant " + event.tenantId(), e);
         }
     }

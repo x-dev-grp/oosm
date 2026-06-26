@@ -3,7 +3,7 @@ package com.xdev.ooms.security.admin.service;
 import com.xdev.ooms.security.admin.dto.*;
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;

@@ -1,11 +1,11 @@
 package com.xdev.ooms.sharedkernel.communicator.models.shared;
 
 
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.OSMModule;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.OOSMModule;
 
 public class PermissionDTO{
     private String permissionName;
-    private OSMModule module;
+    private OOSMModule module;
     private String entity;
 
     public String getEntity() {
@@ -24,11 +24,11 @@ public class PermissionDTO{
         this.permissionName = permissionName;
     }
 
-    public OSMModule getModule() {
+    public OOSMModule getModule() {
         return module;
     }
 
-    public void setModule(OSMModule module) {
+    public void setModule(OOSMModule module) {
         this.module = module;
     }
 

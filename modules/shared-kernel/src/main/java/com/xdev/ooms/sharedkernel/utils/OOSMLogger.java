@@ -13,10 +13,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * Comprehensive logging utility for OSM project with detailed exception handling
+ * Comprehensive logging utility for OOSM project with detailed exception handling
  * and stack trace analysis to pinpoint exact line where exceptions occur.
  */
-public class OSMLogger {
+public class OOSMLogger {
 
     private static final ConcurrentMap<String, Logger> loggerCache = new ConcurrentHashMap<>();
     private static final DateTimeFormatter TIMESTAMP_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
@@ -265,7 +265,7 @@ public class OSMLogger {
      * Generate a unique correlation ID for tracking requests
      */
     private static String generateCorrelationId() {
-        return "OSM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return "OOSM-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 
     /**

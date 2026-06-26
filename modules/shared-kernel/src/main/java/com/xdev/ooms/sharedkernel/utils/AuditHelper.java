@@ -15,12 +15,12 @@ public final class AuditHelper {
 
     private static Optional<String> currentUserId() {
         try {
-            Optional<Map<String, Object>> osmUserOpt = SecurityUtils.getCurrentOsmUser();
-            if (osmUserOpt.isEmpty()) return Optional.empty();
-            Map<String, Object> osmUser = osmUserOpt.get();
+            Optional<Map<String, Object>> oosmUserOpt = SecurityUtils.getCurrentOsmUser();
+            if (oosmUserOpt.isEmpty()) return Optional.empty();
+            Map<String, Object> oosmUser = oosmUserOpt.get();
             
             String roleStr = "";
-            Object roleObj = osmUser.get("role");
+            Object roleObj = oosmUser.get("role");
             if (roleObj instanceof Map<?, ?>) {
                 Map<String, Object> roleMap = (Map<String, Object>) roleObj;
                 Object roleName = roleMap.get("roleName");
@@ -29,8 +29,8 @@ public final class AuditHelper {
                 }
             }
 
-            Object firstName = osmUser.get("firstName");
-            Object lastName = osmUser.get("lastName");
+            Object firstName = oosmUser.get("firstName");
+            Object lastName = oosmUser.get("lastName");
             if (firstName != null || lastName != null) {
                 String fName = firstName != null ? String.valueOf(firstName) : "";
                 String lName = lastName != null ? String.valueOf(lastName) : "";
@@ -38,12 +38,12 @@ public final class AuditHelper {
                 if (!fullName.trim().isEmpty()) return Optional.of(fullName.trim());
             }
 
-            Object username = osmUser.get("username");
+            Object username = oosmUser.get("username");
             if (username != null) return Optional.of(String.valueOf(username) + roleStr);
 
-            Object id = osmUser.get("id");
+            Object id = oosmUser.get("id");
             if (id != null) return Optional.of(String.valueOf(id) + roleStr);
-            Object externalId = osmUser.get("externalId");
+            Object externalId = oosmUser.get("externalId");
             if (externalId != null) return Optional.of(String.valueOf(externalId) + roleStr);
         } catch (Exception ignored) {}
         return Optional.empty();

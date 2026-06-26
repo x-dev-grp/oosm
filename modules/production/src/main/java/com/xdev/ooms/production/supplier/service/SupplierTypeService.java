@@ -9,7 +9,7 @@ import com.xdev.ooms.sharedkernel.basetype.repository.GenericRepository;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -34,42 +34,42 @@ public class SupplierTypeService extends BaseServiceImpl<Supplier, SupplierDto, 
 
     public long getPaidPaymentsCount(UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
 
         try {
             long count = deliveryRepository.countFullyPaidDeliveriesBySupplierId(supplierId);
 
-            OSMLogger.logDataAccess(this.getClass(), "PAID_PAYMENTS_COUNT", "Supplier");
-            OSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_PAID_PAYMENTS_QUERIED",
+            OOSMLogger.logDataAccess(this.getClass(), "PAID_PAYMENTS_COUNT", "Supplier");
+            OOSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_PAID_PAYMENTS_QUERIED",
                     "Found " + count + " paid payments for supplier: " + supplierId);
-            OSMLogger.logMethodExit(this.getClass(), "getPaidPaymentsCount", count);
-            OSMLogger.logPerformance(this.getClass(), "getPaidPaymentsCount", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getPaidPaymentsCount", count);
+            OOSMLogger.logPerformance(this.getClass(), "getPaidPaymentsCount", startTime, System.currentTimeMillis());
 
             return count;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error getting paid payments count for supplier: " + supplierId, e);
+            OOSMLogger.logException(this.getClass(), "Error getting paid payments count for supplier: " + supplierId, e);
             throw e;
         }
     }
 
     public long getUnpaidPaymentsCount(UUID supplierId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);
 
         try {
             long count = deliveryRepository.countUnpaidDeliveriesBySupplierId(supplierId);
 
-            OSMLogger.logDataAccess(this.getClass(), "UNPAID_PAYMENTS_COUNT", "Supplier");
-            OSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_UNPAID_PAYMENTS_QUERIED",
+            OOSMLogger.logDataAccess(this.getClass(), "UNPAID_PAYMENTS_COUNT", "Supplier");
+            OOSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_UNPAID_PAYMENTS_QUERIED",
                     "Found " + count + " unpaid payments for supplier: " + supplierId);
-            OSMLogger.logMethodExit(this.getClass(), "getUnpaidPaymentsCount", count);
-            OSMLogger.logPerformance(this.getClass(), "getUnpaidPaymentsCount", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getUnpaidPaymentsCount", count);
+            OOSMLogger.logPerformance(this.getClass(), "getUnpaidPaymentsCount", startTime, System.currentTimeMillis());
 
             return count;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error getting unpaid payments count for supplier: " + supplierId, e);
+            OOSMLogger.logException(this.getClass(), "Error getting unpaid payments count for supplier: " + supplierId, e);
             throw e;
         }
     }
@@ -77,19 +77,19 @@ public class SupplierTypeService extends BaseServiceImpl<Supplier, SupplierDto, 
     @Override
     public Set<Action> actionsMapping(Supplier supplier) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", supplier);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", supplier);
 
         try {
             Set<Action> actions = new HashSet<>();
             actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.DETAIL));
 
-            OSMLogger.logMethodExit(this.getClass(), "actionsMapping", "Actions: " + actions);
-            OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", "Actions: " + actions);
+            OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
 
             return actions;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error mapping actions for supplier: " + supplier.getId(), e);
+            OOSMLogger.logException(this.getClass(), "Error mapping actions for supplier: " + supplier.getId(), e);
             throw e;
         }
     }

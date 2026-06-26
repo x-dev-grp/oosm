@@ -12,11 +12,11 @@
     </parent>
 
     <groupId>com.xdev.ooms</groupId>
-    <artifactId>osm-monolith-parent</artifactId>
+    <artifactId>oosm-monolith-parent</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
-    <name>OSM Modular Monolith</name>
+    <name>OOSM Modular Monolith</name>
     <description>OSM backend migration target: modular monolith with one database.</description>
 
     <properties>

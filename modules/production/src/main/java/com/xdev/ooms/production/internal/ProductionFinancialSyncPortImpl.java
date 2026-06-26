@@ -11,7 +11,7 @@ import com.xdev.ooms.sharedkernel.Enum.ResourceName;
 import com.xdev.ooms.sharedkernel.Enum.SaleStatus;
 import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncCommand;
 import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncPort;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +54,7 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
             case UnifiedDelivery -> syncDelivery(command);
             case OILSALE -> syncOilSale(command);
             case Waste -> syncWaste(command);
-            default -> OSMLogger.logBusinessEvent(
+            default -> OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "PRODUCTION_SYNC_SKIPPED",
                     "No sync handler for resource " + resourceName);
@@ -65,12 +65,12 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
         resolveDelivery(command).ifPresentOrElse(delivery -> {
             applyDeliveryPayment(delivery, command.amount());
             deliveryRepository.save(delivery);
-            OSMLogger.logBusinessEvent(
+            OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "DELIVERY_PAYMENT_SYNCED",
                     "Synced delivery payment for lot " + delivery.getLotNumber()
                             + ", transaction type " + command.transactionType());
-        }, () -> OSMLogger.logBusinessEvent(
+        }, () -> OOSMLogger.logBusinessEvent(
                 this.getClass(),
                 "DELIVERY_PAYMENT_SYNC_SKIPPED",
                 "No delivery found for externalId=" + command.externalTransactionId()

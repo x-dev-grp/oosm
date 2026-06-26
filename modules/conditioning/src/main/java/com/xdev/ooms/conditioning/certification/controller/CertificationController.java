@@ -8,7 +8,7 @@ import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -45,14 +45,14 @@ public class CertificationController
             @PathVariable UUID id
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findDtoByUuid", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "findDtoByUuid", id);
 
         try {
             CertificationDto result = certificationService.findById(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "findDtoByUuid", result);
-            OSMLogger.logPerformance(this.getClass(), "findDtoByUuid", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ", getResourceName());
+            OOSMLogger.logMethodExit(this.getClass(), "findDtoByUuid", result);
+            OOSMLogger.logPerformance(this.getClass(), "findDtoByUuid", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ", getResourceName());
 
             return ResponseEntity.ok(
                     new ApiSingleResponse<>(
@@ -72,14 +72,14 @@ public class CertificationController
     @Override
     public ResponseEntity<ApiResponse<Certification, CertificationDto>> fetchAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "fetchAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "fetchAll");
 
         try {
             List<CertificationDto> result = certificationService.findAll();
 
-            OSMLogger.logMethodExit(this.getClass(), "fetchAll", "Found " + result.size() + " certifications");
-            OSMLogger.logPerformance(this.getClass(), "fetchAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL", getResourceName());
+            OOSMLogger.logMethodExit(this.getClass(), "fetchAll", "Found " + result.size() + " certifications");
+            OOSMLogger.logPerformance(this.getClass(), "fetchAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", getResourceName());
 
             return ResponseEntity.ok(
                     new ApiResponse<>(
@@ -104,18 +104,18 @@ public class CertificationController
             @RequestParam(required = false, defaultValue = "DESC") String direction
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "fetchAllPageable", page, size, sort, direction);
+        OOSMLogger.logMethodEntry(this.getClass(), "fetchAllPageable", page, size, sort, direction);
 
         try {
             Page<CertificationDto> result = certificationService.findAll(page, size, sort, direction);
 
-            OSMLogger.logMethodExit(
+            OOSMLogger.logMethodExit(
                     this.getClass(),
                     "fetchAllPageable",
                     "Page " + page + " with " + result.getContent().size() + " certifications"
             );
-            OSMLogger.logPerformance(this.getClass(), "fetchAllPageable", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", getResourceName());
+            OOSMLogger.logPerformance(this.getClass(), "fetchAllPageable", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", getResourceName());
 
             return ResponseEntity.ok(
                     new ApiResponse<>(
@@ -137,15 +137,15 @@ public class CertificationController
             @RequestBody CertificationDto dto
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "create", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "create", dto);
 
         try {
             CertificationDto result = certificationService.save(dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "create", result);
-            OSMLogger.logPerformance(this.getClass(), "create", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "CREATE", getResourceName());
-            OSMLogger.logBusinessEvent(
+            OOSMLogger.logMethodExit(this.getClass(), "create", result);
+            OOSMLogger.logPerformance(this.getClass(), "create", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "CREATE", getResourceName());
+            OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "CERTIFICATION_CREATED",
                     "Created certification with ID: " + result.getId()
@@ -171,15 +171,15 @@ public class CertificationController
             @RequestBody CertificationDto dto
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "update", dto);
 
         try {
             CertificationDto result = certificationService.update(dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "update", result);
-            OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "UPDATE", getResourceName());
-            OSMLogger.logBusinessEvent(
+            OOSMLogger.logMethodExit(this.getClass(), "update", result);
+            OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "UPDATE", getResourceName());
+            OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "CERTIFICATION_UPDATED",
                     "Updated certification with ID: " + result.getId()
@@ -206,15 +206,15 @@ public class CertificationController
             @PathVariable UUID id
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "remove", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "remove", id);
 
         try {
             certificationService.remove(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "remove");
-            OSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "REMOVE", getResourceName());
-            OSMLogger.logBusinessEvent(
+            OOSMLogger.logMethodExit(this.getClass(), "remove");
+            OOSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "REMOVE", getResourceName());
+            OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "CERTIFICATION_REMOVED",
                     "Removed certification with ID: " + id
@@ -235,15 +235,15 @@ public class CertificationController
             @PathVariable UUID id
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
 
         try {
             CertificationDto result = certificationService.delete(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "delete", result);
-            OSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "DELETE", getResourceName());
-            OSMLogger.logBusinessEvent(
+            OOSMLogger.logMethodExit(this.getClass(), "delete", result);
+            OOSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "DELETE", getResourceName());
+            OOSMLogger.logBusinessEvent(
                     this.getClass(),
                     "CERTIFICATION_DELETED",
                     "Soft deleted certification with ID: " + id

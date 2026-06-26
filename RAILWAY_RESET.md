@@ -65,9 +65,9 @@ FRONTEND_ENTRY_POINT=https://<frontend>.up.railway.app
 APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://<frontend>.up.railway.app,https://*.up.railway.app
 HIBERNATE_DDL_AUTO=update
 SECURITY_BOOTSTRAP_ENABLED=true
-SECURITY_BOOTSTRAP_USERNAME=osmAdmin
+SECURITY_BOOTSTRAP_USERNAME=oosmAdmin
 SECURITY_BOOTSTRAP_PASSWORD=<pick-a-password>
-SECURITY_BOOTSTRAP_EMAIL=osmAdmin@example.com
+SECURITY_BOOTSTRAP_EMAIL=oosmAdmin@example.com
 ```
 
 Copy full list from [`.env.railway.example`](.env.railway.example).
@@ -181,7 +181,7 @@ Your repo has `oosm/.env` with Render `DB_URL` for **local dev only**. It is git
 For local Postgres:
 
 ```
-DB_URL=jdbc:postgresql://localhost:5432/osm
+DB_URL=jdbc:postgresql://localhost:5432/oosm
 DB_USER=postgres
 DB_PASS=root
 ```

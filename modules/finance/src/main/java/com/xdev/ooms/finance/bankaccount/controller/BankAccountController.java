@@ -4,7 +4,7 @@ package com.xdev.ooms.finance.bankaccount.controller;
 import com.xdev.ooms.finance.bankaccount.dto.BankAccountDto;
 import com.xdev.ooms.finance.bankaccount.entity.BankAccount;
  import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;

@@ -17,7 +17,7 @@ import com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.qr.CodeGenerator;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.*;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -455,7 +455,7 @@ public class LabelContentService {
                 }
             } catch (Exception e) {
                 // Non-blocking for now
-                OSMLogger.logException(this.getClass(), "saveSourceProofs - filtration", e);
+                OOSMLogger.logException(this.getClass(), "saveSourceProofs - filtration", e);
             }
         }
     }
@@ -464,7 +464,7 @@ public class LabelContentService {
         try {
             return productionSupport.getGenealogy(lotId);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "fetchGenealogy", e);
+            OOSMLogger.logException(this.getClass(), "fetchGenealogy", e);
         }
         return null;
     }

@@ -1,13 +1,13 @@
 package com.xdev.ooms.security.permission.entity;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import jakarta.persistence.Entity;
 
 @Entity
 public class Permission extends BaseEntity {
     private String permissionName;
-    private OSMModule module;
+    private OOSMModule module;
     private String entity;
 
     public String getEntity() {
@@ -26,11 +26,11 @@ public class Permission extends BaseEntity {
         this.permissionName = permissionName;
     }
 
-    public OSMModule getModule() {
+    public OOSMModule getModule() {
         return module;
     }
 
-    public void setModule(OSMModule module) {
+    public void setModule(OOSMModule module) {
         this.module = module;
     }
 

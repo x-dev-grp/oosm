@@ -1,10 +1,10 @@
 package com.xdev.ooms.security.companyprofile.dto;
 
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
+import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
 
 public class CompanyUserDTO {
     private String legalName;
-    private OSMUserOUTDTO companyUser;
+    private OOSMUserOUTDTO companyUser;
 
     public String getLegalName() {
         return legalName;
@@ -14,11 +14,11 @@ public class CompanyUserDTO {
         this.legalName = legalName;
     }
 
-    public OSMUserOUTDTO getCompanyUser() {
+    public OOSMUserOUTDTO getCompanyUser() {
         return companyUser;
     }
 
-    public void setCompanyUser(OSMUserOUTDTO companyUser) {
+    public void setCompanyUser(OOSMUserOUTDTO companyUser) {
         this.companyUser = companyUser;
     }
 }

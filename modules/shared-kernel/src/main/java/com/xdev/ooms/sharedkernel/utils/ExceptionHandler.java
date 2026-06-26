@@ -49,7 +49,7 @@ public class ExceptionHandler {
             String customMessage) {
 
         // Log the exception with detailed analysis
-        OSMLogger.logException(clazz,
+        OOSMLogger.logException(clazz,
                 customMessage != null ? customMessage : "Error during " + operation,
                 exception,
                 determineSeverity(exception));
@@ -85,7 +85,7 @@ public class ExceptionHandler {
             String customMessage) {
 
         // Log the exception with detailed analysis
-        OSMLogger.logException(clazz,
+        OOSMLogger.logException(clazz,
                 customMessage != null ? customMessage : "Error during " + operation,
                 exception,
                 determineSeverity(exception));
@@ -103,18 +103,18 @@ public class ExceptionHandler {
     /**
      * Determine the severity level based on exception type
      */
-    private static OSMLogger.ExceptionSeverity determineSeverity(Exception exception) {
+    private static OOSMLogger.ExceptionSeverity determineSeverity(Exception exception) {
         if (exception instanceof AccessDeniedException) {
-            return OSMLogger.ExceptionSeverity.HIGH;
+            return OOSMLogger.ExceptionSeverity.HIGH;
         } else if (exception instanceof SQLException) {
-            return OSMLogger.ExceptionSeverity.CRITICAL;
+            return OOSMLogger.ExceptionSeverity.CRITICAL;
         } else if (exception instanceof EntityNotFoundException) {
-            return OSMLogger.ExceptionSeverity.LOW;
+            return OOSMLogger.ExceptionSeverity.LOW;
         } else if (exception instanceof IllegalArgumentException ||
                 exception instanceof MethodArgumentTypeMismatchException) {
-            return OSMLogger.ExceptionSeverity.MEDIUM;
+            return OOSMLogger.ExceptionSeverity.MEDIUM;
         } else {
-            return OSMLogger.ExceptionSeverity.MEDIUM;
+            return OOSMLogger.ExceptionSeverity.MEDIUM;
         }
     }
 

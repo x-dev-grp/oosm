@@ -25,7 +25,7 @@ import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncCommand;
 import com.xdev.ooms.sharedkernel.ports.ProductionFinancialSyncPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -254,7 +254,7 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
 
     private void updateWasteInvoice(FinancialTransaction tx) {
         productionFinancialSyncPort.syncFromFinancialTransaction(toSyncCommand(tx));
-        OSMLogger.logBusinessEvent(this.getClass(), "WASTE_INVOICE_UPDATE",
+        OOSMLogger.logBusinessEvent(this.getClass(), "WASTE_INVOICE_UPDATE",
                 "Synced waste invoice for transaction: " + tx.getId()
                         + ", invoice: " + tx.getInvoiceReference());
     }
@@ -264,19 +264,19 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
             return;
         }
         productionFinancialSyncPort.syncFromFinancialTransaction(toSyncCommand(tx));
-        OSMLogger.logBusinessEvent(this.getClass(), "OIL_INVOICE_UPDATE",
+        OOSMLogger.logBusinessEvent(this.getClass(), "OIL_INVOICE_UPDATE",
                 "Synced production invoice for transaction: " + tx.getId()
                         + ", resource: " + tx.getResourceName());
     }
 
     private void updateSupplierInvoice(FinancialTransaction tx) {
         if (!hasDeliveryReference(tx)) {
-            OSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_INVOICE_SYNC_SKIPPED",
+            OOSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_INVOICE_SYNC_SKIPPED",
                     "No delivery reference for supplier transaction: " + tx.getId());
             return;
         }
         productionFinancialSyncPort.syncFromFinancialTransaction(toSyncCommand(tx));
-        OSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_INVOICE_UPDATE",
+        OOSMLogger.logBusinessEvent(this.getClass(), "SUPPLIER_INVOICE_UPDATE",
                 "Synced supplier invoice for transaction: " + tx.getId()
                         + ", invoice: " + tx.getInvoiceReference()
                         + ", lot: " + tx.getLotNumber());

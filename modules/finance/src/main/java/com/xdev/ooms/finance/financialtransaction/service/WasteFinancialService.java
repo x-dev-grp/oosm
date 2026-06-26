@@ -5,7 +5,7 @@ import com.xdev.ooms.finance.financialtransaction.entity.FinancialTransaction;
 import com.xdev.ooms.finance.financialtransaction.repository.FinancialTransactionRepository;
 import  com.xdev.ooms.sharedkernel.Enum.Currency;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,7 +36,7 @@ public class WasteFinancialService {
     @Transactional
     public FinancialTransactionDto createWasteFinancialTransaction(FinancialTransactionDto transactionDto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createWasteFinancialTransaction", transactionDto);
+        OOSMLogger.logMethodEntry(this.getClass(), "createWasteFinancialTransaction", transactionDto);
         
         try {
             // Set defaults only if not provided
@@ -59,18 +59,18 @@ public class WasteFinancialService {
             
             FinancialTransactionDto result = modelMapper.map(transaction, FinancialTransactionDto.class);
             
-            OSMLogger.logBusinessEvent(this.getClass(), "WASTE_FINANCIAL_TRANSACTION_CREATED", 
+            OOSMLogger.logBusinessEvent(this.getClass(), "WASTE_FINANCIAL_TRANSACTION_CREATED", 
                 "Created waste financial transaction - type: " + transaction.getTransactionType() + 
                 ", amount: " + transaction.getAmount() + 
                 ", description: " + transaction.getDescription());
             
-            OSMLogger.logMethodExit(this.getClass(), "createWasteFinancialTransaction", result);
-            OSMLogger.logPerformance(this.getClass(), "createWasteFinancialTransaction", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "createWasteFinancialTransaction", result);
+            OOSMLogger.logPerformance(this.getClass(), "createWasteFinancialTransaction", startTime, System.currentTimeMillis());
             
             return result;
             
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating waste financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error creating waste financial transaction", e);
             throw new RuntimeException("Failed to create waste financial transaction: " + e.getMessage(), e);
         }
     }

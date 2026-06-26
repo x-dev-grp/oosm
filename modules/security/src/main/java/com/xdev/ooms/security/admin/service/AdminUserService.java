@@ -3,11 +3,11 @@ package com.xdev.ooms.security.admin.service;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationMethod;
 import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.security.role.repository.RoleRepository;
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.security.user.service.UserService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @Service
 public class AdminUserService {
-    private static final String OSM_ADMIN_ROLE = "OSMADMIN";
+    private static final String OSM_ADMIN_ROLE = "OOSMADMIN";
 
     private final UserRepository userRepository;
     private final UserService userService;
@@ -41,10 +41,10 @@ public class AdminUserService {
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public OSMUserOUTDTO issueTemporaryPassword(UUID userId) throws Exception {
-        OSMLogger.logMethodEntry(this.getClass(), "issueTemporaryPassword", userId);
+    public OOSMUserOUTDTO issueTemporaryPassword(UUID userId) throws Exception {
+        OOSMLogger.logMethodEntry(this.getClass(), "issueTemporaryPassword", userId);
 
-        OSMUser user = userRepository.findByIdAndIsDeletedFalse(userId)
+        OOSMUser user = userRepository.findByIdAndIsDeletedFalse(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         if (user.isLocked()) {
@@ -60,7 +60,7 @@ public class AdminUserService {
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setNewUser(true);
 
-        OSMUserOUTDTO userDTO = modelMapper.map(user, OSMUserOUTDTO.class);
+        OOSMUserOUTDTO userDTO = modelMapper.map(user, OOSMUserOUTDTO.class);
         if (userDTO.getConfirmationMethod() == null) {
             userDTO.setConfirmationMethod(
                     user.getEmail() != null && !user.getEmail().isBlank()
@@ -70,46 +70,46 @@ public class AdminUserService {
         }
 
         userService.sendWelcomeCredentials(userDTO, rawPassword);
-        OSMUser savedUser = userRepository.save(user);
+        OOSMUser savedUser = userRepository.save(user);
 
-        OSMLogger.logSecurityEvent(this.getClass(), "ADMIN_TEMP_PASSWORD_ISSUED",
+        OOSMLogger.logSecurityEvent(this.getClass(), "ADMIN_TEMP_PASSWORD_ISSUED",
                 "Temporary password issued by admin for user: " + savedUser.getUsername());
 
-        return modelMapper.map(savedUser, OSMUserOUTDTO.class);
+        return modelMapper.map(savedUser, OOSMUserOUTDTO.class);
     }
 
     @Transactional(rollbackFor = Exception.class)
-    public OSMUserOUTDTO createOsmAdminUser(OSMUserOUTDTO userDTO) throws Exception {
-        OSMLogger.logMethodEntry(this.getClass(), "createOsmAdminUser",
+    public OOSMUserOUTDTO createOosmAdminUser(OOSMUserOUTDTO userDTO) throws Exception {
+        OOSMLogger.logMethodEntry(this.getClass(), "createOosmAdminUser",
                 userDTO != null ? userDTO.getUsername() : "null");
 
-        validateOsmAdminUserDTO(userDTO);
+        validateOosmAdminUserDTO(userDTO);
         checkUserDoesNotExist(userDTO.getUsername(), userDTO.getEmail(), userDTO.getPhoneNumber());
 
-        Role osmAdminRole = roleRepository.findByRoleName(OSM_ADMIN_ROLE)
-                .orElseThrow(() -> new IllegalArgumentException("OSMADMIN role not found"));
+        Role oosmAdminRole = roleRepository.findByRoleName(OSM_ADMIN_ROLE)
+                .orElseThrow(() -> new IllegalArgumentException("OOSMADMIN role not found"));
 
         String rawPassword = userService.generateSecureCode(8);
         String hashedPassword = passwordEncoder.encode(rawPassword);
 
-        OSMUser user = modelMapper.map(userDTO, OSMUser.class);
-        user.setRole(osmAdminRole);
+        OOSMUser user = modelMapper.map(userDTO, OOSMUser.class);
+        user.setRole(oosmAdminRole);
         user.setPassword(hashedPassword);
         user.setNewUser(true);
         user.setLocked(userDTO.isLocked());
 
         userService.sendWelcomeCredentials(userDTO, rawPassword);
-        OSMUser savedUser = userRepository.save(user);
+        OOSMUser savedUser = userRepository.save(user);
         userRepository.clearTenantId(savedUser.getId());
         savedUser.setTenantId(null);
 
-        OSMLogger.logSecurityEvent(this.getClass(), "OSM_ADMIN_USER_CREATED",
-                "New OSM admin user created: " + savedUser.getUsername());
+        OOSMLogger.logSecurityEvent(this.getClass(), "OSM_ADMIN_USER_CREATED",
+                "New OOSM admin user created: " + savedUser.getUsername());
 
-        return modelMapper.map(savedUser, OSMUserOUTDTO.class);
+        return modelMapper.map(savedUser, OOSMUserOUTDTO.class);
     }
 
-    private void validateOsmAdminUserDTO(OSMUserOUTDTO userDTO) {
+    private void validateOosmAdminUserDTO(OOSMUserOUTDTO userDTO) {
         if (userDTO == null) {
             throw new IllegalArgumentException("User data must not be null");
         }

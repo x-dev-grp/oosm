@@ -6,13 +6,13 @@
 
     <parent>
         <groupId>com.xdev.ooms</groupId>
-        <artifactId>osm-monolith-parent</artifactId>
+        <artifactId>oosm-monolith-parent</artifactId>
         <version>0.0.1-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>osm-monolith-app</artifactId>
-    <name>osm-monolith-app</name>
+    <artifactId>oosm-monolith-app</artifactId>
+    <name>oosm-monolith-app</name>
     <packaging>jar</packaging>
 
     <dependencies>
@@ -141,13 +141,13 @@
     </dependencies>
 
     <build>
-        <finalName>osm-monolith</finalName>
+        <finalName>oosm-monolith</finalName>
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <mainClass>com.xdev.ooms.OsmMonolithApplication</mainClass>
+                    <mainClass>com.xdev.ooms.OosmMonolithApplication</mainClass>
                 </configuration>
             </plugin>
         </plugins>

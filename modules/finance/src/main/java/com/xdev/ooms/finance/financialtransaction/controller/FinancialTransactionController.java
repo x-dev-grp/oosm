@@ -12,7 +12,7 @@ import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -59,7 +59,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
                     "Financial transactions fetched successfully for supplier",
                     attachPermittedActions(transactions)));
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error fetching supplier financial transactions", e);
+            OOSMLogger.logException(this.getClass(), "Error fetching supplier financial transactions", e);
             return ResponseEntity.internalServerError()
                     .body(new ApiResponse<>(false, "Error fetching supplier financial transactions: " + e.getMessage(), null));
         }
@@ -70,14 +70,14 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
         try {
             return ResponseEntity.ok(financialTransactionService.getSupplierFinancialSummary(supplierId));
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error fetching supplier financial summary", e);
+            OOSMLogger.logException(this.getClass(), "Error fetching supplier financial summary", e);
             return ResponseEntity.internalServerError().build();
         }
     }
 
     @PostMapping("/create")
     public ResponseEntity<ApiSingleResponse<FinancialTransaction, FinancialTransactionDto>> save(@RequestBody FinancialTransactionDto dto) {
-        OSMLogger.logMethodEntry(this.getClass(), "createFinancialTransaction", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "createFinancialTransaction", dto);
 
         try {
             normalizeSupplier(dto);
@@ -89,7 +89,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(new ApiSingleResponse<>(false, e.getMessage(), null));
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error creating financial transaction", e);
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error creating financial transaction: " + e.getMessage(), null));
         }
     }
@@ -120,7 +120,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error updating financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error updating financial transaction", e);
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error updating financial transaction: " + e.getMessage(), null));
         }
     }
@@ -136,7 +136,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error approving financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error approving financial transaction", e);
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error approving financial transaction: " + e.getMessage(), null));
         }
     }
@@ -154,7 +154,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error rejecting financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error rejecting financial transaction", e);
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error rejecting financial transaction: " + e.getMessage(), null));
         }
     }
@@ -207,7 +207,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
      */
     @PostMapping("/waste")
     public ResponseEntity<ApiSingleResponse<FinancialTransaction, FinancialTransactionDto>> createWasteTransaction(@RequestBody FinancialTransactionDto dto) {
-        OSMLogger.logMethodEntry(this.getClass(), "createWasteTransaction", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "createWasteTransaction", dto);
 
         try {
             if (dto.getAmount() == null || dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
@@ -220,7 +220,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
             return ResponseEntity.ok(new ApiSingleResponse<>(true, "Waste financial transaction created successfully", created));
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error creating waste financial transaction", e);
+            OOSMLogger.logException(this.getClass(), "Error creating waste financial transaction", e);
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error creating waste transaction: " + e.getMessage(), null));
         }
     }

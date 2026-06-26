@@ -19,9 +19,9 @@ import org.springframework.data.repository.config.BootstrapMode;
         nameGenerator = FullyQualifiedAnnotationBeanNameGenerator.class,
         bootstrapMode = BootstrapMode.LAZY
 )
-public class OsmMonolithApplication {
+public class OosmMonolithApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(OsmMonolithApplication.class, args);
+        SpringApplication.run(OosmMonolithApplication.class, args);
     }
 }

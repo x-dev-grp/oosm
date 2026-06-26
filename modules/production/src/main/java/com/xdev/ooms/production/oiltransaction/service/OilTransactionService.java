@@ -20,7 +20,7 @@ import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.ports.OilCreditPort;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,7 +72,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      * @return OilTransaction entity
      */
     private static OilTransaction getOilTransaction(UnifiedDelivery delivery, ExchangePricingDto dto) {
-        OSMLogger.logMethodEntry(OilTransactionService.class, "getOilTransaction", delivery);
+        OOSMLogger.logMethodEntry(OilTransactionService.class, "getOilTransaction", delivery);
         OilTransaction tx = new OilTransaction();
         tx.setStorageUnitDestination(null);
         tx.setStorageUnitSource(null);
@@ -84,7 +84,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         tx.setQualityGrade(dto.getQualityGrade());
         tx.setOilType(delivery.getOilType());
         tx.setQuantityKg(dto.getOilQuantity());
-        OSMLogger.logMethodExit(OilTransactionService.class, "getOilTransaction", tx);
+        OOSMLogger.logMethodExit(OilTransactionService.class, "getOilTransaction", tx);
         return tx;
     }
 
@@ -113,7 +113,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     @Transactional
     public void reverseOilTransactionForSale(UUID oilSaleId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "reverseOilTransactionForSale", oilSaleId);
+        OOSMLogger.logMethodEntry(this.getClass(), "reverseOilTransactionForSale", oilSaleId);
 
         try {
             // 1. Find the oil transaction
@@ -121,7 +121,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
 
             // 2. Validate transaction state
             if (oilTransaction.getTransactionState() == TransactionState.CANCELED) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Oil transaction for OilSale %s is already canceled", oilSaleId);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Oil transaction for OilSale %s is already canceled", oilSaleId);
                 throw new IllegalStateException("Oil transaction is already canceled for OilSale: " + oilSaleId);
             }
 
@@ -130,27 +130,27 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
                 StorageUnit source = storageUnitRepo.findByIdAndIsDeletedFalse(oilTransaction.getStorageUnitSource().getId()).orElseThrow(() -> new IllegalArgumentException("Source storage unit not found: " + oilTransaction.getStorageUnitSource().getId()));
                 source.updateCurrentVolume(oilTransaction.getQuantityKg(), 1, oilTransaction.getUnitPrice());
                 storageUnitRepo.save(source);
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Restored %.2f kg to storage unit %s", oilTransaction.getQuantityKg(), source.getId());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Restored %.2f kg to storage unit %s", oilTransaction.getQuantityKg(), source.getId());
             } else {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "No source storage unit found for oil transaction %s", oilTransaction.getId());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "No source storage unit found for oil transaction %s", oilTransaction.getId());
             }
 
             // 4. Mark transaction as canceled or deleted
             oilTransaction.setTransactionState(TransactionState.CANCELED);
             oilTransaction.setDeleted(true); // Soft-delete
             oilTransactionRepository.save(oilTransaction);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "Oil transaction %s canceled for OilSale %s", oilTransaction.getId(), oilSaleId);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "Oil transaction %s canceled for OilSale %s", oilTransaction.getId(), oilSaleId);
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "Validation error in reverseOilTransactionForSale: %s", e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "Validation error in reverseOilTransactionForSale: %s", e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "Unexpected error in reverseOilTransactionForSale: %s", e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "Unexpected error in reverseOilTransactionForSale: %s", e.getMessage(), e);
             throw new RuntimeException("Failed to reverse oil transaction for OilSale: " + oilSaleId, e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "reverseOilTransactionForSale", null);
-        OSMLogger.logPerformance(this.getClass(), "reverseOilTransactionForSale", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "reverseOilTransactionForSale", null);
+        OOSMLogger.logPerformance(this.getClass(), "reverseOilTransactionForSale", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -163,7 +163,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     public OilTransactionDTO save(OilTransactionDTO request) {
         java.util.function.Function<Double, Double> rd = v -> BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "save", request);
+        OOSMLogger.logMethodEntry(this.getClass(), "save", request);
         OilTransaction oilTransaction = modelMapper.map(request, OilTransaction.class);
         boolean isTransfertIN = oilTransaction.getTransactionType() == TransactionType.TRANSFER_IN;
         if (request.getStorageUnitSource() != null && request.getStorageUnitSource().getId() != null) {
@@ -201,8 +201,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
 
 
-        OSMLogger.logMethodExit(this.getClass(), "save", modelMapper.map(oilTransaction, OilTransactionDTO.class));
-        OSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "save", modelMapper.map(oilTransaction, OilTransactionDTO.class));
+        OOSMLogger.logPerformance(this.getClass(), "save", startTime, System.currentTimeMillis());
         return modelMapper.map(oilTransaction, OilTransactionDTO.class);
     }
 
@@ -214,7 +214,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     public OilTransactionDTO saveWithoutStockAdjustment(OilTransactionDTO request) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "saveWithoutStockAdjustment", request);
+        OOSMLogger.logMethodEntry(this.getClass(), "saveWithoutStockAdjustment", request);
 
         OilTransaction oilTransaction = modelMapper.map(request, OilTransaction.class);
 
@@ -231,23 +231,23 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         oilTransaction.setTotalPrice();
         oilTransaction = oilTransactionRepository.save(oilTransaction);
 
-        OSMLogger.logMethodExit(this.getClass(), "saveWithoutStockAdjustment", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "saveWithoutStockAdjustment", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "saveWithoutStockAdjustment", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "saveWithoutStockAdjustment", startTime, System.currentTimeMillis());
         return modelMapper.map(oilTransaction, OilTransactionDTO.class);
     }
 
     @Override
     @Transactional
     public OilTransactionDTO delete(UUID id) {
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
         try {
             if (id == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
             OilTransaction entity = repository.findByIdAndIsDeletedFalse(id).orElse(null);
             if (entity == null) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
             }
             entity.setDeleted(true);
@@ -268,7 +268,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             }
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error deleting entity with ID: " + id, e);
             throw e;
         }
     }
@@ -282,16 +282,16 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     public OilTransactionDTO approveOilTransaction2(OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "approveOilTransaction2", dto);
+        OOSMLogger.logMethodEntry(this.getClass(), "approveOilTransaction2", dto);
         if (dto == null || dto.getId() == null) {
-            OSMLogger.logMethodExit(this.getClass(), "approveOilTransaction2", null);
-            OSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "approveOilTransaction2", null);
+            OOSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
             return null;
         }
         OilTransaction oilTransaction = oilTransactionRepository.findById(dto.getId()).orElseThrow(() -> new RuntimeException("Oil transaction not found"));
         handleApprovalLogicByType(oilTransaction, dto);
-        OSMLogger.logMethodExit(this.getClass(), "approveOilTransaction2", modelMapper.map(oilTransaction, OilTransactionDTO.class));
-        OSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "approveOilTransaction2", modelMapper.map(oilTransaction, OilTransactionDTO.class));
+        OOSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
         return modelMapper.map(oilTransaction, OilTransactionDTO.class);
     }
 
@@ -303,7 +303,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleApprovalLogicByType(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleApprovalLogicByType", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleApprovalLogicByType", oilTransaction);
         TransactionType type = oilTransaction.getTransactionType();
         // Dispatch to the correct handler based on transaction type
         switch (type) {
@@ -317,8 +317,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
 
         // Save the updated transaction
         save(modelMapper.map(oilTransaction, OilTransactionDTO.class));
-        OSMLogger.logMethodExit(this.getClass(), "handleApprovalLogicByType", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleApprovalLogicByType", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleApprovalLogicByType", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleApprovalLogicByType", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -326,7 +326,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleReceptionIn(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleReceptionIn", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleReceptionIn", oilTransaction);
         if (dto.getStorageUnitDestination() != null) {
             StorageUnit dest = storageUnitRepo.findById(dto.getStorageUnitDestination().getId()).orElseThrow();
             oilTransaction.setStorageUnitDestination(dest);
@@ -341,8 +341,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             }
 
         }
-        OSMLogger.logMethodExit(this.getClass(), "handleReceptionIn", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleReceptionIn", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleReceptionIn", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleReceptionIn", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -350,7 +350,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleTransferIn(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleTransferIn", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleTransferIn", oilTransaction);
         if (dto.getStorageUnitSource() != null && dto.getStorageUnitDestination() != null) {
             StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
             StorageUnit dest = storageUnitRepo.findById(dto.getStorageUnitDestination().getId()).orElseThrow();
@@ -359,8 +359,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "handleTransferIn", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleTransferIn", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleTransferIn", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleTransferIn", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -368,15 +368,15 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleSale(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleSale", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleSale", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
             StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
             oilTransaction.setStorageUnitSource(source);
             oilTransaction.setTotalPrice();
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
         }
-        OSMLogger.logMethodExit(this.getClass(), "handleSale", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleSale", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleSale", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleSale", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -384,7 +384,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleLoan(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleLoan", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleLoan", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
             StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
             oilTransaction.setStorageUnitSource(source);
@@ -393,8 +393,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
             oilCreditPort.approveOilCredit(oilTransaction.getExternalId());
         }
-        OSMLogger.logMethodExit(this.getClass(), "handleLoan", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleLoan", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleLoan", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleLoan", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -402,7 +402,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     private void handleExchange(OilTransaction oilTransaction, OilTransactionDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleExchange", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleExchange", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
             StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
             oilTransaction.setStorageUnitSource(source);
@@ -425,8 +425,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
                 unifiedDeliveryRepo.save(unifiedDelivery);
             }
         }
-        OSMLogger.logMethodExit(this.getClass(), "handleExchange", oilTransaction);
-        OSMLogger.logPerformance(this.getClass(), "handleExchange", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "handleExchange", oilTransaction);
+        OOSMLogger.logPerformance(this.getClass(), "handleExchange", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -437,10 +437,10 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
      */
     public List<OilTransaction> findByStorageUnitId(UUID storageUnitId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findByStorageUnitId", storageUnitId);
+        OOSMLogger.logMethodEntry(this.getClass(), "findByStorageUnitId", storageUnitId);
         List<OilTransaction> transactions = oilTransactionRepository.findByStorageUnitDestinationId(storageUnitId);
-        OSMLogger.logMethodExit(this.getClass(), "findByStorageUnitId", transactions);
-        OSMLogger.logPerformance(this.getClass(), "findByStorageUnitId", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "findByStorageUnitId", transactions);
+        OOSMLogger.logPerformance(this.getClass(), "findByStorageUnitId", startTime, System.currentTimeMillis());
         return transactions;
     }
 
@@ -454,7 +454,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     @Override
     public Set<Action> actionsMapping(OilTransaction oilTransaction) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", oilTransaction);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", oilTransaction);
         Set<Action> actions = new HashSet<>();
         actions.add(Action.READ);
         // Only allow update/delete/validate if transaction is pending
@@ -471,8 +471,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             case null, default -> {
             }
         }
-        OSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
-        OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
+        OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
         return actions;
     }
 
@@ -487,60 +487,60 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     @Transactional
     public void createSingleOilTransactionIn(UnifiedDelivery delivery) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createSingleOilTransactionIn", delivery);
+        OOSMLogger.logMethodEntry(this.getClass(), "createSingleOilTransactionIn", delivery);
 
         // Validate input parameters
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Delivery is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Delivery is null");
             throw new IllegalArgumentException("Delivery cannot be null");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Creating oil transaction for delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Creating oil transaction for delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
 
         try {
             // Validate delivery type
             if (delivery.getDeliveryType() != DeliveryType.OIL) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid delivery type for oil transaction: %s (expected OIL)", delivery.getDeliveryType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid delivery type for oil transaction: %s (expected OIL)", delivery.getDeliveryType());
                 throw new IllegalArgumentException("Oil transaction can only be created for OIL deliveries");
             }
 
             // Validate delivery state
             if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[createSingleOilTransactionIn] Creating oil transaction for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createSingleOilTransactionIn] Creating oil transaction for delivery %s that is already IN_STOCK", delivery.getLotNumber());
             }
 
             // Validate required fields
             if (delivery.getOilQuantity() == null || delivery.getOilQuantity() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid oil quantity for delivery %s: %s", delivery.getLotNumber(), delivery.getOilQuantity());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid oil quantity for delivery %s: %s", delivery.getLotNumber(), delivery.getOilQuantity());
                 throw new IllegalArgumentException("Oil quantity must be positive for oil transaction creation");
             }
 
             if (delivery.getUnitPrice() == null || delivery.getUnitPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid unit price for delivery %s: %s", delivery.getLotNumber(), delivery.getUnitPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Invalid unit price for delivery %s: %s", delivery.getLotNumber(), delivery.getUnitPrice());
                 throw new IllegalArgumentException("Unit price must be positive for oil transaction creation");
             }
 
             // Create oil transaction
             OilTransaction tx = getOilTransaction(delivery);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Created oil transaction for delivery %s with quantity %.2f and unit price %.2f", delivery.getLotNumber(), tx.getQuantityKg(), tx.getUnitPrice());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Created oil transaction for delivery %s with quantity %.2f and unit price %.2f", delivery.getLotNumber(), tx.getQuantityKg(), tx.getUnitPrice());
 
             // Save the transaction
             OilTransactionDTO savedTx = save(modelMapper.map(tx, OilTransactionDTO.class));
 
 
             deliveryRepository.save(delivery);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Successfully saved oil transaction %s for delivery %s", savedTx.getId(), delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionIn] Successfully saved oil transaction %s for delivery %s", savedTx.getId(), delivery.getLotNumber());
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Validation error: %s", e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Validation error: %s", e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Unexpected error during oil transaction creation: %s", e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Unexpected error during oil transaction creation: %s", e.getMessage(), e);
             throw new RuntimeException("Failed to create oil transaction", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "createSingleOilTransactionIn", null);
-        OSMLogger.logPerformance(this.getClass(), "createSingleOilTransactionIn", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "createSingleOilTransactionIn", null);
+        OOSMLogger.logPerformance(this.getClass(), "createSingleOilTransactionIn", startTime, System.currentTimeMillis());
     }
 
     /**
@@ -555,68 +555,68 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     @Transactional
     public void createSingleOilTransactionOut(UnifiedDelivery delivery, ExchangePricingDto dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "createSingleOilTransactionOut", String.format("delivery=%s, dto=%s", delivery != null ? delivery.getLotNumber() : "null", dto));
+        OOSMLogger.logMethodEntry(this.getClass(), "createSingleOilTransactionOut", String.format("delivery=%s, dto=%s", delivery != null ? delivery.getLotNumber() : "null", dto));
 
         // Validate input parameters
         if (delivery == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Delivery is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Delivery is null");
             throw new IllegalArgumentException("Delivery cannot be null");
         }
 
         if (dto == null) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] ExchangePricingDto is null");
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] ExchangePricingDto is null");
             throw new IllegalArgumentException("ExchangePricingDto cannot be null");
         }
 
-        OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Creating oil transaction out for delivery %s (Type: %s, Status: %s, Operation: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus(), delivery.getOperationType());
+        OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Creating oil transaction out for delivery %s (Type: %s, Status: %s, Operation: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus(), delivery.getOperationType());
 
         try {
 
 
             // Validate operation type for exchange
             if (delivery.getOperationType() != EXCHANGE) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[createSingleOilTransactionOut] Creating oil transaction out for non-exchange operation: %s", delivery.getOperationType());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createSingleOilTransactionOut] Creating oil transaction out for non-exchange operation: %s", delivery.getOperationType());
             }
 
             // Validate delivery state
             if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "[createSingleOilTransactionOut] Creating oil transaction out for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createSingleOilTransactionOut] Creating oil transaction out for delivery %s that is already IN_STOCK", delivery.getLotNumber());
             }
 
             // Validate pricing data
             if (dto.getOilQuantity() == null || dto.getOilQuantity() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil quantity in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilQuantity());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil quantity in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilQuantity());
                 throw new IllegalArgumentException("Oil quantity must be positive for oil transaction out creation");
             }
 
             if (dto.getOilUnitPrice() == null || dto.getOilUnitPrice() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil unit price in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilUnitPrice());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil unit price in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilUnitPrice());
                 throw new IllegalArgumentException("Oil unit price must be positive for oil transaction out creation");
             }
 
             if (dto.getOilTotalValue() == null || dto.getOilTotalValue() <= 0) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil total value in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilTotalValue());
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Invalid oil total value in DTO for delivery %s: %s", delivery.getLotNumber(), dto.getOilTotalValue());
                 throw new IllegalArgumentException("Oil total value must be positive for oil transaction out creation");
             }
 
             // Create oil transaction
             OilTransaction tx = getOilTransaction(delivery, dto);
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Created oil transaction out for delivery %s with quantity %.2f, unit price %.2f, total value %.2f", delivery.getLotNumber(), tx.getQuantityKg(), tx.getUnitPrice(), tx.getTotalPrice());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Created oil transaction out for delivery %s with quantity %.2f, unit price %.2f, total value %.2f", delivery.getLotNumber(), tx.getQuantityKg(), tx.getUnitPrice(), tx.getTotalPrice());
 
             // Save the transaction
             OilTransactionDTO savedTx = save(modelMapper.map(tx, OilTransactionDTO.class));
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Successfully saved oil transaction out %s for delivery %s", savedTx.getId(), delivery.getLotNumber());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[createSingleOilTransactionOut] Successfully saved oil transaction out %s for delivery %s", savedTx.getId(), delivery.getLotNumber());
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Validation error: %s", e.getMessage());
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Validation error: %s", e.getMessage());
             throw e;
         } catch (Exception e) {
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Unexpected error during oil transaction out creation: %s", e.getMessage(), e);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionOut] Unexpected error during oil transaction out creation: %s", e.getMessage(), e);
             throw new RuntimeException("Failed to create oil transaction out", e);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "createSingleOilTransactionOut", null);
-        OSMLogger.logPerformance(this.getClass(), "createSingleOilTransactionOut", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "createSingleOilTransactionOut", null);
+        OOSMLogger.logPerformance(this.getClass(), "createSingleOilTransactionOut", startTime, System.currentTimeMillis());
     }
 
     @Transactional

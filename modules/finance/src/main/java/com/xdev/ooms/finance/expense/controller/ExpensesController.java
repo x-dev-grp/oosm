@@ -4,7 +4,7 @@ package com.xdev.ooms.finance.expense.controller;
 import com.xdev.ooms.finance.expense.dto.ExpenseDto;
 import com.xdev.ooms.finance.expense.entity.Expense;
  import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;

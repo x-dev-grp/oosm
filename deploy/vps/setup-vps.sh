@@ -18,7 +18,7 @@ if ! command -v docker >/dev/null 2>&1; then
   apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 fi
 
-DEPLOY_PATH="${DEPLOY_PATH:-/opt/osm}"
+DEPLOY_PATH="${DEPLOY_PATH:-/opt/oosm}"
 mkdir -p "$DEPLOY_PATH"
 echo "Deploy directory: $DEPLOY_PATH"
 echo "Copy deploy/vps/* from the oosm repo into $DEPLOY_PATH, then:"

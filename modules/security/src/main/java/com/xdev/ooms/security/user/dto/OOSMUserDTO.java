@@ -1,9 +1,11 @@
-package com.xdev.ooms.sharedkernel.communicator.models.shared;
+package com.xdev.ooms.security.user.dto;
 
+import com.xdev.ooms.security.role.dto.RoleDTO;
+import com.xdev.ooms.security.user.entity.OOSMUser;
+import com.xdev.ooms.security.confirmationcode.enums.ConfirmationMethod;
+import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
-import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.BaseDto;
-
-public class OSMUserDTO extends BaseDto {
+public class OOSMUserDTO extends BaseDto<OOSMUser> {
     private String username;
     private String firstName;
     private String lastName;
@@ -15,6 +17,7 @@ public class OSMUserDTO extends BaseDto {
     private ConfirmationMethod confirmationMethod;
     private boolean isNewUser;
     private String oneSignalPlayerId;
+
 
     public boolean isNewUser() {
         return isNewUser;

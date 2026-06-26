@@ -3,13 +3,13 @@
 
     <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
 
-    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="osm-monolith"/>
+    <springProperty scope="context" name="APP_NAME" source="spring.application.name" defaultValue="oosm-monolith"/>
 
     <property name="OSM_CONSOLE_LOG_PATTERN"
               value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-36.36logger{35}){cyan} %clr(:){faint} %msg %clr(%X{correlationId:-}){yellow}%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
 
     <property name="JSON_LOG_PATTERN"
-              value="{&quot;timestamp&quot;:&quot;%d{yyyy-MM-dd HH:mm:ss.SSS}&quot;,&quot;level&quot;:&quot;%-5level&quot;,&quot;pid&quot;:&quot;${PID:-}&quot;,&quot;thread&quot;:&quot;%thread&quot;,&quot;logger&quot;:&quot;%logger{48}&quot;,&quot;correlationId&quot;:&quot;%X{correlationId:-}&quot;,&quot;application&quot;:&quot;${APP_NAME}&quot;,&quot;message&quot;:&quot;%msg&quot;,&quot;service&quot;:&quot;osm-monolith&quot;}%n"/>
+              value="{&quot;timestamp&quot;:&quot;%d{yyyy-MM-dd HH:mm:ss.SSS}&quot;,&quot;level&quot;:&quot;%-5level&quot;,&quot;pid&quot;:&quot;${PID:-}&quot;,&quot;thread&quot;:&quot;%thread&quot;,&quot;logger&quot;:&quot;%logger{48}&quot;,&quot;correlationId&quot;:&quot;%X{correlationId:-}&quot;,&quot;application&quot;:&quot;${APP_NAME}&quot;,&quot;message&quot;:&quot;%msg&quot;,&quot;service&quot;:&quot;oosm-monolith&quot;}%n"/>
 
     <appender name="OSM_CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>

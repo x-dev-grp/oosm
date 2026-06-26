@@ -3,7 +3,7 @@ package com.xdev.ooms.production.qualitycontrol.service;
 import com.xdev.ooms.production.qualitycontrol.defaults.TunisiaQualityControlDefaults;
 import com.xdev.ooms.production.qualitycontrol.entity.QualityControlRule;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlRuleRepository;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,7 +27,7 @@ public class QualityControlProvisioningService {
         }
 
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "provisionDefaultRulesForTenant", tenantId);
+        OOSMLogger.logMethodEntry(this.getClass(), "provisionDefaultRulesForTenant", tenantId);
 
         List<QualityControlRule> toSave = new ArrayList<>();
         for (TunisiaQualityControlDefaults.QcRuleTemplate template : TunisiaQualityControlDefaults.all()) {
@@ -54,8 +54,8 @@ public class QualityControlProvisioningService {
             ruleRepository.saveAll(toSave);
         }
 
-        OSMLogger.logMethodExit(this.getClass(), "provisionDefaultRulesForTenant", toSave.size());
-        OSMLogger.logPerformance(this.getClass(), "provisionDefaultRulesForTenant", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "provisionDefaultRulesForTenant", toSave.size());
+        OOSMLogger.logPerformance(this.getClass(), "provisionDefaultRulesForTenant", startTime, System.currentTimeMillis());
         return toSave.size();
     }
 }

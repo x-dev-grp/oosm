@@ -4,7 +4,7 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import com.xdev.ooms.sharedkernel.models.SearchDetails;
 import com.xdev.ooms.sharedkernel.models.SearchModel;
 import com.xdev.ooms.sharedkernel.models.SearchOperation;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
@@ -25,15 +25,15 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
 
     public Specification<T> buildSpecification(SearchModel searchModel) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "buildSpecification", searchModel);
+        OOSMLogger.logMethodEntry(this.getClass(), "buildSpecification", searchModel);
 
         try {
             if (searchModel == null) {
-                OSMLogger.logMethodExit(this.getClass(), "buildSpecification", "SearchModel is null, returning null specification");
+                OOSMLogger.logMethodExit(this.getClass(), "buildSpecification", "SearchModel is null, returning null specification");
                 return null;
             }
 
-            OSMLogger.logBusinessEvent(this.getClass(), "SEARCH_SPECIFICATION_BUILD_START",
+            OOSMLogger.logBusinessEvent(this.getClass(), "SEARCH_SPECIFICATION_BUILD_START",
                     "Building specification for search model with " +
                             (searchModel.getSearch() != null ? searchModel.getSearch().size() : 0) + " search criteria");
 
@@ -42,7 +42,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
 
                 // Process search criteria
                 if (searchModel.getSearch() != null && !searchModel.getSearch().isEmpty()) {
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_CRITERIA_PROCESSING",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_CRITERIA_PROCESSING",
                             "Processing " + searchModel.getSearch().size() + " search criteria");
 
                     for (Map.Entry<String, SearchDetails> entry : searchModel.getSearch().entrySet()) {
@@ -51,11 +51,11 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
 
                         if (details != null) {
                             try {
-                                OSMLogger.logDataAccess(this.getClass(), "SEARCH_DETAIL_PROCESSING",
+                                OOSMLogger.logDataAccess(this.getClass(), "SEARCH_DETAIL_PROCESSING",
                                         "Processing search detail for field: " + key);
                                 handleSearchDetails(key, details, root, criteriaBuilder, predicates);
                             } catch (Exception e) {
-                                OSMLogger.logException(this.getClass(),
+                                OOSMLogger.logException(this.getClass(),
                                         "Error processing search details for field: " + key, e);
                                 throw new RuntimeException("Failed to process search details for field: " + key, e);
                             }
@@ -65,7 +65,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
 
                 // Process nested search models
                 if (searchModel.getSearchs() != null && !searchModel.getSearchs().isEmpty()) {
-                    OSMLogger.logDataAccess(this.getClass(), "NESTED_SEARCH_PROCESSING",
+                    OOSMLogger.logDataAccess(this.getClass(), "NESTED_SEARCH_PROCESSING",
                             "Processing " + searchModel.getSearchs().size() + " nested search models");
 
                     for (SearchModel nestedModel : searchModel.getSearchs()) {
@@ -81,13 +81,13 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
 
                 // Build final predicate
                 if (predicates.isEmpty()) {
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
                             "No predicates generated, returning null");
                     return null;
                 } else if (predicates.size() == 1) {
                     Predicate result = predicates.getFirst();
                     Predicate finalResult = searchModel.isReverse() ? criteriaBuilder.not(result) : result;
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
                             "Single predicate generated, reverse: " + searchModel.isReverse());
                     return finalResult;
                 } else {
@@ -101,23 +101,23 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                     }
 
                     Predicate finalResult = searchModel.isReverse() ? criteriaBuilder.not(combined) : combined;
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_PREDICATE_RESULT",
                             "Combined " + predicates.size() + " predicates with operation: " +
                                     searchModel.getOperation() + ", reverse: " + searchModel.isReverse());
                     return finalResult;
                 }
             };
 
-            OSMLogger.logMethodExit(this.getClass(), "buildSpecification", "Specification built successfully");
-            OSMLogger.logPerformance(this.getClass(), "buildSpecification", startTime, System.currentTimeMillis());
-            OSMLogger.logBusinessEvent(this.getClass(), "SEARCH_SPECIFICATION_BUILD_COMPLETE",
+            OOSMLogger.logMethodExit(this.getClass(), "buildSpecification", "Specification built successfully");
+            OOSMLogger.logPerformance(this.getClass(), "buildSpecification", startTime, System.currentTimeMillis());
+            OOSMLogger.logBusinessEvent(this.getClass(), "SEARCH_SPECIFICATION_BUILD_COMPLETE",
                     "Search specification built successfully with " +
                             (searchModel.getSearch() != null ? searchModel.getSearch().size() : 0) + " criteria");
 
             return specification;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error building search specification", e);
+            OOSMLogger.logException(this.getClass(), "Error building search specification", e);
             throw e;
         }
     }
@@ -128,12 +128,12 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
      */
     private void handleSearchDetails(String key, SearchDetails details, Root<T> root, CriteriaBuilder cb, List<Predicate> predicates) throws Exception {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleSearchDetails", "Field: " + key);
+        OOSMLogger.logMethodEntry(this.getClass(), "handleSearchDetails", "Field: " + key);
 
         try {
             // Skip processing if all values are null and we're ignoring nulls
             if (allValuesAreNull(details) && details.isIgnoreIfNull()) {
-                OSMLogger.logDataAccess(this.getClass(), "SEARCH_DETAIL_SKIPPED",
+                OOSMLogger.logDataAccess(this.getClass(), "SEARCH_DETAIL_SKIPPED",
                         "Skipping search detail for field: " + key + " (all values null and ignoreIfNull=true)");
                 return;
             }
@@ -141,7 +141,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             Path<?> path = getNestedPropertyPath(root, key);
             Class<?> fieldType = path.getJavaType();
 
-            OSMLogger.logDataAccess(this.getClass(), "SEARCH_FIELD_TYPE",
+            OOSMLogger.logDataAccess(this.getClass(), "SEARCH_FIELD_TYPE",
                     "Field: " + key + ", Type: " + fieldType.getSimpleName());
 
             // Handle equal value
@@ -149,7 +149,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                 Object convertedValue = convertValueToTargetType(details.getEqualValue(), fieldType);
                 if (convertedValue != null) {
                     predicates.add(cb.equal(path, convertedValue));
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_EQUAL_PREDICATE",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_EQUAL_PREDICATE",
                             "Added equal predicate for field: " + key + ", value: " + convertedValue);
                 }
             }
@@ -158,7 +158,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             if (details.getLikeValue() != null && String.class.isAssignableFrom(fieldType)) {
                 String likeValue = details.getLikeValue().toString();
                 predicates.add(cb.like(cb.lower(path.as(String.class)), "%" + likeValue.toLowerCase() + "%"));
-                OSMLogger.logDataAccess(this.getClass(), "SEARCH_LIKE_PREDICATE",
+                OOSMLogger.logDataAccess(this.getClass(), "SEARCH_LIKE_PREDICATE",
                         "Added like predicate for field: " + key + ", value: " + likeValue);
             }
 
@@ -195,7 +195,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                 }
                 if (validValues > 0) {
                     predicates.add(inClause);
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_IN_PREDICATE",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_IN_PREDICATE",
                             "Added IN predicate for field: " + key + " with " + validValues + " values");
                 }
             }
@@ -204,11 +204,11 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             if (details.getNull() != null) {
                 if (details.getNull()) {
                     predicates.add(cb.isNull(path));
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_NULL_PREDICATE",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_NULL_PREDICATE",
                             "Added IS NULL predicate for field: " + key);
                 } else {
                     predicates.add(cb.isNotNull(path));
-                    OSMLogger.logDataAccess(this.getClass(), "SEARCH_NOT_NULL_PREDICATE",
+                    OOSMLogger.logDataAccess(this.getClass(), "SEARCH_NOT_NULL_PREDICATE",
                             "Added IS NOT NULL predicate for field: " + key);
                 }
             }
@@ -217,16 +217,16 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             if (details.getContainsValue() != null && String.class.isAssignableFrom(fieldType)) {
                 String containsValue = details.getContainsValue().toString().toLowerCase();
                 predicates.add(cb.like(cb.lower(path.as(String.class)), "%" + containsValue + "%"));
-                OSMLogger.logDataAccess(this.getClass(), "SEARCH_CONTAINS_PREDICATE",
+                OOSMLogger.logDataAccess(this.getClass(), "SEARCH_CONTAINS_PREDICATE",
                         "Added contains predicate for field: " + key + ", value: " + containsValue);
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "handleSearchDetails",
+            OOSMLogger.logMethodExit(this.getClass(), "handleSearchDetails",
                     "Processed search details for field: " + key + ", added " + predicates.size() + " predicates");
-            OSMLogger.logPerformance(this.getClass(), "handleSearchDetails", startTime, System.currentTimeMillis());
+            OOSMLogger.logPerformance(this.getClass(), "handleSearchDetails", startTime, System.currentTimeMillis());
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Error handling search details for field: " + key, e);
             throw e;
         }
@@ -246,13 +246,13 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             String fieldName) throws Exception {
 
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "handleComparison",
+        OOSMLogger.logMethodEntry(this.getClass(), "handleComparison",
                 "Field: " + fieldName + ", Type: " + comparisonType + ", Value: " + value);
 
         try {
             Object convertedValue = convertValueToTargetType(value, fieldType);
             if (convertedValue == null) {
-                OSMLogger.logDataAccess(this.getClass(), "COMPARISON_SKIPPED",
+                OOSMLogger.logDataAccess(this.getClass(), "COMPARISON_SKIPPED",
                         "Skipping comparison for field: " + fieldName + " (converted value is null)");
                 return;
             }
@@ -260,7 +260,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             // Make sure the value is comparable
             if (!(convertedValue instanceof Comparable)) {
                 String errorMsg = "Value must be comparable for field type: " + fieldType.getName();
-                OSMLogger.logException(this.getClass(), errorMsg,
+                OOSMLogger.logException(this.getClass(), errorMsg,
                         new IllegalArgumentException(errorMsg));
                 throw new IllegalArgumentException(errorMsg);
             }
@@ -307,19 +307,19 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                     }
                 } catch (ClassCastException e) {
                     String errorMsg = "Failed to create comparison predicate for field type: " + fieldType.getName();
-                    OSMLogger.logException(this.getClass(), errorMsg, e);
+                    OOSMLogger.logException(this.getClass(), errorMsg, e);
                     throw new Exception(errorMsg, e);
                 }
             }
 
-            OSMLogger.logDataAccess(this.getClass(), "COMPARISON_PREDICATE_ADDED",
+            OOSMLogger.logDataAccess(this.getClass(), "COMPARISON_PREDICATE_ADDED",
                     "Added " + comparisonType + " predicate for field: " + fieldName + ", value: " + convertedValue);
-            OSMLogger.logMethodExit(this.getClass(), "handleComparison",
+            OOSMLogger.logMethodExit(this.getClass(), "handleComparison",
                     "Comparison completed for field: " + fieldName);
-            OSMLogger.logPerformance(this.getClass(), "handleComparison", startTime, System.currentTimeMillis());
+            OOSMLogger.logPerformance(this.getClass(), "handleComparison", startTime, System.currentTimeMillis());
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Error handling comparison for field: " + fieldName + ", type: " + comparisonType, e);
             throw e;
         }
@@ -460,19 +460,19 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
      */
     private Object convertValueToTargetType(Object value, Class<?> targetType) throws Exception {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "convertValueToTargetType",
+        OOSMLogger.logMethodEntry(this.getClass(), "convertValueToTargetType",
                 "Value: " + value + ", TargetType: " + targetType.getSimpleName());
 
         try {
             if (value == null || targetType == null) {
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SKIPPED",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SKIPPED",
                         "Skipping conversion (value or targetType is null)");
                 return null;
             }
 
             // If already the correct type, return as is
             if (targetType.isInstance(value)) {
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SKIPPED",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SKIPPED",
                         "Value already of correct type: " + targetType.getSimpleName());
                 return value;
             }
@@ -482,7 +482,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             // Handle enum types
             if (targetType.isEnum()) {
                 Object result = Enum.valueOf((Class<Enum>) targetType, stringValue);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to enum: " + result);
                 return result;
             }
@@ -490,7 +490,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             //handle UUID types
             if (targetType == UUID.class) {
                 Object result = UUID.fromString(stringValue);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to UUID: " + result);
                 return result;
             }
@@ -498,14 +498,14 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             // Handle date/time types
             if (targetType == LocalDate.class) {
                 Object result = LocalDate.parse(stringValue);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to LocalDate: " + result);
                 return result;
             }
 
             if (targetType == LocalDateTime.class) {
                 Object result = LocalDateTime.parse(stringValue);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to LocalDateTime: " + result);
                 return result;
             }
@@ -513,7 +513,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             if (targetType == Date.class) {
                 // Try to parse as LocalDate first, then convert to java.sql.Date
                 Object result = java.sql.Date.valueOf(LocalDate.parse(stringValue));
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to Date: " + result);
                 return result;
             }
@@ -521,14 +521,14 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             if (targetType == OffsetDateTime.class) {
                 try {
                     Object result = OffsetDateTime.parse(stringValue);
-                    OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                    OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                             "Converted to OffsetDateTime: " + result);
                     return result;
                 } catch (DateTimeParseException e) {
                     // Try as LocalDateTime and apply system offset
                     LocalDateTime ldt = LocalDateTime.parse(stringValue);
                     Object result = ldt.atOffset(ZoneOffset.systemDefault().getRules().getOffset(ldt));
-                    OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                    OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                             "Converted to OffsetDateTime (with system offset): " + result);
                     return result;
                 }
@@ -554,7 +554,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                 }
 
                 if (result != null) {
-                    OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                    OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                             "Converted to " + targetType.getSimpleName() + ": " + result);
                     return result;
                 }
@@ -563,7 +563,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             // Handle boolean
             if (targetType == Boolean.class) {
                 Object result = Boolean.parseBoolean(stringValue);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to Boolean: " + result);
                 return result;
             }
@@ -571,7 +571,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
             // Handle character (use first char of string)
             if (targetType == Character.class && !stringValue.isEmpty()) {
                 Object result = stringValue.charAt(0);
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                         "Converted to Character: " + result);
                 return result;
             }
@@ -581,26 +581,26 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                 Method valueOfMethod = targetType.getMethod("valueOf", String.class);
                 if (valueOfMethod != null) {
                     Object result = valueOfMethod.invoke(null, stringValue);
-                    OSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
+                    OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_SUCCESS",
                             "Converted using valueOf method: " + result);
                     return result;
                 }
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
                 // Ignore and fall through to the exception
-                OSMLogger.logDataAccess(this.getClass(), "CONVERSION_VALUE_OF_FAILED",
+                OOSMLogger.logDataAccess(this.getClass(), "CONVERSION_VALUE_OF_FAILED",
                         "valueOf method failed for type: " + targetType.getSimpleName());
             }
 
             String errorMsg = "Unsupported conversion from [" + value.getClass().getName() + "] to [" + targetType.getName() + "]";
-            OSMLogger.logException(this.getClass(), errorMsg, new Exception(errorMsg));
+            OOSMLogger.logException(this.getClass(), errorMsg, new Exception(errorMsg));
             throw new Exception(errorMsg);
 
         } catch (Exception e) {
             String errorMsg = "Failed to convert value [" + value + "] to type [" + targetType.getName() + "]: " + e.getMessage();
-            OSMLogger.logException(this.getClass(), errorMsg, e);
+            OOSMLogger.logException(this.getClass(), errorMsg, e);
             throw new Exception(errorMsg, e);
         } finally {
-            OSMLogger.logPerformance(this.getClass(), "convertValueToTargetType", startTime, System.currentTimeMillis());
+            OOSMLogger.logPerformance(this.getClass(), "convertValueToTargetType", startTime, System.currentTimeMillis());
         }
     }
 
@@ -624,7 +624,7 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
      */
     private Path<?> getNestedPropertyPath(Root<T> root, String propertyPath) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getNestedPropertyPath", "PropertyPath: " + propertyPath);
+        OOSMLogger.logMethodEntry(this.getClass(), "getNestedPropertyPath", "PropertyPath: " + propertyPath);
 
         try {
             String[] parts = propertyPath.split("\\.");
@@ -634,14 +634,14 @@ public class SearchSpecificationBuilder<T extends BaseEntity> {
                 path = path.get(part);
             }
 
-            OSMLogger.logMethodExit(this.getClass(), "getNestedPropertyPath",
+            OOSMLogger.logMethodExit(this.getClass(), "getNestedPropertyPath",
                     "Resolved path for: " + propertyPath + " with " + parts.length + " parts");
-            OSMLogger.logPerformance(this.getClass(), "getNestedPropertyPath", startTime, System.currentTimeMillis());
+            OOSMLogger.logPerformance(this.getClass(), "getNestedPropertyPath", startTime, System.currentTimeMillis());
 
             return path;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Error resolving nested property path: " + propertyPath, e);
             throw e;
         }

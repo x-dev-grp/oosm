@@ -9,7 +9,7 @@ import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 //todo refactor
@@ -36,7 +36,7 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
     @Override
     public List<RoleDTO> findAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll");
 
         try {
             UUID tenantId = TenantContext.getCurrentTenant();
@@ -46,12 +46,12 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
                 data.add(adminRole);
             }
             List<RoleDTO> result = data.stream().map(item -> modelMapper.map(item, outDTOClass)).toList();
-            OSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding all entities", e);
+            OOSMLogger.logException(this.getClass(), "Error finding all entities", e);
             throw e;
         }
     }
@@ -63,12 +63,12 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
     public void resolveEntityRelations(Role entity) {
         long startTime = System.currentTimeMillis();
         String roleName = entity != null ? entity.getRoleName() : "null";
-        OSMLogger.logMethodEntry(this.getClass(), "resolveEntityRelations", 
+        OOSMLogger.logMethodEntry(this.getClass(), "resolveEntityRelations", 
             "Resolving entity relations for role: " + roleName);
         
         try {
             if (entity.getPermissions() != null && !entity.getPermissions().isEmpty()) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, 
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, 
                     "Resolving {} permissions for role: {}", entity.getPermissions().size(), roleName);
                 
                 Set<Permission> resolved = entity.getPermissions().stream()
@@ -79,19 +79,19 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
                 entity.getPermissions().clear();
                 entity.setPermissions(resolved);
                 
-                OSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations", 
+                OOSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations", 
                     "Resolved " + resolved.size() + " permissions for role: " + roleName);
-                OSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "RESOLVE_PERMISSIONS", "Role");
+                OOSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "RESOLVE_PERMISSIONS", "Role");
                 
             } else {
-                OSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations", 
+                OOSMLogger.logMethodExit(this.getClass(), "resolveEntityRelations", 
                     "No permissions to resolve for role: " + roleName);
-                OSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
+                OOSMLogger.logPerformance(this.getClass(), "resolveEntityRelations", startTime, System.currentTimeMillis());
             }
             
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), 
+            OOSMLogger.logException(this.getClass(), 
                 "Error resolving entity relations for role: " + roleName, e);
             throw e;
         }
@@ -102,7 +102,7 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
     @Transactional
     public RoleDTO update(RoleDTO dto) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update");
+        OOSMLogger.logMethodEntry(this.getClass(), "update");
 
         try {
             if (dto == null || dto.getId() == null) {
@@ -127,14 +127,14 @@ public class RoleService extends BaseServiceImpl<Role, RoleDTO, RoleDTO> {
             Role saved = roleRepository.saveAndFlush(role);
             RoleDTO out = modelMapper.map(saved, outDTOClass);
 
-            OSMLogger.logMethodExit(this.getClass(), "update", "Updated role with " + saved.getPermissions().size() + " permissions");
-            OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "UPDATE", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "update", "Updated role with " + saved.getPermissions().size() + " permissions");
+            OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "UPDATE", entityClass.getSimpleName());
 
             return out;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error updating role", e);
+            OOSMLogger.logException(this.getClass(), "Error updating role", e);
             throw e;
         }
     }

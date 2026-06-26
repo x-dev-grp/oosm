@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.security.notification.dto.UserNotificationDto;
 import com.xdev.ooms.security.notification.entity.UserNotification;
 import com.xdev.ooms.security.notification.repository.UserNotificationRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -74,7 +74,7 @@ public class UserNotificationService {
     private UUID requireCurrentUserId() {
         return SecurityUtils.getCurrentUserId()
                 .orElseGet(() -> userRepository.findByUsername(SecurityUtils.getCurrentUsername().orElse(""))
-                        .map(OSMUser::getId)
+                        .map(OOSMUser::getId)
                         .orElseThrow(() -> new EntityNotFoundException("Authenticated user not found")));
     }
 

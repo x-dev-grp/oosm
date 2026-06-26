@@ -6,7 +6,7 @@ import com.xdev.ooms.sharedkernel.communicator.models.shared.LabelContentDto;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.LabelContentUpdateRequestDto;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.LabelExportDto;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.LabelGenerateRequestDto;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,17 +35,17 @@ public class LabelContentController {
     @GetMapping
     public ResponseEntity<ApiResponse<List<LabelContentDto>>> getAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "getAll");
 
         try {
             List<LabelContentDto> result = labelContentService.getAll();
 
-            OSMLogger.logMethodExit(this.getClass(), "getAll", result);
-            OSMLogger.logPerformance(this.getClass(), "getAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getAll", result);
+            OOSMLogger.logPerformance(this.getClass(), "getAll", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Liste des etiquettes recuperee avec succes", result);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getAll", e);
+            OOSMLogger.logException(this.getClass(), "getAll", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la lecture des etiquettes");
         }
     }
@@ -53,20 +53,20 @@ public class LabelContentController {
     @PostMapping("/generate")
     public ResponseEntity<ApiResponse<LabelContentDto>> generate(@RequestBody LabelGenerateRequestDto request) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "generate", request);
+        OOSMLogger.logMethodEntry(this.getClass(), "generate", request);
 
         try {
             LabelContentDto result = labelContentService.generate(request);
 
-            OSMLogger.logMethodExit(this.getClass(), "generate", result);
-            OSMLogger.logPerformance(this.getClass(), "generate", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "generate", result);
+            OOSMLogger.logPerformance(this.getClass(), "generate", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.CREATED, "Contenu d'etiquette genere avec succes", result);
         } catch (IllegalArgumentException | IllegalStateException | EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "generate", e);
+            OOSMLogger.logException(this.getClass(), "generate", e);
             return failure(resolveStatus(e), e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "generate", e);
+            OOSMLogger.logException(this.getClass(), "generate", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la generation d'etiquette");
         }
     }
@@ -74,20 +74,20 @@ public class LabelContentController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<LabelContentDto>> getById(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getById", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "getById", id);
 
         try {
             LabelContentDto result = labelContentService.getById(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "getById", result);
-            OSMLogger.logPerformance(this.getClass(), "getById", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getById", result);
+            OOSMLogger.logPerformance(this.getClass(), "getById", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Contenu d'etiquette recupere avec succes", result);
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "getById", e);
+            OOSMLogger.logException(this.getClass(), "getById", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getById", e);
+            OOSMLogger.logException(this.getClass(), "getById", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la lecture de l'etiquette");
         }
     }
@@ -95,17 +95,17 @@ public class LabelContentController {
     @GetMapping("/product/{productId}")
     public ResponseEntity<ApiResponse<List<LabelContentDto>>> getByProductId(@PathVariable UUID productId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getByProductId", productId);
+        OOSMLogger.logMethodEntry(this.getClass(), "getByProductId", productId);
 
         try {
             List<LabelContentDto> result = labelContentService.getByProductId(productId);
 
-            OSMLogger.logMethodExit(this.getClass(), "getByProductId", result);
-            OSMLogger.logPerformance(this.getClass(), "getByProductId", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "getByProductId", result);
+            OOSMLogger.logPerformance(this.getClass(), "getByProductId", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Etiquettes du produit recuperees avec succes", result);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "getByProductId", e);
+            OOSMLogger.logException(this.getClass(), "getByProductId", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la lecture des etiquettes du produit");
         }
     }
@@ -116,23 +116,23 @@ public class LabelContentController {
             @RequestBody LabelContentUpdateRequestDto request
     ) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "update", id, request);
+        OOSMLogger.logMethodEntry(this.getClass(), "update", id, request);
 
         try {
             LabelContentDto result = labelContentService.update(id, request);
 
-            OSMLogger.logMethodExit(this.getClass(), "update", result);
-            OSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "update", result);
+            OOSMLogger.logPerformance(this.getClass(), "update", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Contenu d'etiquette mis a jour avec succes", result);
         } catch (IllegalArgumentException | IllegalStateException e) {
-            OSMLogger.logException(this.getClass(), "update", e);
+            OOSMLogger.logException(this.getClass(), "update", e);
             return failure(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "update", e);
+            OOSMLogger.logException(this.getClass(), "update", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "update", e);
+            OOSMLogger.logException(this.getClass(), "update", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la mise a jour de l'etiquette");
         }
     }
@@ -140,23 +140,23 @@ public class LabelContentController {
     @PostMapping("/{id}/draft")
     public ResponseEntity<ApiResponse<LabelContentDto>> markAsDraft(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "markAsDraft", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "markAsDraft", id);
 
         try {
             LabelContentDto result = labelContentService.markAsDraft(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "markAsDraft", result);
-            OSMLogger.logPerformance(this.getClass(), "markAsDraft", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "markAsDraft", result);
+            OOSMLogger.logPerformance(this.getClass(), "markAsDraft", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Etiquette remise en brouillon avec succes", result);
         } catch (IllegalStateException e) {
-            OSMLogger.logException(this.getClass(), "markAsDraft", e);
+            OOSMLogger.logException(this.getClass(), "markAsDraft", e);
             return failure(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "markAsDraft", e);
+            OOSMLogger.logException(this.getClass(), "markAsDraft", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "markAsDraft", e);
+            OOSMLogger.logException(this.getClass(), "markAsDraft", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors du changement de statut en brouillon");
         }
     }
@@ -164,23 +164,23 @@ public class LabelContentController {
     @PostMapping("/{id}/finalize")
     public ResponseEntity<ApiResponse<LabelContentDto>> finalizeLabel(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "finalizeLabel", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "finalizeLabel", id);
 
         try {
             LabelContentDto result = labelContentService.approve(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "finalizeLabel", result);
-            OSMLogger.logPerformance(this.getClass(), "finalizeLabel", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "finalizeLabel", result);
+            OOSMLogger.logPerformance(this.getClass(), "finalizeLabel", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Contenu d'etiquette finalise avec succes", result);
         } catch (IllegalStateException e) {
-            OSMLogger.logException(this.getClass(), "finalizeLabel", e);
+            OOSMLogger.logException(this.getClass(), "finalizeLabel", e);
             return failure(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "finalizeLabel", e);
+            OOSMLogger.logException(this.getClass(), "finalizeLabel", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "finalizeLabel", e);
+            OOSMLogger.logException(this.getClass(), "finalizeLabel", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la finalisation de l'etiquette");
         }
     }
@@ -188,23 +188,23 @@ public class LabelContentController {
     @GetMapping("/{id}/export")
     public ResponseEntity<ApiResponse<LabelExportDto>> export(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "export", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "export", id);
 
         try {
             LabelExportDto result = labelContentService.export(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "export", result);
-            OSMLogger.logPerformance(this.getClass(), "export", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "export", result);
+            OOSMLogger.logPerformance(this.getClass(), "export", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Export d'etiquette prepare avec succes", result);
         } catch (IllegalStateException e) {
-            OSMLogger.logException(this.getClass(), "export", e);
+            OOSMLogger.logException(this.getClass(), "export", e);
             return failure(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "export", e);
+            OOSMLogger.logException(this.getClass(), "export", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "export", e);
+            OOSMLogger.logException(this.getClass(), "export", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de l'export de l'etiquette");
         }
     }
@@ -212,23 +212,23 @@ public class LabelContentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiResponse<Void>> delete(@PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "delete", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
 
         try {
             labelContentService.delete(id);
 
-            OSMLogger.logMethodExit(this.getClass(), "delete", null);
-            OSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "delete", null);
+            OOSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
 
             return success(HttpStatus.OK, "Etiquette supprimee avec succes", null);
         } catch (IllegalStateException e) {
-            OSMLogger.logException(this.getClass(), "delete", e);
+            OOSMLogger.logException(this.getClass(), "delete", e);
             return failure(HttpStatus.BAD_REQUEST, e.getMessage());
         } catch (EntityNotFoundException e) {
-            OSMLogger.logException(this.getClass(), "delete", e);
+            OOSMLogger.logException(this.getClass(), "delete", e);
             return failure(HttpStatus.NOT_FOUND, e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "delete", e);
+            OOSMLogger.logException(this.getClass(), "delete", e);
             return failure(HttpStatus.INTERNAL_SERVER_ERROR, "Erreur interne lors de la suppression de l'etiquette");
         }
     }

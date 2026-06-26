@@ -4,8 +4,8 @@ import com.xdev.ooms.security.permission.entity.Permission;
 import com.xdev.ooms.security.permission.repository.PermissionRepository;
 import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.security.role.repository.RoleRepository;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -50,12 +50,12 @@ public class PermissionCatalogSyncService {
             PermissionCatalogSyncResult result = new PermissionCatalogSyncResult(
                     created, existing, legacyMerged, mirrorGrants);
 
-            OSMLogger.logBusinessEvent(this.getClass(), "PERMISSION_CATALOG_SYNC",
+            OOSMLogger.logBusinessEvent(this.getClass(), "PERMISSION_CATALOG_SYNC",
                     "created=" + created + ", existing=" + existing
                             + ", legacyMerged=" + legacyMerged + ", mirrorGrants=" + mirrorGrants);
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Permission catalog sync failed", e);
+            OOSMLogger.logException(this.getClass(), "Permission catalog sync failed", e);
             throw new IllegalStateException("Permission catalog sync failed: " + e.getMessage(), e);
         }
     }
@@ -63,7 +63,7 @@ public class PermissionCatalogSyncService {
     private SyncCount ensureEntityPermissions(PermissionCatalogSpec spec,
                                               String entityName,
                                               PermissionCatalogSpec.EntitySpec entitySpec) {
-        OSMModule module = parseModule(entitySpec.getModule(), entityName);
+        OOSMModule module = parseModule(entitySpec.getModule(), entityName);
         List<String> actions = catalogLoader.resolveActions(spec, entitySpec);
 
         int created = 0;
@@ -78,7 +78,7 @@ public class PermissionCatalogSyncService {
         return new SyncCount(created, existing);
     }
 
-    private boolean ensurePermission(OSMModule module, String entity, String action) {
+    private boolean ensurePermission(OOSMModule module, String entity, String action) {
         Optional<Permission> active = permissionRepository
                 .findByModuleAndEntityAndPermissionNameAndIsDeletedFalse(module, entity, action);
         if (active.isPresent()) {
@@ -116,7 +116,7 @@ public class PermissionCatalogSyncService {
                     continue;
                 }
 
-                OSMModule module = parseModule(entitySpec.getModule(), canonicalEntity);
+                OOSMModule module = parseModule(entitySpec.getModule(), canonicalEntity);
                 for (String alias : entitySpec.getLegacyAliases()) {
                     List<Permission> legacyPermissions = permissionRepository
                             .findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(module, alias);
@@ -142,8 +142,8 @@ public class PermissionCatalogSyncService {
         int grantsAdded = 0;
 
         for (PermissionCatalogSpec.RoleMirrorSpec mirror : spec.getRoleMirrors()) {
-            OSMModule sourceModule = parseModule(mirror.getSourceModule(), mirror.getSourceEntity());
-            OSMModule targetModule = parseModule(mirror.getTargetModule(), mirror.getTargetEntity());
+            OOSMModule sourceModule = parseModule(mirror.getSourceModule(), mirror.getSourceEntity());
+            OOSMModule targetModule = parseModule(mirror.getTargetModule(), mirror.getTargetEntity());
 
             List<Permission> sourcePermissions = permissionRepository
                     .findByModuleAndEntityIgnoreCaseAndIsDeletedFalse(sourceModule, mirror.getSourceEntity());
@@ -189,11 +189,11 @@ public class PermissionCatalogSyncService {
         return added;
     }
 
-    private OSMModule parseModule(String moduleName, String context) {
+    private OOSMModule parseModule(String moduleName, String context) {
         if (moduleName == null || moduleName.isBlank()) {
             throw new IllegalStateException("Missing module for " + context);
         }
-        return OSMModule.valueOf(moduleName.trim().toUpperCase());
+        return OOSMModule.valueOf(moduleName.trim().toUpperCase());
     }
 
     private record SyncCount(int created, int existing) {

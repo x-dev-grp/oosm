@@ -396,7 +396,7 @@
         "UPDATE"
       ]
     },
-    "OSMUSER": {
+    "OOSMUSER": {
       "description": "User management",
       "module": "HABILITATION",
       "permissions": [

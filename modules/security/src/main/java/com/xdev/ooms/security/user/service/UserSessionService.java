@@ -3,8 +3,8 @@ package com.xdev.ooms.security.user.service;
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
 import com.xdev.ooms.security.user.dto.SessionRefreshResponse;
-import com.xdev.ooms.security.user.entity.OSMUser;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.security.user.entity.OOSMUser;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -57,18 +57,18 @@ public class UserSessionService {
 
     public SessionRefreshResponse refreshSession(String accessTokenValue) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "refreshSession", "Refreshing session permissions");
+        OOSMLogger.logMethodEntry(this.getClass(), "refreshSession", "Refreshing session permissions");
 
         OAuth2Authorization authorization = authorizationService.findByToken(
                 accessTokenValue, OAuth2TokenType.ACCESS_TOKEN);
         if (authorization == null) {
-            OSMLogger.logSecurityEvent(this.getClass(), "SESSION_REFRESH_NOT_FOUND",
+            OOSMLogger.logSecurityEvent(this.getClass(), "SESSION_REFRESH_NOT_FOUND",
                     "No authorization found for access token");
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_TOKEN);
         }
 
         String username = authorization.getPrincipalName();
-        OSMUser user = userService.getByUsernameWithFreshPermissions(username);
+        OOSMUser user = userService.getByUsernameWithFreshPermissions(username);
         if (user == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
         }
@@ -123,9 +123,9 @@ public class UserSessionService {
                     .map(GrantedAuthority::getAuthority)
                     .toList();
 
-            OSMLogger.logMethodExit(this.getClass(), "refreshSession",
+            OOSMLogger.logMethodExit(this.getClass(), "refreshSession",
                     "Session refreshed for user: " + username + ", authorities: " + authorities.size());
-            OSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
+            OOSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
 
             return new SessionRefreshResponse(accessToken.getTokenValue(), authorities);
         } finally {
@@ -133,14 +133,14 @@ public class UserSessionService {
         }
     }
 
-    private void validateActiveUser(OSMUser user) {
+    private void validateActiveUser(OOSMUser user) {
         if (user.isLocked()) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
         }
         if (user.getRole() == null) {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
         }
-        if (!user.getRole().getRoleName().equalsIgnoreCase("OSMADMIN")) {
+        if (!user.getRole().getRoleName().equalsIgnoreCase("OOSMADMIN")) {
             CompanyProfile companyProfile = companyProfileRepository.findById(user.getTenantId()).orElse(null);
             if (companyProfile == null || !companyProfile.isActive()) {
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);

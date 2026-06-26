@@ -8,10 +8,10 @@ import com.xdev.ooms.security.notification.catalog.NotificationRulesLoader;
 import com.xdev.ooms.security.notification.catalog.NotificationRulesSpec;
 import com.xdev.ooms.security.notification.entity.UserNotification;
 import com.xdev.ooms.security.notification.repository.UserNotificationRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
 import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
@@ -76,7 +76,7 @@ public class NotificationDispatcher {
             return;
         }
 
-        OSMModule module = OSMModule.valueOf(rule.getModule().trim().toUpperCase());
+        OOSMModule module = OOSMModule.valueOf(rule.getModule().trim().toUpperCase());
         String entity = rule.getEntity().trim().toUpperCase();
         String recipientAction = rule.getRecipientAction() != null
                 ? rule.getRecipientAction().trim().toUpperCase()
@@ -89,11 +89,11 @@ public class NotificationDispatcher {
                 ? event.actorDisplayName()
                 : SecurityUtils.getCurrentUserDisplayName().orElse("System");
 
-        List<OSMUser> recipients = userRepository.findAssignableUsersByPermissionOrAdmin(
+        List<OOSMUser> recipients = userRepository.findAssignableUsersByPermissionOrAdmin(
                 tenantId, module, entity, recipientAction);
 
         Set<UUID> recipientIds = recipients.stream()
-                .map(OSMUser::getId)
+                .map(OOSMUser::getId)
                 .filter(id -> actorUserId == null || !actorUserId.equals(id))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
@@ -122,7 +122,7 @@ public class NotificationDispatcher {
 
         List<String> playerIds = new ArrayList<>();
         List<UserNotification> notificationsToSave = new ArrayList<>();
-        for (OSMUser user : recipients) {
+        for (OOSMUser user : recipients) {
             if (!recipientIds.contains(user.getId())) {
                 continue;
             }

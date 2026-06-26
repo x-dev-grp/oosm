@@ -1,6 +1,6 @@
 package com.xdev.ooms.security.confirmationcode.entity;
 
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationCodeType;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.Entity;
@@ -17,7 +17,7 @@ public class ConfirmationCode extends BaseEntity {
     private LocalDateTime consumedAt;
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false)
-    private OSMUser user;
+    private OOSMUser user;
 
     public boolean isExpired() {
         return this.getLastModifiedDate().plusMinutes(10).isBefore(LocalDateTime.now());
@@ -44,7 +44,7 @@ public class ConfirmationCode extends BaseEntity {
         return consumedAt;
     }
 
-    public OSMUser getUser() {
+    public OOSMUser getUser() {
         return user;
     }
 
@@ -64,7 +64,7 @@ public class ConfirmationCode extends BaseEntity {
         this.consumedAt = consumedAt;
     }
 
-    public void setUser(OSMUser user) {
+    public void setUser(OOSMUser user) {
         this.user = user;
     }
 }

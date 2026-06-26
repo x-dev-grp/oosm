@@ -3,7 +3,7 @@ package com.xdev.ooms.sharedkernel.communicator.models.shared;
 public class ConfirmationCodeDTO   {
     private String code;
     private ConfirmationCodeType confirmationCodeType;
-    private OSMUserDTO user;
+    private OOSMUserDTO user;
 
     public String getCode() {
         return code;
@@ -21,11 +21,11 @@ public class ConfirmationCodeDTO   {
         this.confirmationCodeType = confirmationCodeType;
     }
 
-    public OSMUserDTO getUser() {
+    public OOSMUserDTO getUser() {
         return user;
     }
 
-    public void setUser(OSMUserDTO user) {
+    public void setUser(OOSMUserDTO user) {
         this.user = user;
     }
 }

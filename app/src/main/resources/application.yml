@@ -15,7 +15,7 @@ server:
 
 spring:
   application:
-    name: ${SPRING_APP_NAME:osm-monolith}
+    name: ${SPRING_APP_NAME:oosm-monolith}
   main:
     lazy-initialization: ${SPRING_MAIN_LAZY_INITIALIZATION:true}
     banner-mode: console
@@ -26,7 +26,7 @@ spring:
     enabled: ${SPRING_JMX_ENABLED:false}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:osm}}
+    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:oosm}}
     username: ${DB_USER:${PGUSER:postgres}}
     password: ${DB_PASS:${PGPASSWORD:root}}
     driver-class-name: org.postgresql.Driver
@@ -100,7 +100,7 @@ spring:
 
 oauth2:
   client:
-    id: ${OAUTH2_CLIENT_ID:osm-client}
+    id: ${OAUTH2_CLIENT_ID:oosm-client}
     secret: ${OAUTH2_CLIENT_SECRET:}
 
 otp:
@@ -120,7 +120,7 @@ app:
   frontend:
     base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
   mail:
-    from-name: ${MAIL_FROM_NAME:OSM}
+    from-name: ${MAIL_FROM_NAME:OOSM}
     support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_USER:}}
     debug: ${MAIL_DEBUG:false}
     enabled: ${MAIL_ENABLED:true}
@@ -131,12 +131,12 @@ app:
     jwt:
       secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
     bootstrap:
-      enabled: ${SECURITY_BOOTSTRAP_ENABLED:true}
-      username: ${SECURITY_BOOTSTRAP_USERNAME:osmAdmin}
-      password: ${SECURITY_BOOTSTRAP_PASSWORD:osmAdmin123&}
-      email: ${SECURITY_BOOTSTRAP_EMAIL:osmAdmin@example.com}
+      enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
+      username: ${SECURITY_BOOTSTRAP_USERNAME:oosmAdmin}
+      password: ${SECURITY_BOOTSTRAP_PASSWORD:}
+      email: ${SECURITY_BOOTSTRAP_EMAIL:oosmAdmin@example.com}
       phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
-      reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:false}
+      reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:true}
     permissions:
       # Always seeds when the permission table is empty. Set true to re-sync on every startup.
       sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * OSM permission catalog sync
+ * OOSM permission catalog sync
  *
  * Single source of truth: oosm/modules/security/src/main/resources/permissions/permissions-spec.json
  *

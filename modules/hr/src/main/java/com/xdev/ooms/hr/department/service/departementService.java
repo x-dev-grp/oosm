@@ -6,7 +6,7 @@ import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -24,14 +24,14 @@ public class departementService extends BaseServiceImpl<Department, DepartmentDt
     @Override
     public Set<Action> actionsMapping(Department Department) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", Department);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", Department);
         Set<Action> actions = new HashSet<>();
         actions.add(Action.READ);
         actions.add(Action.UPDATE);
         actions.add(Action.DELETE);
         actions.add(Action.PAY);
-        OSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
-        OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
+        OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
         return actions;
     }
 

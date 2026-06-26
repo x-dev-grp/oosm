@@ -24,8 +24,12 @@ public final class SecurityUtils {
         }
 
         if (auth.getPrincipal() instanceof Jwt jwt) {
-            Object osmUserClaim = jwt.getClaim("osmUser");
-            if (osmUserClaim instanceof Map<?, ?> map) {
+            Object oosmUserClaim = jwt.getClaim("oosmUser");
+            if (oosmUserClaim instanceof Map<?, ?> map) {
+                return Optional.of((Map<String, Object>) map);
+            }
+            Object legacyClaim = jwt.getClaim("osmUser");
+            if (legacyClaim instanceof Map<?, ?> map) {
                 return Optional.of((Map<String, Object>) map);
             }
         }
@@ -44,8 +48,12 @@ public final class SecurityUtils {
             if (subject != null && !subject.isBlank()) {
                 return Optional.of(subject);
             }
-            Object osmUserClaim = jwt.getClaim("osmUser");
-            if (osmUserClaim instanceof Map<?, ?> map && map.get("username") != null) {
+            Object oosmUserClaim = jwt.getClaim("oosmUser");
+            if (oosmUserClaim instanceof Map<?, ?> map && map.get("username") != null) {
+                return Optional.of(map.get("username").toString());
+            }
+            Object legacyClaim = jwt.getClaim("osmUser");
+            if (legacyClaim instanceof Map<?, ?> map && map.get("username") != null) {
                 return Optional.of(map.get("username").toString());
             }
         }
@@ -100,12 +108,12 @@ public final class SecurityUtils {
                 .map(GrantedAuthority::getAuthority)
                 .filter(authority -> authority != null && !authority.isBlank())
                 .map(SecurityUtils::normalizeRole)
-                .filter(role -> "ADMIN".equals(role) || "OSMADMIN".equals(role))
+                .filter(role -> "ADMIN".equals(role) || "OOSMADMIN".equals(role))
                 .findFirst();
     }
 
-    public static boolean isOsmAdmin() {
-        return getCurrentRole().map("OSMADMIN"::equals).orElse(false);
+    public static boolean isOosmAdmin() {
+        return getCurrentRole().map("OOSMADMIN"::equals).orElse(false);
     }
 
     public static boolean isTenantAdmin() {
@@ -114,7 +122,7 @@ public final class SecurityUtils {
 
     public static boolean hasElevatedAdminAccess() {
         return getCurrentRole()
-                .map(role -> "ADMIN".equals(role) || "OSMADMIN".equals(role))
+                .map(role -> "ADMIN".equals(role) || "OOSMADMIN".equals(role))
                 .orElse(false);
     }
 

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/security/admin/dashboard")
-@PreAuthorize("authentication.tokenAttributes['role'] == 'OSMADMIN' or hasAnyAuthority('OSMADMIN', 'ROLE_OSMADMIN')")
+@PreAuthorize("authentication.tokenAttributes['role'] == 'OOSMADMIN' or hasAnyAuthority('OOSMADMIN', 'ROLE_OOSMADMIN')")
 public class AdminDashboardController {
     private final AdminDashboardService adminDashboardService;
 
@@ -24,27 +24,27 @@ public class AdminDashboardController {
 
     @GetMapping("/stats")
     public ResponseEntity<AdminDashboardStatsDTO> getStats(Authentication authentication) {
-        if (!isOsmAdmin(authentication)) {
+        if (!isOosmAdmin(authentication)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         return ResponseEntity.ok(adminDashboardService.getStats());
     }
 
-    private boolean isOsmAdmin(Authentication authentication) {
+    private boolean isOosmAdmin(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Object role = jwtAuth.getToken().getClaims().get("role");
-            if (role != null && "OSMADMIN".equalsIgnoreCase(role.toString())) {
+            if (role != null && "OOSMADMIN".equalsIgnoreCase(role.toString())) {
                 return true;
             }
         }
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(authority ->
-                        "OSMADMIN".equalsIgnoreCase(authority)
-                                || "ROLE_OSMADMIN".equalsIgnoreCase(authority)
+                        "OOSMADMIN".equalsIgnoreCase(authority)
+                                || "ROLE_OOSMADMIN".equalsIgnoreCase(authority)
                 );
     }
 }

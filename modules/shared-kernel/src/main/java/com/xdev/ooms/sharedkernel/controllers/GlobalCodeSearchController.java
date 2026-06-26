@@ -3,7 +3,7 @@ package com.xdev.ooms.sharedkernel.controllers;
 import com.xdev.ooms.sharedkernel.qr.model.GlobalCodeSearchResponse;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import com.xdev.ooms.sharedkernel.services.GlobalCodeSearchContributor;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -41,7 +41,7 @@ public class GlobalCodeSearchController {
             try {
                 contributor.searchByCode(normalizedCode).ifPresent(matches::add);
             } catch (Exception ex) {
-                OSMLogger.logException(this.getClass(), "Contributor failed during global code search", ex);
+                OOSMLogger.logException(this.getClass(), "Contributor failed during global code search", ex);
             }
         }
         Map<String, QrResolveResponse> uniqueMatches = new LinkedHashMap<>();

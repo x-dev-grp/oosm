@@ -5,7 +5,7 @@ import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
@@ -23,13 +23,13 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
     @Override
     public Set<Action> actionsMapping(Employee Employee) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", Employee);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", Employee);
         Set<Action> actions = new HashSet<>();
         actions.add(Action.READ);
         actions.add(Action.UPDATE);
         actions.add(Action.DELETE);
-        OSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
-        OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
+        OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
         return actions;
     }
 }

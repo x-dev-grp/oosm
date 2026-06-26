@@ -1,4 +1,4 @@
-# OSM 2.0 — Railway testing deployment
+# OOSM 2.0 — Railway testing deployment
 
 Deploy the **backend**, **frontend**, and **PostgreSQL** to [Railway](https://railway.com) for integration/testing. Production VPS flow remains in [deploy/vps/README.md](deploy/vps/README.md).
 

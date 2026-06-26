@@ -1,23 +1,24 @@
 package com.xdev.ooms.security.user.dto;
 
 import com.xdev.ooms.security.role.dto.RoleDTO;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationMethod;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
-public class OSMUserDTO extends BaseDto<OSMUser> {
+public class OOSMUserOUTDTO extends BaseDto<OOSMUser> {
     private String username;
     private String firstName;
     private String lastName;
-    private String password;
     private String email;
     private String phoneNumber;
-    private RoleDTO role;
     private boolean isLocked;
+    private RoleDTO role;
     private ConfirmationMethod confirmationMethod;
     private boolean isNewUser;
-    private String oneSignalPlayerId;
-
+    private String tenantName;
+    private String photoData;
+    private String photoContentType;
+    private String initialPassword;
 
     public boolean isNewUser() {
         return isNewUser;
@@ -27,12 +28,12 @@ public class OSMUserDTO extends BaseDto<OSMUser> {
         isNewUser = newUser;
     }
 
-    public ConfirmationMethod getConfirmationMethod() {
-        return confirmationMethod;
+    public RoleDTO getRole() {
+        return role;
     }
 
-    public void setConfirmationMethod(ConfirmationMethod confirmationMethod) {
-        this.confirmationMethod = confirmationMethod;
+    public void setRole(RoleDTO role) {
+        this.role = role;
     }
 
     public String getUsername() {
@@ -41,14 +42,6 @@ public class OSMUserDTO extends BaseDto<OSMUser> {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getEmail() {
@@ -67,20 +60,20 @@ public class OSMUserDTO extends BaseDto<OSMUser> {
         this.phoneNumber = phoneNumber;
     }
 
-    public RoleDTO getRole() {
-        return role;
-    }
-
-    public void setRole(RoleDTO role) {
-        this.role = role;
-    }
-
     public boolean isLocked() {
         return isLocked;
     }
 
     public void setLocked(boolean locked) {
         isLocked = locked;
+    }
+
+    public ConfirmationMethod getConfirmationMethod() {
+        return confirmationMethod;
+    }
+
+    public void setConfirmationMethod(ConfirmationMethod confirmationMethod) {
+        this.confirmationMethod = confirmationMethod;
     }
 
     public String getFirstName() {
@@ -99,11 +92,35 @@ public class OSMUserDTO extends BaseDto<OSMUser> {
         this.lastName = lastName;
     }
 
-    public String getOneSignalPlayerId() {
-        return oneSignalPlayerId;
+    public String getTenantName() {
+        return tenantName;
     }
 
-    public void setOneSignalPlayerId(String oneSignalPlayerId) {
-        this.oneSignalPlayerId = oneSignalPlayerId;
+    public void setTenantName(String tenantName) {
+        this.tenantName = tenantName;
+    }
+
+    public String getPhotoData() {
+        return photoData;
+    }
+
+    public void setPhotoData(String photoData) {
+        this.photoData = photoData;
+    }
+
+    public String getPhotoContentType() {
+        return photoContentType;
+    }
+
+    public void setPhotoContentType(String photoContentType) {
+        this.photoContentType = photoContentType;
+    }
+
+    public String getInitialPassword() {
+        return initialPassword;
+    }
+
+    public void setInitialPassword(String initialPassword) {
+        this.initialPassword = initialPassword;
     }
 }

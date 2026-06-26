@@ -68,4 +68,4 @@ esac
 
 echo "Database: ${PGHOST:-from DB_URL}:${PGPORT:-5432}/${PGDATABASE:-?} user=${DB_USER}"
 
-exec java ${JAVA_OPTS:-} -jar /app/osm-monolith.jar
+exec java ${JAVA_OPTS:-} -jar /app/oosm-monolith.jar

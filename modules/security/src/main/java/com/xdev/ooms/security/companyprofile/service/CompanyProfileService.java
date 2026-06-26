@@ -4,7 +4,7 @@ import com.xdev.ooms.security.permission.repository.PermissionRepository;
 import com.xdev.ooms.security.role.repository.RoleRepository;
 import com.xdev.ooms.security.companyprofile.dto.CompanyProfileDTO;
 import com.xdev.ooms.security.companyprofile.dto.CompanyUserDTO;
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
+import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
 import com.xdev.ooms.security.role.dto.RoleDTO;
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.permission.entity.Permission;
@@ -15,7 +15,7 @@ import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
@@ -52,27 +52,27 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     @Override
     public Set<Action> actionsMapping(CompanyProfile companyProfile) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "actionsMapping", companyProfile);
+        OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", companyProfile);
 
         try {
             Set<Action> actions = new HashSet<>();
             actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ));
 
-            OSMLogger.logMethodExit(this.getClass(), "actionsMapping", "Actions: " + actions);
-            OSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", "Actions: " + actions);
+            OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
 
             return actions;
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error mapping actions for CompanyProfile: " + companyProfile.getId(), e);
+            OOSMLogger.logException(this.getClass(), "Error mapping actions for CompanyProfile: " + companyProfile.getId(), e);
             throw e;
         }
     }
 
     @Transactional
     public CompanyUserDTO save(CompanyUserDTO dto) throws Exception {
-        if (!SecurityUtils.isOsmAdmin()) {
-            throw new AccessDeniedException("Only OSM administrators can create companies");
+        if (!SecurityUtils.isOosmAdmin()) {
+            throw new AccessDeniedException("Only OOSM administrators can create companies");
         }
         if (dto == null || dto.getCompanyUser() == null) return null;
         CompanyProfile company = new CompanyProfile();
@@ -80,7 +80,7 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         company.setActive(true);
         CompanyProfile companyProfile = repository.save(company);
 
-        OSMUserOUTDTO userDto = modelMapper.map(dto.getCompanyUser(), OSMUserOUTDTO.class);
+        OOSMUserOUTDTO userDto = modelMapper.map(dto.getCompanyUser(), OOSMUserOUTDTO.class);
         Role adminRole = roleRepository.findByRoleName("ADMIN").orElse(null);
         if (adminRole == null) {
             Role role = new Role();
@@ -105,22 +105,22 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     @Override
     public CompanyProfileDTO findById(UUID id) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findById", id);
+        OOSMLogger.logMethodEntry(this.getClass(), "findById", id);
 
         try {
             Optional<CompanyProfile> data = repository.findByIdAndIsDeletedFalse(id);
             if (data.isEmpty()) {
-                OSMLogger.log(this.getClass(), OSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
                 throw new EntityNotFoundException("Entity not found with this id " + id);
             } else {
                 CompanyProfileDTO result = modelMapper.map(data.get(), outDTOClass);
-                OSMLogger.logMethodExit(this.getClass(), "findById", result);
-                OSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
+                OOSMLogger.logMethodExit(this.getClass(), "findById", result);
+                OOSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
                 return result;
             }
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding entity by ID: " + id, e);
+            OOSMLogger.logException(this.getClass(), "Error finding entity by ID: " + id, e);
             throw e;
         }
     }
@@ -128,17 +128,17 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     @Override
     public List<CompanyProfileDTO> findAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll");
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll");
 
         try {
             Collection<CompanyProfile> data = repository.findAllByIsDeletedFalse();
             List<CompanyProfileDTO> result = data.stream().map(item -> modelMapper.map(item, outDTOClass)).toList();
-            OSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding all entities", e);
+            OOSMLogger.logException(this.getClass(), "Error finding all entities", e);
             throw e;
         }
     }
@@ -146,7 +146,7 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     @Override
     public Page<CompanyProfileDTO> findAll(int page, int size, String sort, String direction) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll", page, size, sort, direction);
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll", page, size, sort, direction);
 
         try {
             Sort.Direction sortDirection = Sort.Direction.fromString(direction);  // "ASC" or "DESC"
@@ -155,12 +155,12 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
             Page<CompanyProfile> data = repository.findAllByIsDeletedFalse(pageable);
 
             Page<CompanyProfileDTO> result = data.map(item -> modelMapper.map(item, outDTOClass));
-            OSMLogger.logMethodExit(this.getClass(), "findAll", "Page " + page + " with " + result.getContent().size() + " entities");
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
-            OSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", entityClass.getSimpleName());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", "Page " + page + " with " + result.getContent().size() + " entities");
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", entityClass.getSimpleName());
             return result;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error finding entities with pagination", e);
+            OOSMLogger.logException(this.getClass(), "Error finding entities with pagination", e);
             throw e;
         }
     }
@@ -170,7 +170,7 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         @Override
         public SearchResponse<CompanyProfile, CompanyProfileDTO> search(SearchData searchData) {
             long startTime = System.currentTimeMillis();
-            OSMLogger.logMethodEntry(this.getClass(), "search", searchData);
+            OOSMLogger.logMethodEntry(this.getClass(), "search", searchData);
 
             try {
                 int page = searchData.getPage() != null ? searchData.getPage() : 0;
@@ -201,13 +201,13 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
                         result.getNumber() + 1
                 );
 
-                OSMLogger.logMethodExit(this.getClass(), "search", "Found " + dtos.size() + " entities out of " + result.getTotalElements());
-                OSMLogger.logPerformance(this.getClass(), "search", startTime, System.currentTimeMillis());
-                OSMLogger.logDataAccess(this.getClass(), "SEARCH", entityClass.getSimpleName());
+                OOSMLogger.logMethodExit(this.getClass(), "search", "Found " + dtos.size() + " entities out of " + result.getTotalElements());
+                OOSMLogger.logPerformance(this.getClass(), "search", startTime, System.currentTimeMillis());
+                OOSMLogger.logDataAccess(this.getClass(), "SEARCH", entityClass.getSimpleName());
 
                 return response;
             } catch (Exception e) {
-                OSMLogger.logException(this.getClass(), "Error during search operation", e);
+                OOSMLogger.logException(this.getClass(), "Error during search operation", e);
                 return new SearchResponse<>(
                         0,
                         null,

@@ -1,7 +1,7 @@
 package com.xdev.ooms.security.notification.entity;
 
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -23,7 +23,7 @@ public class UserNotification extends BaseEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 40)
-    private OSMModule module;
+    private OOSMModule module;
 
     @Column(nullable = false, length = 80)
     private String entity;
@@ -68,11 +68,11 @@ public class UserNotification extends BaseEntity {
         this.ruleCode = ruleCode;
     }
 
-    public OSMModule getModule() {
+    public OOSMModule getModule() {
         return module;
     }
 
-    public void setModule(OSMModule module) {
+    public void setModule(OOSMModule module) {
         this.module = module;
     }
 

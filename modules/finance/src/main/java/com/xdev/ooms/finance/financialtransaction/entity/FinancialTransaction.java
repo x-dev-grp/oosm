@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 
 /**
  * Universal Financial Transaction Model
- * Handles all types of financial operations in the OSM system
+ * Handles all types of financial operations in the OOSM system
  */
 @Entity
 public class FinancialTransaction extends BaseEntity {

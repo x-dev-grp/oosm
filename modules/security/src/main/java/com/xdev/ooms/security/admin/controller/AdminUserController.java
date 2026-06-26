@@ -1,7 +1,7 @@
 package com.xdev.ooms.security.admin.controller;
 
 import com.xdev.ooms.security.admin.service.AdminUserService;
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
+import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -18,7 +18,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/security/admin/users")
-@PreAuthorize("authentication.tokenAttributes['role'] == 'OSMADMIN' or hasAnyAuthority('OSMADMIN', 'ROLE_OSMADMIN')")
+@PreAuthorize("authentication.tokenAttributes['role'] == 'OOSMADMIN' or hasAnyAuthority('OOSMADMIN', 'ROLE_OOSMADMIN')")
 public class AdminUserController {
     private final AdminUserService adminUserService;
 
@@ -27,13 +27,13 @@ public class AdminUserController {
     }
 
     @PostMapping("/osm-admin")
-    public ResponseEntity<?> createOsmAdminUser(@RequestBody OSMUserOUTDTO userDTO, Authentication authentication) {
-        if (!isOsmAdmin(authentication)) {
+    public ResponseEntity<?> createOosmAdminUser(@RequestBody OOSMUserOUTDTO userDTO, Authentication authentication) {
+        if (!isOosmAdmin(authentication)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         try {
-            OSMUserOUTDTO user = adminUserService.createOsmAdminUser(userDTO);
+            OOSMUserOUTDTO user = adminUserService.createOosmAdminUser(userDTO);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -44,12 +44,12 @@ public class AdminUserController {
 
     @PostMapping("/{userId}/issue-temporary-password")
     public ResponseEntity<?> issueTemporaryPassword(@PathVariable UUID userId, Authentication authentication) {
-        if (!isOsmAdmin(authentication)) {
+        if (!isOosmAdmin(authentication)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 
         try {
-            OSMUserOUTDTO user = adminUserService.issueTemporaryPassword(userId);
+            OOSMUserOUTDTO user = adminUserService.issueTemporaryPassword(userId);
             return ResponseEntity.ok(user);
         } catch (javax.security.auth.login.AccountLockedException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account is locked");
@@ -60,21 +60,21 @@ public class AdminUserController {
         }
     }
 
-    private boolean isOsmAdmin(Authentication authentication) {
+    private boolean isOosmAdmin(Authentication authentication) {
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             Object role = jwtAuth.getToken().getClaims().get("role");
-            if (role != null && "OSMADMIN".equalsIgnoreCase(role.toString())) {
+            if (role != null && "OOSMADMIN".equalsIgnoreCase(role.toString())) {
                 return true;
             }
         }
         return authentication.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .anyMatch(authority ->
-                        "OSMADMIN".equalsIgnoreCase(authority)
-                                || "ROLE_OSMADMIN".equalsIgnoreCase(authority)
+                        "OOSMADMIN".equalsIgnoreCase(authority)
+                                || "ROLE_OOSMADMIN".equalsIgnoreCase(authority)
                 );
     }
 }

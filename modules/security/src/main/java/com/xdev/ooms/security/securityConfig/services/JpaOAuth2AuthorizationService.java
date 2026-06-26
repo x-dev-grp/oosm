@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.xdev.ooms.security.authorization.entity.Authorization;
 import com.xdev.ooms.security.authorization.repository.AuthorizationRepository;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.dao.DataRetrievalFailureException;
 import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
@@ -246,9 +246,9 @@ public class JpaOAuth2AuthorizationService implements OAuth2AuthorizationService
             Map<String, Object> parsed = (Map<String, Object>) in.readObject();
             return parsed != null ? parsed : Collections.emptyMap();
         } catch (Exception ex) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Failed to deserialize OAuth2 authorization metadata; continuing with empty metadata", ex);
-            OSMLogger.logSecurityEvent(this.getClass(), "OAUTH2_METADATA_DESERIALIZE_FAILED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "OAUTH2_METADATA_DESERIALIZE_FAILED",
                     "Stale OAuth2 authorization metadata ignored to preserve active sessions");
             return Collections.emptyMap();
         }

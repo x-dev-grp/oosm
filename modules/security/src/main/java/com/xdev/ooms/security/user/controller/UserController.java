@@ -3,17 +3,17 @@ package com.xdev.ooms.security.user.controller;
 import com.xdev.ooms.security.user.dto.UserProfileUpdateDTO;
 import com.xdev.ooms.security.user.dto.UserPhotoDTO;
 import com.xdev.ooms.security.user.dto.AssignableUserDTO;
-import com.xdev.ooms.security.user.dto.OSMUserDTO;
-import com.xdev.ooms.security.user.dto.OSMUserOUTDTO;
+import com.xdev.ooms.security.user.dto.OOSMUserDTO;
+import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
 import com.xdev.ooms.security.user.dto.SessionRefreshResponse;
 import com.xdev.ooms.security.user.dto.UpdatePasswordDTO;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.security.user.service.UserSessionService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
-import com.xdev.ooms.sharedkernel.models.OSMModule;
+import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.validation.Valid;
 import org.modelmapper.ModelMapper;
@@ -30,11 +30,11 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/security/user")
-public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMUserOUTDTO> {
+public class UserController extends BaseControllerImpl<OOSMUser, OOSMUserDTO, OOSMUserOUTDTO> {
     private final UserService userService;
     private final UserSessionService userSessionService;
 
-    public UserController(BaseService<OSMUser, OSMUserDTO, OSMUserOUTDTO> baseService,
+    public UserController(BaseService<OOSMUser, OOSMUserDTO, OOSMUserOUTDTO> baseService,
                           ModelMapper modelMapper,
                           UserService userService,
                           UserSessionService userSessionService) {
@@ -46,30 +46,30 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
     @PostMapping("/auth/resetPassword")
     public ResponseEntity<?> resetPassword(@RequestParam String identifier) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "resetPassword", "Password reset request for identifier: " + identifier);
+        OOSMLogger.logMethodEntry(this.getClass(), "resetPassword", "Password reset request for identifier: " + identifier);
         
         try {
-            OSMUserOUTDTO user = userService.resetPassword(identifier);
+            OOSMUserOUTDTO user = userService.resetPassword(identifier);
             
-            OSMLogger.logMethodExit(this.getClass(), "resetPassword", "Password reset successful for identifier: " + identifier);
-            OSMLogger.logPerformance(this.getClass(), "resetPassword", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_REQUESTED", 
+            OOSMLogger.logMethodExit(this.getClass(), "resetPassword", "Password reset successful for identifier: " + identifier);
+            OOSMLogger.logPerformance(this.getClass(), "resetPassword", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_REQUESTED", 
                 "Password reset requested successfully for identifier: " + identifier);
             
             return ResponseEntity.ok(user);
             
         } catch (AccountLockedException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_ACCOUNT_LOCKED", 
+            OOSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_ACCOUNT_LOCKED", 
                 "Password reset failed - Account locked for identifier: " + identifier);
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Account is locked");
             
         } catch (IllegalArgumentException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_INVALID_INPUT", 
+            OOSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_RESET_INVALID_INPUT", 
                 "Password reset failed - Invalid input for identifier: " + identifier + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input");
             
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), 
+            OOSMLogger.logException(this.getClass(), 
                 "Unexpected error during password reset for identifier: " + identifier, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to process password reset");
         }
@@ -78,31 +78,31 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
     @PostMapping("/auth/validateResetCode/{userId}")
     public ResponseEntity<?> validateResetCode(@RequestParam String code, @PathVariable UUID userId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "validateResetCode",
+        OOSMLogger.logMethodEntry(this.getClass(), "validateResetCode",
             "Validating reset code for user: " + userId + ", Code: " + (code != null ? code.substring(0, Math.min(3, code.length())) + "..." : "null"));
 
         try {
             userService.validateResetCode(code, userId);
 
-            OSMLogger.logMethodExit(this.getClass(), "validateResetCode", "Reset code validated successfully for user: " + userId);
-            OSMLogger.logPerformance(this.getClass(), "validateResetCode", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_VALIDATED",
+            OOSMLogger.logMethodExit(this.getClass(), "validateResetCode", "Reset code validated successfully for user: " + userId);
+            OOSMLogger.logPerformance(this.getClass(), "validateResetCode", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_VALIDATED",
                 "Reset code validated successfully for user: " + userId);
 
             return ResponseEntity.ok().build();
 
         } catch (CredentialExpiredException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_EXPIRED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_EXPIRED",
                 "Reset code validation failed - Code expired for user: " + userId);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Code is expired");
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_INVALID",
+            OOSMLogger.logSecurityEvent(this.getClass(), "RESET_CODE_INVALID",
                 "Reset code validation failed - Invalid input for user: " + userId + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid input");
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during reset code validation for user: " + userId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to validate reset code");
         }
@@ -111,48 +111,48 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
     @PostMapping("/auth/updatePassword/{userId}")
     public ResponseEntity<?> updatePassword(@Valid @RequestBody UpdatePasswordDTO dto, @PathVariable UUID userId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "updatePassword", "Updating password for user: " + userId);
+        OOSMLogger.logMethodEntry(this.getClass(), "updatePassword", "Updating password for user: " + userId);
 
         try {
             userService.updatePassword(dto, userId);
 
-            OSMLogger.logMethodExit(this.getClass(), "updatePassword", "Password updated successfully for user: " + userId);
-            OSMLogger.logPerformance(this.getClass(), "updatePassword", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_UPDATED",
+            OOSMLogger.logMethodExit(this.getClass(), "updatePassword", "Password updated successfully for user: " + userId);
+            OOSMLogger.logPerformance(this.getClass(), "updatePassword", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_UPDATED",
                 "Password updated successfully for user: " + userId);
 
             return ResponseEntity.ok().build();
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_UPDATE_INVALID",
+            OOSMLogger.logSecurityEvent(this.getClass(), "PASSWORD_UPDATE_INVALID",
                 "Password update failed - Invalid input for user: " + userId + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Invalid or expired reset request");
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during password update for user: " + userId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update password");
         }
     }
 
     @PostMapping("/addUser")
-    public ResponseEntity<?> addUser(@RequestBody OSMUserOUTDTO dto) {
+    public ResponseEntity<?> addUser(@RequestBody OOSMUserOUTDTO dto) {
         long startTime = System.currentTimeMillis();
         String username = dto != null ? dto.getUsername() : "null";
-        OSMLogger.logMethodEntry(this.getClass(), "addUser", "Adding new user: " + username);
+        OOSMLogger.logMethodEntry(this.getClass(), "addUser", "Adding new user: " + username);
 
         try {
-            OSMUserOUTDTO user = userService.addUser(dto);
+            OOSMUserOUTDTO user = userService.addUser(dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "addUser", "User added successfully: " + username);
-            OSMLogger.logPerformance(this.getClass(), "addUser", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_ADDED",
+            OOSMLogger.logMethodExit(this.getClass(), "addUser", "User added successfully: " + username);
+            OOSMLogger.logPerformance(this.getClass(), "addUser", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_ADDED",
                 "New user added successfully: " + username);
 
             return ResponseEntity.ok(user);
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_ADD_INVALID",
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_ADD_INVALID",
                 "User addition failed - Invalid input for username: " + username + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 
@@ -160,30 +160,30 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during user addition for username: " + username, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to add user");
         }
     }
 
     @PostMapping("/updateUser/{id}")
-    public ResponseEntity<?> updateUser(@RequestBody OSMUserOUTDTO dto, @PathVariable UUID id) {
+    public ResponseEntity<?> updateUser(@RequestBody OOSMUserOUTDTO dto, @PathVariable UUID id) {
         long startTime = System.currentTimeMillis();
         String username = dto != null ? dto.getUsername() : "null";
-        OSMLogger.logMethodEntry(this.getClass(), "updateUser", "Updating user: " + username + " with ID: " + id);
+        OOSMLogger.logMethodEntry(this.getClass(), "updateUser", "Updating user: " + username + " with ID: " + id);
 
         try {
-            OSMUserOUTDTO user = userService.updateUser(dto, id);
+            OOSMUserOUTDTO user = userService.updateUser(dto, id);
 
-            OSMLogger.logMethodExit(this.getClass(), "updateUser", "User updated successfully: " + username + " with ID: " + id);
-            OSMLogger.logPerformance(this.getClass(), "updateUser", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_UPDATED",
+            OOSMLogger.logMethodExit(this.getClass(), "updateUser", "User updated successfully: " + username + " with ID: " + id);
+            OOSMLogger.logPerformance(this.getClass(), "updateUser", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_UPDATED",
                 "User updated successfully: " + username + " with ID: " + id);
 
             return ResponseEntity.ok(user);
 
         } catch (IllegalArgumentException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_UPDATE_INVALID",
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_UPDATE_INVALID",
                 "User update failed - Invalid input for user: " + username + " with ID: " + id + ", Error: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
 
@@ -191,7 +191,7 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during user update for username: " + username + " with ID: " + id, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update user");
         }
@@ -208,21 +208,21 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
     }
 
     @GetMapping("/role/{roleName}")
-    public ResponseEntity<List<OSMUserDTO>> getUsersByRole(@PathVariable String roleName) {
+    public ResponseEntity<List<OOSMUserDTO>> getUsersByRole(@PathVariable String roleName) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "getUsersByRole", "Fetching users for role: " + roleName);
+        OOSMLogger.logMethodEntry(this.getClass(), "getUsersByRole", "Fetching users for role: " + roleName);
 
         try {
-            List<OSMUserDTO> users = userService.findByRole(roleName);
+            List<OOSMUserDTO> users = userService.findByRole(roleName);
 
-            OSMLogger.logMethodExit(this.getClass(), "getUsersByRole",
+            OOSMLogger.logMethodExit(this.getClass(), "getUsersByRole",
                     "Found " + users.size() + " users");
-            OSMLogger.logPerformance(this.getClass(), "getUsersByRole",
+            OOSMLogger.logPerformance(this.getClass(), "getUsersByRole",
                     startTime, System.currentTimeMillis());
 
             return ResponseEntity.ok(users);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Error fetching users by role: " + roleName, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
@@ -253,7 +253,7 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                     "Unexpected error during initial password update for user: " + userId, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update password");
         }
@@ -264,12 +264,12 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
         try {
             String username = SecurityUtils.getCurrentUsername()
                     .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
-            OSMUserOUTDTO profile = userService.getCurrentUserProfile(username);
+            OOSMUserOUTDTO profile = userService.getCurrentUserProfile(username);
             return ResponseEntity.ok(profile);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error fetching current user profile", e);
+            OOSMLogger.logException(this.getClass(), "Error fetching current user profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to fetch profile");
         }
     }
@@ -280,19 +280,19 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
         try {
             String username = SecurityUtils.getCurrentUsername()
                     .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
-            OSMUserOUTDTO updated = userService.updateCurrentUserProfile(username, dto);
+            OOSMUserOUTDTO updated = userService.updateCurrentUserProfile(username, dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "updateCurrentUserProfile",
+            OOSMLogger.logMethodExit(this.getClass(), "updateCurrentUserProfile",
                     "Profile updated for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "updateCurrentUserProfile", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_PROFILE_UPDATED",
+            OOSMLogger.logPerformance(this.getClass(), "updateCurrentUserProfile", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_PROFILE_UPDATED",
                     "Current user updated their profile: " + username);
 
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error updating current user profile", e);
+            OOSMLogger.logException(this.getClass(), "Error updating current user profile", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update profile");
         }
     }
@@ -305,17 +305,17 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
                     .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
             userService.changeOwnPassword(username, dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "changeOwnPassword",
+            OOSMLogger.logMethodExit(this.getClass(), "changeOwnPassword",
                     "Password changed for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "changeOwnPassword", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_PASSWORD_CHANGED",
+            OOSMLogger.logPerformance(this.getClass(), "changeOwnPassword", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_PASSWORD_CHANGED",
                     "Current user changed their password: " + username);
 
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error changing current user password", e);
+            OOSMLogger.logException(this.getClass(), "Error changing current user password", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to change password");
         }
     }
@@ -329,7 +329,7 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error fetching current user photo", e);
+            OOSMLogger.logException(this.getClass(), "Error fetching current user photo", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to fetch photo");
         }
     }
@@ -342,17 +342,17 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
                     .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
             UserPhotoDTO updated = userService.updateCurrentUserPhoto(username, dto);
 
-            OSMLogger.logMethodExit(this.getClass(), "updateCurrentUserPhoto",
+            OOSMLogger.logMethodExit(this.getClass(), "updateCurrentUserPhoto",
                     "Photo updated for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "updateCurrentUserPhoto", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_UPDATED",
+            OOSMLogger.logPerformance(this.getClass(), "updateCurrentUserPhoto", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_UPDATED",
                     "Current user updated their photo: " + username);
 
             return ResponseEntity.ok(updated);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error updating current user photo", e);
+            OOSMLogger.logException(this.getClass(), "Error updating current user photo", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to update photo");
         }
     }
@@ -365,17 +365,17 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
                     .orElseThrow(() -> new IllegalArgumentException("Unauthorized"));
             userService.removeCurrentUserPhoto(username);
 
-            OSMLogger.logMethodExit(this.getClass(), "removeCurrentUserPhoto",
+            OOSMLogger.logMethodExit(this.getClass(), "removeCurrentUserPhoto",
                     "Photo removed for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "removeCurrentUserPhoto", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_REMOVED",
+            OOSMLogger.logPerformance(this.getClass(), "removeCurrentUserPhoto", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_PHOTO_REMOVED",
                     "Current user removed their photo: " + username);
 
             return ResponseEntity.ok().build();
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error removing current user photo", e);
+            OOSMLogger.logException(this.getClass(), "Error removing current user photo", e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Unable to remove photo");
         }
     }
@@ -383,7 +383,7 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
     @PostMapping("/me/refresh-session")
     public ResponseEntity<?> refreshSession(@RequestHeader(value = "Authorization", required = false) String authHeader) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "refreshSession", "Refreshing current user session");
+        OOSMLogger.logMethodEntry(this.getClass(), "refreshSession", "Refreshing current user session");
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
@@ -393,14 +393,14 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
             String accessToken = authHeader.substring(7);
             SessionRefreshResponse response = userSessionService.refreshSession(accessToken);
 
-            OSMLogger.logMethodExit(this.getClass(), "refreshSession", "Session refreshed successfully");
-            OSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "SESSION_PERMISSIONS_REFRESHED",
+            OOSMLogger.logMethodExit(this.getClass(), "refreshSession", "Session refreshed successfully");
+            OOSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "SESSION_PERMISSIONS_REFRESHED",
                     "Current user session refreshed with updated permissions");
 
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error refreshing user session", e);
+            OOSMLogger.logException(this.getClass(), "Error refreshing user session", e);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
     }
@@ -410,7 +410,7 @@ public class UserController extends BaseControllerImpl<OSMUser, OSMUserDTO, OSMU
                                                             @RequestParam String entity,
                                                             @RequestParam String permission) {
         try {
-            OSMModule moduleEnum = OSMModule.valueOf(module.toUpperCase(Locale.ROOT));
+            OOSMModule moduleEnum = OOSMModule.valueOf(module.toUpperCase(Locale.ROOT));
             List<AssignableUserDTO> users =
                     userService.findAssignableUsersByPermissionIncludingAdmins(moduleEnum, entity, permission);
             return ResponseEntity.ok(users);

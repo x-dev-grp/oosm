@@ -2,9 +2,9 @@ package com.xdev.ooms.security.securityConfig;
 
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
-import com.xdev.ooms.security.user.entity.OSMUser;
+import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.service.UserService;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -43,7 +43,7 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                                                   OAuth2TokenGenerator<?> tokenGenerator, RegisteredClientRepository registeredClientRepository, UserService userService,
                                                   CompanyProfileRepository companyProfileRepository) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "CustomTokenGrantAuthenticationProvider", "Initializing token grant authentication provider");
+        OOSMLogger.logMethodEntry(this.getClass(), "CustomTokenGrantAuthenticationProvider", "Initializing token grant authentication provider");
 
         try {
             this.authenticationManager = authenticationManager;
@@ -53,13 +53,13 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
             this.userService = userService;
             this.companyProfileRepository = companyProfileRepository;
 
-            OSMLogger.logMethodExit(this.getClass(), "CustomTokenGrantAuthenticationProvider", "Token grant authentication provider initialized");
-            OSMLogger.logPerformance(this.getClass(), "CustomTokenGrantAuthenticationProvider", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "TOKEN_GRANT_PROVIDER_INITIALIZED",
+            OOSMLogger.logMethodExit(this.getClass(), "CustomTokenGrantAuthenticationProvider", "Token grant authentication provider initialized");
+            OOSMLogger.logPerformance(this.getClass(), "CustomTokenGrantAuthenticationProvider", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "TOKEN_GRANT_PROVIDER_INITIALIZED",
                 "Custom token grant authentication provider initialized");
 
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "Error initializing token grant authentication provider", e);
+            OOSMLogger.logException(this.getClass(), "Error initializing token grant authentication provider", e);
             throw e;
         }
     }
@@ -71,24 +71,24 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
         String username = tokenAuth.getUsername();
         String clientId = ((Authentication) tokenAuth.getPrincipal()).getName();
 
-        OSMLogger.logMethodEntry(this.getClass(), "authenticate",
+        OOSMLogger.logMethodEntry(this.getClass(), "authenticate",
             "Token grant authentication attempt - Username: " + username + ", Client: " + clientId);
 
         try {
-            OSMUser user = userService.getByUsername(tokenAuth.getUsername());
+            OOSMUser user = userService.getByUsername(tokenAuth.getUsername());
 
             if (user == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_NOT_FOUND",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_NOT_FOUND",
                     "Authentication failed - User not found: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
 
             if (user.isLocked()) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_LOCKED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCOUNT_LOCKED",
                     "Authentication failed - Account locked: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
-            if(!user.getRole().getRoleName().equalsIgnoreCase("OSMADMIN")) {
+            if(!user.getRole().getRoleName().equalsIgnoreCase("OOSMADMIN")) {
                 CompanyProfile companyProfile =companyProfileRepository.findById(user.getTenantId()).orElse(null);
                 if ( companyProfile ==null || !companyProfile.isActive() ) {
                     throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
@@ -100,27 +100,27 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                     new UsernamePasswordAuthenticationToken(tokenAuth.getUsername(), tokenAuth.getPassword())
             );
 
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_AUTHENTICATED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_AUTHENTICATED",
                 "User authenticated successfully: " + username);
 
             if (user.isNewUser()) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_NEW_USER_ACCESS_DENIED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_NEW_USER_ACCESS_DENIED",
                         "Authentication failed - Password update required for new user: " + username);
                 throw new OAuth2AuthenticationException(
                         new OAuth2Error(OAuth2ErrorCodes.ACCESS_DENIED, user.getUsername(), user.getId().toString()));
             }
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "User validation passed for: {}", username);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "User validation passed for: {}", username);
 
             // Validate client
             RegisteredClient client = registeredClientRepository.findByClientId(clientId);
             if (client == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_CLIENT_NOT_FOUND",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_CLIENT_NOT_FOUND",
                     "Authentication failed - Client not found: " + clientId);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
             }
 
-            OSMLogger.log(this.getClass(), OSMLogger.LogLevel.DEBUG, "Client validation passed: {}", clientId);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.DEBUG, "Client validation passed: {}", clientId);
 
             Set<String> scopes = Collections.emptySet();
 //        Set<String> scopes = user.getAuthorities().stream()
@@ -137,7 +137,7 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
             // Get the AuthorizationServerContext
             AuthorizationServerContext authorizationServerContext = AuthorizationServerContextHolder.getContext();
             if (authorizationServerContext == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_CONTEXT_MISSING",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_CONTEXT_MISSING",
                     "Authentication failed - AuthorizationServerContext not available for user: " + username);
                 throw new IllegalStateException("AuthorizationServerContext is not available");
             }
@@ -157,7 +157,7 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
             // Generate access token
             OAuth2Token generatedAccessToken = tokenGenerator.generate(tokenContext);
             if (generatedAccessToken == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GENERATION_FAILED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GENERATION_FAILED",
                     "Access token generation failed for user: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
             }
@@ -166,7 +166,7 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                     generatedAccessToken.getTokenValue(), generatedAccessToken.getIssuedAt(),
                     generatedAccessToken.getExpiresAt(), tokenContext.getAuthorizedScopes());
 
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCESS_TOKEN_GENERATED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_ACCESS_TOKEN_GENERATED",
                 "Access token generated successfully for user: " + username);
 
             if (generatedAccessToken instanceof ClaimAccessor) {
@@ -191,20 +191,20 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
 
             OAuth2RefreshToken refreshToken = (OAuth2RefreshToken) tokenGenerator.generate(refreshTokenContext);
             if (refreshToken == null) {
-                OSMLogger.logSecurityEvent(this.getClass(), "AUTH_REFRESH_TOKEN_GENERATION_FAILED",
+                OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_REFRESH_TOKEN_GENERATION_FAILED",
                     "Refresh token generation failed for user: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.SERVER_ERROR);
             }
 
             authorizationBuilder.refreshToken(refreshToken);
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_REFRESH_TOKEN_GENERATED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_REFRESH_TOKEN_GENERATED",
                 "Refresh token generated successfully for user: " + username);
 
             // Save authorization
             OAuth2Authorization authorization = authorizationBuilder.build();
             authorizationService.save(authorization);
 
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_AUTHORIZATION_SAVED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_AUTHORIZATION_SAVED",
                 "Authorization saved successfully for user: " + username);
 
             // Prepare additional parameters with scopes
@@ -220,21 +220,21 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                     additionalParameters
             );
 
-            OSMLogger.logMethodExit(this.getClass(), "authenticate",
+            OOSMLogger.logMethodExit(this.getClass(), "authenticate",
                 "Token grant authentication successful for user: " + username);
-            OSMLogger.logPerformance(this.getClass(), "authenticate", startTime, System.currentTimeMillis());
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GRANT_SUCCESS",
+            OOSMLogger.logPerformance(this.getClass(), "authenticate", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GRANT_SUCCESS",
                 "Token grant authentication completed successfully - User: " + username + ", Client: " + clientId);
 
             return result;
 
         } catch (OAuth2AuthenticationException e) {
-            OSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GRANT_FAILED",
+            OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_TOKEN_GRANT_FAILED",
                 "Token grant authentication failed - User: " + username + ", Client: " + clientId +
                 ", Error: " + e.getError().getErrorCode());
             throw e;
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(),
+            OOSMLogger.logException(this.getClass(),
                 "Unexpected error during token grant authentication for user: " + username + ", client: " + clientId, e);
             throw e;
         }

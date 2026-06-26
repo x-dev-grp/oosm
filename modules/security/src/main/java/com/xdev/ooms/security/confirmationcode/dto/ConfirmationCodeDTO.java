@@ -2,7 +2,7 @@ package com.xdev.ooms.security.confirmationcode.dto;
 
 import com.xdev.ooms.security.confirmationcode.entity.ConfirmationCode;
 import com.xdev.ooms.security.confirmationcode.enums.ConfirmationCodeType;
-import com.xdev.ooms.sharedkernel.communicator.models.shared.OSMUserDTO;
+import com.xdev.ooms.sharedkernel.communicator.models.shared.OOSMUserDTO;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 import java.time.LocalDateTime;
@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 public class ConfirmationCodeDTO extends BaseDto<ConfirmationCode> {
     private String code;
     private ConfirmationCodeType confirmationCodeType;
-    private OSMUserDTO user;
+    private OOSMUserDTO user;
     private int failedAttempts;
     private LocalDateTime consumedAt;
 
@@ -30,11 +30,11 @@ public class ConfirmationCodeDTO extends BaseDto<ConfirmationCode> {
         this.confirmationCodeType = confirmationCodeType;
     }
 
-    public OSMUserDTO getUser() {
+    public OOSMUserDTO getUser() {
         return user;
     }
 
-    public void setUser(OSMUserDTO user) {
+    public void setUser(OOSMUserDTO user) {
         this.user = user;
     }
 

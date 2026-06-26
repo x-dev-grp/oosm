@@ -4,12 +4,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 @Component
-public class OsmMailProperties {
+public class OosmMailProperties {
 
     @Value("${spring.mail.username:}")
     private String fromAddress;
 
-    @Value("${app.mail.from-name:OSM}")
+    @Value("${app.mail.from-name:OOSM}")
     private String fromName;
 
     @Value("${app.mail.support-email:${spring.mail.username:}}")

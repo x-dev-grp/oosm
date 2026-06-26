@@ -1,6 +1,5 @@
 package com.xdev.ooms.production.qualitycontrol.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
 
 import com.xdev.ooms.production.genealogy.entity.TraceabilityLot;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
@@ -26,7 +25,10 @@ import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class QualityControlResultService extends BaseServiceImpl<QualityControlResult, QualityControlResultDto, QualityControlResultDto> {
+
+    private static final Logger log = LoggerFactory.getLogger(QualityControlResultService.class);
     private final DeliveryRepository deliveryRepository;
     private final QualityControlResultRepository repository;
     private final QualityControlRuleRepository ruleRepository;
@@ -66,15 +70,15 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     @Override
     public List<QualityControlResultDto> findAll() {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findAll", null);
+        OOSMLogger.logMethodEntry(this.getClass(), "findAll", null);
         try {
             throw new UnsupportedOperationException("Not implemented yet");
         } catch (Exception e) {
-            OSMLogger.logException(this.getClass(), "findAll", e);
+            OOSMLogger.logException(this.getClass(), "findAll", e);
             throw e;
         } finally {
-            OSMLogger.logMethodExit(this.getClass(), "findAll", null);
-            OSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "findAll", null);
+            OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
         }
     }
 
@@ -89,10 +93,10 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     @Transactional
     public List<QualityControlResultDto> saveAll(List<QualityControlResultDto> dtos) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "saveAll", dtos);
+        OOSMLogger.logMethodEntry(this.getClass(), "saveAll", dtos);
         if (dtos.isEmpty()) {
-            OSMLogger.logMethodExit(this.getClass(), "saveAll", Collections.emptyList());
-            OSMLogger.logPerformance(this.getClass(), "saveAll", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "saveAll", Collections.emptyList());
+            OOSMLogger.logPerformance(this.getClass(), "saveAll", startTime, System.currentTimeMillis());
             return Collections.emptyList();
         }
 
@@ -146,22 +150,22 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         // 8) Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
-        OSMLogger.logMethodExit(this.getClass(), "saveAll", resultDtos);
-        OSMLogger.logPerformance(this.getClass(), "saveAll", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "saveAll", resultDtos);
+        OOSMLogger.logPerformance(this.getClass(), "saveAll", startTime, System.currentTimeMillis());
         return resultDtos;
     }
 
     @Transactional
     public List<QualityControlResultDto> saveOilQcForOliveRec(UUID idx, List<QualityControlResultDto> dtos, String std) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "saveAllForIdx", idx, dtos);
+        OOSMLogger.logMethodEntry(this.getClass(), "saveAllForIdx", idx, dtos);
         if (dtos.isEmpty()) {
-            OSMLogger.logMethodExit(this.getClass(), "saveAllForIdx", Collections.emptyList());
-            OSMLogger.logPerformance(this.getClass(), "saveAllForIdx", startTime, System.currentTimeMillis());
+            OOSMLogger.logMethodExit(this.getClass(), "saveAllForIdx", Collections.emptyList());
+            OOSMLogger.logPerformance(this.getClass(), "saveAllForIdx", startTime, System.currentTimeMillis());
             return Collections.emptyList();
         }
         UnifiedDelivery newOIlRec = unifiedDeliveryService.createOilRecFromOliveRecImpl(idx, true, std);
-        OSMLogger.info(QualityControlResultService.class, "Saving QC results for idx: {} ({} results)", idx, dtos.size());
+        log.info("Saving QC results for idx: {} ({} results)", idx, dtos.size());
         // Validate rules
         Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos);
         // Map each DTO → entity (no delivery linkage)
@@ -194,8 +198,8 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         // Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
-        OSMLogger.logMethodExit(this.getClass(), "saveAllForIdx", resultDtos);
-        OSMLogger.logPerformance(this.getClass(), "saveAllForIdx", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "saveAllForIdx", resultDtos);
+        OOSMLogger.logPerformance(this.getClass(), "saveAllForIdx", startTime, System.currentTimeMillis());
         return resultDtos;
     }
 
@@ -237,7 +241,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     // Helper: fetch & validate rule IDs
     private Map<UUID, QualityControlRule> fetchAndValidateRules(List<QualityControlResultDto> dtos) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "fetchAndValidateRules", dtos);
+        OOSMLogger.logMethodEntry(this.getClass(), "fetchAndValidateRules", dtos);
         Set<UUID> ruleIds = dtos.stream().peek(dto -> {
             if (dto.getRule() == null || dto.getRule().getId() == null) {
                 throw new IllegalArgumentException("Each DTO must reference a valid Rule ID");
@@ -249,8 +253,8 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             throw new IllegalArgumentException("One or more provided Rule IDs were not found");
         }
         Map<UUID, QualityControlRule> ruleMap = rules.stream().collect(Collectors.toMap(QualityControlRule::getId, Function.identity()));
-        OSMLogger.logMethodExit(this.getClass(), "fetchAndValidateRules", ruleMap);
-        OSMLogger.logPerformance(this.getClass(), "fetchAndValidateRules", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "fetchAndValidateRules", ruleMap);
+        OOSMLogger.logPerformance(this.getClass(), "fetchAndValidateRules", startTime, System.currentTimeMillis());
         return ruleMap;
     }
 
@@ -259,7 +263,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
     private void validateMeasuredValue(String measuredValue, QualityControlRule rule) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "validateMeasuredValue", measuredValue, rule);
+        OOSMLogger.logMethodEntry(this.getClass(), "validateMeasuredValue", measuredValue, rule);
         RuleType ruleType = rule.getRuleType();
 
         switch (ruleType) {
@@ -297,27 +301,27 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             default:
                 throw new IllegalArgumentException("Unknown rule type: " + ruleType);
         }
-        OSMLogger.logMethodExit(this.getClass(), "validateMeasuredValue", null);
-        OSMLogger.logPerformance(this.getClass(), "validateMeasuredValue", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "validateMeasuredValue", null);
+        OOSMLogger.logPerformance(this.getClass(), "validateMeasuredValue", startTime, System.currentTimeMillis());
     }
 
 
     @Transactional(readOnly = true)
     public List<QualityControlResultDto> findByDeliveryId(UUID deliveryId) {
         long startTime = System.currentTimeMillis();
-        OSMLogger.logMethodEntry(this.getClass(), "findByDeliveryId", deliveryId);
-        OSMLogger.debug(QualityControlResultService.class, "Fetching quality control results for deliveryId: {}", deliveryId);
+        OOSMLogger.logMethodEntry(this.getClass(), "findByDeliveryId", deliveryId);
+        log.debug("Fetching quality control results for deliveryId: {}", deliveryId);
         if (deliveryId == null) {
-            OSMLogger.error(QualityControlResultService.class, "Delivery ID is null");
+            log.error("Delivery ID is null");
             throw new IllegalArgumentException("Delivery ID is required");
         }
 
         List<QualityControlResult> results = repository.findByDeliveryId(deliveryId);
-        OSMLogger.debug(QualityControlResultService.class, "Found {} quality control results for deliveryId: {}", results.size(), deliveryId);
+        log.debug("Found {} quality control results for deliveryId: {}", results.size(), deliveryId);
 
         List<QualityControlResultDto> resultDtos = results.stream().map(entity -> modelMapper.map(entity, QualityControlResultDto.class)).collect(Collectors.toList());
-        OSMLogger.logMethodExit(this.getClass(), "findByDeliveryId", resultDtos);
-        OSMLogger.logPerformance(this.getClass(), "findByDeliveryId", startTime, System.currentTimeMillis());
+        OOSMLogger.logMethodExit(this.getClass(), "findByDeliveryId", resultDtos);
+        OOSMLogger.logPerformance(this.getClass(), "findByDeliveryId", startTime, System.currentTimeMillis());
         return resultDtos;
     }
 
@@ -404,22 +408,22 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                     null,
                     null));
         } catch (Exception ex) {
-            OSMLogger.warn(QualityControlResultService.class, "Failed to publish QC completed notification: {}", ex.getMessage());
+            log.warn("Failed to publish QC completed notification: {}", ex.getMessage());
         }
     }
 
 //    @Transactional(readOnly = true)
 //    public List<QualityControlResultDto> findOilResultsByOliveDeliveryFromOliveLotNumber(String oliveLotNUmber) {
 //        long startTime = System.currentTimeMillis();
-//        OSMLogger.logMethodEntry(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", oliveLotNUmber);
+//        OOSMLogger.logMethodEntry(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", oliveLotNUmber);
 ////UUID oilRecFromOliveRec_Lotnumber = deliveryRepository.findByLotOliveNumber(oliveLotNUmber).getFirst().getQualityControlResults()
 ////        List<QualityControlResult> results = repository.findByDeliveryIdAndRule_OilQcTrue(deliveryId);
 //         List<QualityControlResult> results = (List<QualityControlResult>) deliveryRepository.findByLotOliveNumber(oliveLotNUmber).getFirst().getQualityControlResults();
 //        List<QualityControlResultDto> resultDtos = results.stream()
 //                .map(e -> modelMapper.map(e, QualityControlResultDto.class))
 //                .toList();
-//        OSMLogger.logMethodExit(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", resultDtos);
-//        OSMLogger.logPerformance(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", startTime, System.currentTimeMillis());
+//        OOSMLogger.logMethodExit(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", resultDtos);
+//        OOSMLogger.logPerformance(this.getClass(), "findOilResultsByOliveDeliveryFromOliveLotNumber", startTime, System.currentTimeMillis());
 //        return resultDtos;
 //    }
 }
