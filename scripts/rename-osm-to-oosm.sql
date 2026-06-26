@@ -21,7 +21,7 @@ UPDATE osmuser
 SET username = 'oosmAdmin', email = 'oosmAdmin@example.com'
 WHERE username = 'osmAdmin';
 
--- Rename user table after code expects oosmuser (Hibernate @Table name = oosmuser)
+-- Rename user table when only legacy name exists
 DO $$
 BEGIN
   IF EXISTS (
@@ -34,3 +34,15 @@ BEGIN
     ALTER TABLE osmuser RENAME TO oosmuser;
   END IF;
 END $$;
+
+-- When both tables exist (Hibernate created empty oosmuser), copy missing users by username
+INSERT INTO oosmuser
+SELECT o.*
+FROM osmuser o
+WHERE EXISTS (
+  SELECT 1 FROM information_schema.tables
+  WHERE table_schema = 'public' AND table_name = 'osmuser'
+)
+AND NOT EXISTS (
+  SELECT 1 FROM oosmuser n WHERE LOWER(n.username) = LOWER(o.username)
+);
