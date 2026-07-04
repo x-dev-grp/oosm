@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.ordrefabrication.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.conditioning.Enum.QualityStatus;
 import com.xdev.ooms.conditioning.Enum.StatutOF;
@@ -837,7 +837,7 @@ public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricatio
         } catch (RuntimeException e) {
             throw e;
         } catch (Exception e) {
-            OSMLogger.warn(OFService.class, "Erreur validation lot vrac {}: {}", lotVracId, e.getMessage());
+            OOSMLogger.warn(OFService.class, "Erreur validation lot vrac {}: {}", lotVracId, e.getMessage());
             throw new RuntimeException("Impossible de valider le lot vrac selectionne", e);
         }
     }

@@ -1,6 +1,6 @@
 package com.xdev.ooms.production.filtration.controller;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.production.filtration.dto.FiltrationCompletionDto;
 import com.xdev.ooms.production.filtration.dto.FiltrationRequestDto;
@@ -60,21 +60,21 @@ public class FiltrationController {
         String requestId = generateRequestId();
 
         try {
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Modification de l'opération {}", requestId, operationId);
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Modification de l'opération {}", requestId, operationId);
 
             FiltrationResultDto result = filtrationService.updateFiltration(operationId, req);
 
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Opération {} modifiée avec succès", requestId, operationId);
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Opération {} modifiée avec succès", requestId, operationId);
             return ResponseEntity.ok(result);
 
         } catch (IllegalArgumentException | IllegalStateException e) {
-            OSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur de validation: {}", requestId, e.getMessage());
+            OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur de validation: {}", requestId, e.getMessage());
             return ResponseEntity
                     .badRequest()
                     .body(new ErrorResponse("Erreur: " + e.getMessage()));
 
         } catch (Exception e) {
-            OSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
+            OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Une erreur technique est survenue"));
@@ -114,11 +114,11 @@ public class FiltrationController {
             // Appel du service avec les données de completion
             FiltrationResultDto result = filtrationService.completeFiltration(operationId, completionData);
 
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Opération {} terminée avec succès", requestId, operationId);
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Opération {} terminée avec succès", requestId, operationId);
             return ResponseEntity.ok(result);
 
         }   catch (Exception e) {
-            OSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
+            OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Erreur: " + e.getMessage()));
@@ -132,7 +132,7 @@ public class FiltrationController {
         String requestId = generateRequestId();
 
         try {
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Mise à jour du statut de l'opération {} vers {}",
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Mise à jour du statut de l'opération {} vers {}",
                     requestId, operationId, statusDto.getStatus());
 
             FiltrationResultDto result = filtrationService.updateFiltrationStatus(operationId, statusDto);
@@ -229,15 +229,15 @@ public class FiltrationController {
         String requestId = generateRequestId();
 
         try {
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Récupération de toutes les opérations", requestId);
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Récupération de toutes les opérations", requestId);
 
             List<FiltrationResultDto> results = filtrationService.getAllFiltrations();
 
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - {} opérations trouvées", requestId, results.size());
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - {} opérations trouvées", requestId, results.size());
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
-            OSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
+            OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Une erreur technique est survenue"));
@@ -249,7 +249,7 @@ public class FiltrationController {
         String requestId = generateRequestId();
 
         try {
-            OSMLogger.info(FiltrationController.class, "Request ID: {} - Récupération des opérations avec statut: {}", requestId, status);
+            OOSMLogger.info(FiltrationController.class, "Request ID: {} - Récupération des opérations avec statut: {}", requestId, status);
 
             // [NOUVEAU] Appel à la nouvelle méthode du service
             List<FiltrationResultDto> results = filtrationService.getFiltrationsByStatus(status);
@@ -257,7 +257,7 @@ public class FiltrationController {
             return ResponseEntity.ok(results);
 
         } catch (Exception e) {
-            OSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur: {}", requestId, e.getMessage(), e);
+            OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur: {}", requestId, e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ErrorResponse("Une erreur technique est survenue"));

@@ -1,6 +1,6 @@
 package com.xdev.ooms.finance.internal;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.finance.oilcredit.entity.OilCredit;
 import com.xdev.ooms.finance.oilcredit.repository.OilCreditRepository;
@@ -26,9 +26,9 @@ public class OilCreditPortImpl implements OilCreditPort {
         if (Objects.nonNull(oilCredit)) {
             oilCredit.setCreditState(CreditState.APPROVED);
             oilCreditRepository.save(oilCredit);
-            OSMLogger.info(OilCreditPortImpl.class, "Approved oil credit for transaction ID: {}", transactionId);
+            OOSMLogger.info(OilCreditPortImpl.class, "Approved oil credit for transaction ID: {}", transactionId);
         } else {
-            OSMLogger.warn(OilCreditPortImpl.class, "No oil credit found for transaction ID: {}", transactionId);
+            OOSMLogger.warn(OilCreditPortImpl.class, "No oil credit found for transaction ID: {}", transactionId);
         }
     }
 }

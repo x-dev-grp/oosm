@@ -1,6 +1,6 @@
 package com.xdev.ooms.production.parameter.config;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.production.parameter.repository.ParameterRepo;
 import com.xdev.ooms.production.parameter.service.ParameterService;
@@ -21,11 +21,11 @@ public class ProductionParameterBootstrap {
         return args -> {
             List<UUID> tenantIds = parameterRepo.findDistinctTenantIds();
             if (tenantIds.isEmpty()) {
-                OSMLogger.debug(ProductionParameterBootstrap.class, "No tenants found for production parameter bootstrap");
+                OOSMLogger.debug(ProductionParameterBootstrap.class, "No tenants found for production parameter bootstrap");
                 return;
             }
 
-            OSMLogger.info(ProductionParameterBootstrap.class, "Ensuring default application parameters for {} tenant(s)", tenantIds.size());
+            OOSMLogger.info(ProductionParameterBootstrap.class, "Ensuring default application parameters for {} tenant(s)", tenantIds.size());
             for (UUID tenantId : tenantIds) {
                 parameterService.ensureDefaultsForTenant(tenantId);
             }

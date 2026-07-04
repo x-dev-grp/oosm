@@ -1,6 +1,6 @@
 package com.xdev.ooms.security.notification.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -66,13 +66,13 @@ public class NotificationDispatcher {
 
         NotificationRulesSpec.NotificationRuleSpec rule = rulesLoader.getRule(event.ruleCode());
         if (rule == null) {
-            OSMLogger.warn(NotificationDispatcher.class, "Unknown notification rule: {}", event.ruleCode());
+            OOSMLogger.warn(NotificationDispatcher.class, "Unknown notification rule: {}", event.ruleCode());
             return;
         }
 
         UUID tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {
-            OSMLogger.warn(NotificationDispatcher.class, "Skipping notification {} because tenant is missing", event.ruleCode());
+            OOSMLogger.warn(NotificationDispatcher.class, "Skipping notification {} because tenant is missing", event.ruleCode());
             return;
         }
 
@@ -98,7 +98,7 @@ public class NotificationDispatcher {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
         if (recipientIds.isEmpty()) {
-            OSMLogger.warn(NotificationDispatcher.class,
+            OOSMLogger.warn(NotificationDispatcher.class,
                     "No recipients for notification rule {} (module={}, entity={}, action={}, tenant={})",
                     event.ruleCode(),
                     module,
@@ -108,7 +108,7 @@ public class NotificationDispatcher {
             return;
         }
 
-        OSMLogger.info(NotificationDispatcher.class,
+        OOSMLogger.info(NotificationDispatcher.class,
                 "Dispatching notification {} to {} recipient(s) (tenant={}, entityId={})",
                 event.ruleCode(),
                 recipientIds.size(),
@@ -182,7 +182,7 @@ public class NotificationDispatcher {
             NotificationRequest request = new NotificationRequest(playerIds, title, recap, payload);
             oneSignalService.sendNotification(request);
         } catch (Exception ex) {
-            OSMLogger.warn(NotificationDispatcher.class, "Push notification failed: {}", ex.getMessage());
+            OOSMLogger.warn(NotificationDispatcher.class, "Push notification failed: {}", ex.getMessage());
         }
     }
 

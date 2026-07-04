@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.analytics.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.conditioning.Enum.ResultStatus;
 import com.xdev.ooms.conditioning.Enum.StatutOF;
@@ -40,10 +40,10 @@ public class AnalyticsService {
     // ─────────────────────────────────────────────
     public List<OfYieldDto> getOfYieldsReport(ReportRequestDto request) {
         UUID tenantId = TenantContext.getCurrentTenant();
-        OSMLogger.debug(AnalyticsService.class, "Fetching yields report for tenant: {}, request: {}", tenantId, request);
+        OOSMLogger.debug(AnalyticsService.class, "Fetching yields report for tenant: {}, request: {}", tenantId, request);
 
         List<OfAnalyticsProjection> results = ofRepository.findByTenantIdAndIsDeletedFalse(tenantId);
-        OSMLogger.debug(AnalyticsService.class, "Found {} OFs for analytics", results.size());
+        OOSMLogger.debug(AnalyticsService.class, "Found {} OFs for analytics", results.size());
 
         return results.stream()
                 .filter(of -> of.getQuantiteCible() != null && of.getQuantiteCible().compareTo(BigDecimal.ZERO) > 0)
@@ -63,7 +63,7 @@ public class AnalyticsService {
     // ─────────────────────────────────────────────
     public GlobalOfReportDto getGlobalOfReport(ReportRequestDto request) {
         UUID tenantId = TenantContext.getCurrentTenant();
-        OSMLogger.debug(AnalyticsService.class, "Fetching global report for tenant: {}", tenantId);
+        OOSMLogger.debug(AnalyticsService.class, "Fetching global report for tenant: {}", tenantId);
         
         List<OfAnalyticsProjection> all = ofRepository.findByTenantIdAndIsDeletedFalse(tenantId);
         List<OfAnalyticsProjection> filtered = all.stream()
@@ -76,7 +76,7 @@ public class AnalyticsService {
                 })
                 .collect(Collectors.toList());
         
-        OSMLogger.debug(AnalyticsService.class, "Filtered {} OFs from total {}", filtered.size(), all.size());
+        OOSMLogger.debug(AnalyticsService.class, "Filtered {} OFs from total {}", filtered.size(), all.size());
 
         GlobalOfReportDto dto = new GlobalOfReportDto();
         dto.setTotalOf(filtered.size());
@@ -118,7 +118,7 @@ public class AnalyticsService {
                     try {
                         return qcResultRepository.findByOfIdAndTenantIdOrderByDateControleDesc(of.getId(), tenantId).stream();
                     } catch (Exception e) {
-                        OSMLogger.warn(AnalyticsService.class, "Impossible de récupérer les QCResults pour OF {}: {}", of.getId(), e.getMessage());
+                        OOSMLogger.warn(AnalyticsService.class, "Impossible de récupérer les QCResults pour OF {}: {}", of.getId(), e.getMessage());
                         return java.util.stream.Stream.empty();
                     }
                 })
@@ -200,7 +200,7 @@ public class AnalyticsService {
                     result.add(dto);
                 }
             } catch (Exception e) {
-                OSMLogger.warn(AnalyticsService.class, "Impossible de récupérer le BOM {} pour OF {}: {}", of.getBomId(), of.getCode(), e.getMessage());
+                OOSMLogger.warn(AnalyticsService.class, "Impossible de récupérer le BOM {} pour OF {}: {}", of.getBomId(), of.getCode(), e.getMessage());
             }
         }
 
@@ -222,7 +222,7 @@ public class AnalyticsService {
                     .map(this::mapFiltrationReport)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            OSMLogger.error(AnalyticsService.class, "Erreur lors de la recuperation des donnees de filtrage: {}", e.getMessage());
+            OOSMLogger.error(AnalyticsService.class, "Erreur lors de la recuperation des donnees de filtrage: {}", e.getMessage());
             return Collections.emptyList();
         }
     }

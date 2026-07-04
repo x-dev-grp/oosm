@@ -1,6 +1,6 @@
 package com.xdev.ooms.security.permission.catalog;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.security.permission.repository.PermissionRepository;
 import org.springframework.beans.factory.annotation.Value;
@@ -28,18 +28,18 @@ public class PermissionCatalogSyncRunner implements CommandLineRunner {
     public void run(String... args) {
         long activeCount = permissionRepository.countByIsDeletedFalse();
         if (!syncOnStartup && activeCount > 0) {
-            OSMLogger.debug(PermissionCatalogSyncRunner.class, "Permission catalog sync skipped ({} active permissions)", activeCount);
+            OOSMLogger.debug(PermissionCatalogSyncRunner.class, "Permission catalog sync skipped ({} active permissions)", activeCount);
             return;
         }
 
         if (activeCount == 0) {
-            OSMLogger.warn(PermissionCatalogSyncRunner.class, "Permission table is empty — seeding from permissions-spec.json");
+            OOSMLogger.warn(PermissionCatalogSyncRunner.class, "Permission table is empty — seeding from permissions-spec.json");
         } else {
-            OSMLogger.info(PermissionCatalogSyncRunner.class, "Syncing permission catalog from permissions-spec.json (sync-on-startup=true)");
+            OOSMLogger.info(PermissionCatalogSyncRunner.class, "Syncing permission catalog from permissions-spec.json (sync-on-startup=true)");
         }
 
         PermissionCatalogSyncResult result = syncService.syncFromCatalog();
-        OSMLogger.info(PermissionCatalogSyncRunner.class,
+        OOSMLogger.info(PermissionCatalogSyncRunner.class,
                 "Permission catalog sync complete: created={}, existing={}, legacyMerged={}, mirrorGrants={}",
                 result.permissionsCreated(),
                 result.permissionsExisting(),

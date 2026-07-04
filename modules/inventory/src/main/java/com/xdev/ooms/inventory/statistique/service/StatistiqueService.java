@@ -1,6 +1,6 @@
 package com.xdev.ooms.inventory.statistique.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleCritiqueDto;
@@ -215,7 +215,7 @@ public class StatistiqueService {
         try {
             return bonCommandeRepository.countByStatusNotDeleted(StatutBonCommande.EN_ATTENTE);
         } catch (Exception ex) {
-            OSMLogger.warn(StatistiqueService.class, "Impossible de compter les bons en attente: {}", ex.getMessage());
+            OOSMLogger.warn(StatistiqueService.class, "Impossible de compter les bons en attente: {}", ex.getMessage());
             try {
                 Long legacy = bonCommandeRepository.countBonCommandesByStatus(StatutBonCommande.EN_ATTENTE);
                 return legacy != null ? legacy : 0L;

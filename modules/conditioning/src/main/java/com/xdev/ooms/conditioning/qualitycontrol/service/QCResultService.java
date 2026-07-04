@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.qualitycontrol.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.conditioning.Enum.StatutOF;
 import com.xdev.ooms.conditioning.ordrefabrication.service.OFService;
@@ -124,7 +124,7 @@ public class QCResultService extends BaseServiceImpl<QCResult, QCResultDTO, QCRe
                         null,
                         null));
             } catch (Exception e) {
-                OSMLogger.warn(QCResultService.class, "Failed to publish OF blocked notification: {}", e.getMessage());
+                OOSMLogger.warn(QCResultService.class, "Failed to publish OF blocked notification: {}", e.getMessage());
             }
         }
     }

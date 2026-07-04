@@ -1,6 +1,6 @@
 package com.xdev.ooms.conditioning.projet.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.conditioning.inventoryusage.dto.*;
 import com.xdev.ooms.conditioning.label.entity.LabelContent;
@@ -425,7 +425,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                         }
                     }
                 } catch (Exception e) {
-                    OSMLogger.logException(ProjetService.class, "Failed to fetch BOM for product " + pp.getProductId(), e);
+                    OOSMLogger.logException(ProjetService.class, "Failed to fetch BOM for product " + pp.getProductId(), e);
                 }
             }
         }
@@ -445,7 +445,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 pr.setStatut("CONFIRMED");
                 confirmedReservations.put(entry.getKey(), quantiteArrondie);
             } catch (Exception e) {
-                OSMLogger.warn(ProjetService.class, "Failed to reserve stock for article {}: {}",
+                OOSMLogger.warn(ProjetService.class, "Failed to reserve stock for article {}: {}",
                         describeArticle(entry.getKey(), articleCache), resolveReservationErrorMessage(e));
                 pr.setStatut("FAILED");
                 hasFailure = true;
@@ -697,7 +697,7 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 payload.put("quantite", entry.getValue());
                 inventorySupport.annulerReservation(entry.getKey(), payload);
             } catch (Exception e) {
-                OSMLogger.logException(ProjetService.class, "Rollback reservation failed for article " + entry.getKey(), e);
+                OOSMLogger.logException(ProjetService.class, "Rollback reservation failed for article " + entry.getKey(), e);
             }
         }
     }

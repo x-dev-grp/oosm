@@ -1,6 +1,6 @@
 package com.xdev.ooms.inventory.common.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.InventoryUsageBlockersDto;
@@ -136,7 +136,7 @@ public class InventoryDeleteGuardService {
         try {
             return conditioningUsagePort.getArticleUsageBlockers(articleId);
         } catch (RuntimeException ex) {
-            OSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning article usage check failed for {}: {}", articleId, ex.getMessage());
+            OOSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning article usage check failed for {}: {}", articleId, ex.getMessage());
             throw usageCheckUnavailable();
         }
     }
@@ -145,7 +145,7 @@ public class InventoryDeleteGuardService {
         try {
             return conditioningUsagePort.getProductUsageBlockers(productId);
         } catch (RuntimeException ex) {
-            OSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning product usage check failed for {}: {}", productId, ex.getMessage());
+            OOSMLogger.warn(InventoryDeleteGuardService.class, "Conditioning product usage check failed for {}: {}", productId, ex.getMessage());
             throw usageCheckUnavailable();
         }
     }

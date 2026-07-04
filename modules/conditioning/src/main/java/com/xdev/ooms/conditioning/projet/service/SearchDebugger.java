@@ -2,7 +2,7 @@ package com.xdev.ooms.conditioning.projet.service;
 
 import com.xdev.ooms.conditioning.projet.entity.Projet;
 import com.xdev.ooms.conditioning.projet.repository.ProjetRepository;
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -19,13 +19,13 @@ public class SearchDebugger implements CommandLineRunner {
     @Override
     @jakarta.transaction.Transactional
     public void run(String... args) throws Exception {
-        OSMLogger.debug(SearchDebugger.class, "Starting project search diagnostic");
+        OOSMLogger.debug(SearchDebugger.class, "Starting project search diagnostic");
         Iterable<Projet> projets = projetRepository.findAll();
         for (Projet p : projets) {
-            OSMLogger.debug(SearchDebugger.class,
+            OOSMLogger.debug(SearchDebugger.class,
                     "Project diagnostic: id={}, code={}, qrHex={}, tenant={}",
                     p.getId(), p.getCode(), p.getQrHex(), p.getTenantId());
         }
-        OSMLogger.debug(SearchDebugger.class, "Completed project search diagnostic");
+        OOSMLogger.debug(SearchDebugger.class, "Completed project search diagnostic");
     }
 }

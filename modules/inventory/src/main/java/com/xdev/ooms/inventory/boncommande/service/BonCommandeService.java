@@ -1,6 +1,6 @@
 package com.xdev.ooms.inventory.boncommande.service;
 
-import com.xdev.ooms.sharedkernel.utils.OSMLogger;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 
 import com.xdev.ooms.inventory.Enum.StatutBonCommande;
 import com.xdev.ooms.inventory.articlesec.dto.ArticleSecDto;
@@ -73,7 +73,7 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
                                 ArticleSecDto articleDto = articleSecService.findById(ligne.getArticle().getId());
                                 ligneDto.setArticle(articleDto);
                             } catch (Exception e) {
-                                OSMLogger.error(BonCommandeService.class, "Impossible de charger l'article {}");
+                                OOSMLogger.error(BonCommandeService.class, "Impossible de charger l'article {}");
                             }
                         }
                         ligneDto.setQuantiteCommandee(ligne.getQuantiteCommandee());
