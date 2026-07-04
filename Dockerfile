@@ -26,7 +26,7 @@ RUN apt-get update \
 
 COPY --from=build --chown=oosm:oosm /workspace/app/target/oosm-monolith.jar /app/oosm-monolith.jar
 COPY --chown=oosm:oosm docker/entrypoint.sh /app/entrypoint.sh
-RUN chmod +x /app/entrypoint.sh
+RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
 ENV SERVER_PORT=8084 \
     JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError" \
