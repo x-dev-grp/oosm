@@ -4,10 +4,18 @@ WORKDIR /workspace
 COPY pom.xml .
 COPY modules ./modules
 COPY app ./app
+COPY VERSION .
 
-RUN mvn -B -DskipTests package -pl app -am
+ARG GIT_SHA=unknown
+RUN VERSION=$(tr -d '\r\n' < VERSION) && \
+    printf 'app.version=%s\napp.git.sha=%s\napp.built.at=%s\n' \
+      "$VERSION" "${GIT_SHA}" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > app/src/main/resources/version.properties && \
+    mvn -B -DskipTests package -pl app -am
 
 FROM eclipse-temurin:21-jre-jammy AS runtime
+
+ARG APP_VERSION=unknown
+LABEL org.opencontainers.image.version="${APP_VERSION}"
 
 WORKDIR /app
 

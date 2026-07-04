@@ -31,6 +31,28 @@ public class PermissionCatalogSyncService {
         this.roleRepository = roleRepository;
     }
 
+    @Transactional(readOnly = true)
+    public PermissionCatalogStatusDTO getCatalogStatus(boolean syncOnStartup) {
+        try {
+            PermissionCatalogSpec spec = catalogLoader.loadSpec();
+            int expected = spec.getEntities().values().stream()
+                    .mapToInt(entitySpec -> catalogLoader.resolveActions(spec, entitySpec).size())
+                    .sum();
+            return new PermissionCatalogStatusDTO(
+                    spec.getVersion(),
+                    spec.getEntities().size(),
+                    spec.getActionProfiles().size(),
+                    expected,
+                    permissionRepository.countByIsDeletedFalse(),
+                    syncOnStartup,
+                    "permissions-spec.json"
+            );
+        } catch (Exception e) {
+            OOSMLogger.logException(this.getClass(), "Failed to read permission catalog status", e);
+            throw new IllegalStateException("Failed to read permission catalog status: " + e.getMessage(), e);
+        }
+    }
+
     @Transactional
     public PermissionCatalogSyncResult syncFromCatalog() {
         try {

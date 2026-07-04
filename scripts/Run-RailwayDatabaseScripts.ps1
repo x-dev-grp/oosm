@@ -18,6 +18,8 @@ if (-not (Get-Command psql -ErrorAction SilentlyContinue)) {
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 
 $idempotentScripts = @(
+    "scripts/rename-osm-to-oosm.sql",
+    "scripts/migrate-osmuser-to-oosmuser.sql",
     "modules/production/src/main/resources/legacy/osm-prod/db/migration/20260522_add_traceability_lot_table.sql",
     "modules/production/src/main/resources/legacy/osm-prod/db/migration/20260522_add_filtration_quality_control_links.sql",
     "modules/conditioning/src/main/resources/legacy/osm-cond/db/migration/20260522_add_traceability_lot_columns.sql",

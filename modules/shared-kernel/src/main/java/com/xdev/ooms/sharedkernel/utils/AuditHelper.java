@@ -43,8 +43,6 @@ public final class AuditHelper {
 
             Object id = oosmUser.get("id");
             if (id != null) return Optional.of(String.valueOf(id) + roleStr);
-            Object externalId = oosmUser.get("externalId");
-            if (externalId != null) return Optional.of(String.valueOf(externalId) + roleStr);
         } catch (Exception ignored) {}
         return Optional.empty();
     }

@@ -1,6 +1,15 @@
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- ====== 0) Pré-requis & idempotence ======
 CREATE EXTENSION IF NOT EXISTS pgcrypto; -- pour gen_random_uuid()
 
@@ -150,6 +159,98 @@ SELECT public.seed_permissions_from_json($${
         "UPDATE"
       ]
     },
+    "EMPLOYEE": {
+      "description": "Employee records",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "POSTE": {
+      "description": "Job positions",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "CONTRACT": {
+      "description": "Employment contracts",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "POINTAGE": {
+      "description": "Attendance records",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "GEN_PDF",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LEAVEREQUEST": {
+      "description": "Leave requests",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "REJECT",
+        "UPDATE"
+      ]
+    },
+    "PAYROLLPERIOD": {
+      "description": "Payroll periods",
+      "module": "HR",
+      "permissions": [
+        "CALCULATE",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "PAY",
+        "READ",
+        "REPORT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "PAYSLIP": {
+      "description": "Employee payslips",
+      "module": "HR",
+      "permissions": [
+        "CALCULATE",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "GEN_PDF",
+        "PAY",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
     "base_type": {
       "description": "Generic type system",
       "module": "PRODUCTION",
@@ -275,6 +376,26 @@ SELECT public.seed_permissions_from_json($${
     },
     "MAINTENANCEWORKORDER": {
       "description": "Equipment maintenance work orders",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "MILLEQUIPMENT": {
+      "description": "Mill mobile equipment registry (tractors, tools)",
+      "module": "PRODUCTION",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "EQUIPMENTSERVICEMISSION": {
+      "description": "External equipment service missions",
       "module": "PRODUCTION",
       "permissions": [
         "CREATE",
@@ -430,76 +551,6 @@ SELECT public.seed_permissions_from_json($${
         "READ",
         "UPDATE",
         "VALIDATE"
-      ]
-    },
-    "CONTRACT": {
-      "description": "Employee contracts",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "DEPARTMENT": {
-      "description": "Departments",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "EMPLOYEE": {
-      "description": "Employee profiles",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "LEAVEREQUEST": {
-      "description": "Employee leave requests",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "PAYROLL": {
-      "description": "Payroll runs and items",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "POINTAGE": {
-      "description": "Time clock entries",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
-      ]
-    },
-    "POSTE": {
-      "description": "Job positions",
-      "module": "HR",
-      "permissions": [
-        "CREATE",
-        "DELETE",
-        "READ",
-        "UPDATE"
       ]
     }
   },
@@ -827,7 +878,7 @@ SELECT public.seed_permissions_from_json($${
   "modules": {
     "HR": {
       "value": 0,
-      "description": "Human Resources module"
+      "description": "Human Resources — employees, contracts, payroll, attendance"
     },
     "RECEPTION": {
       "value": 1,
@@ -874,6 +925,7 @@ SELECT public.seed_permissions_from_json($${
     "ASSIGN_SUPPLIER": "Assign suppliers to operations",
     "COMPLETE_PAYMENT_DETAILS": "Complete payment information",
     "VALIDATE": "Validate operations or data",
+    "CALCULATE": "Run payroll or calculation workflows",
     "PAY": "Process payments",
     "GEN_PDF": "Generate PDF documents",
     "APPROVE": "Approve operations or requests",

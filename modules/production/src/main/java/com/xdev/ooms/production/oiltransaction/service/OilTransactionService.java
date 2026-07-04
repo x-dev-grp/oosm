@@ -391,7 +391,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             oilTransaction.setUnitPrice(source.getAvgCost());
             oilTransaction.setTotalPrice();
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
-            oilCreditPort.approveOilCredit(oilTransaction.getExternalId());
+            oilCreditPort.approveOilCredit(oilTransaction.getId());
         }
         OOSMLogger.logMethodExit(this.getClass(), "handleLoan", oilTransaction);
         OOSMLogger.logPerformance(this.getClass(), "handleLoan", startTime, System.currentTimeMillis());

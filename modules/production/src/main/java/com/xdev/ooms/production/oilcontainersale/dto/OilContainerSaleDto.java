@@ -16,22 +16,11 @@ import java.util.UUID;
  * DTO for {@link com.xdev.ooms.production.oilcontainersale.entity.OilContainerSale}
  */
 public class OilContainerSaleDto extends BaseDto<OilContainerSale> {
-    UUID externalId;
     OilSaleDTO oilSale;
     OilContainerDTO container;
     Integer count;
     BigDecimal unitPrice;
     BigDecimal lineTotal;
-
-    @Override
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    @Override
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
-    }
 
     public OilSaleDTO getOilSale() {
         return oilSale;

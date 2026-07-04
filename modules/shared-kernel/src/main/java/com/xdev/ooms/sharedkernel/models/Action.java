@@ -21,6 +21,7 @@ public enum Action {
     ASSIGN_SUPPLIER,
     COMPLETE_PAYMENT_DETAILS,
     VALIDATE,
+    CALCULATE,
     PAY,
     GEN_PDF,
     GEN_INVOICE,

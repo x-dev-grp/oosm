@@ -73,18 +73,18 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
         }, () -> OOSMLogger.logBusinessEvent(
                 this.getClass(),
                 "DELIVERY_PAYMENT_SYNC_SKIPPED",
-                "No delivery found for externalId=" + command.externalTransactionId()
+                "No delivery found for id=" + command.externalTransactionId()
                         + ", lotNumber=" + command.lotNumber()));
     }
 
     private Optional<UnifiedDelivery> resolveDelivery(ProductionFinancialSyncCommand command) {
         if (command.externalTransactionId() != null && !command.externalTransactionId().isBlank()) {
-            UUID externalId = parseUuid(command.externalTransactionId());
-            if (externalId != null) {
-                Optional<UnifiedDelivery> byExternal =
-                        deliveryRepository.findByExternalIdAndIsDeletedFalse(externalId);
-                if (byExternal.isPresent()) {
-                    return byExternal;
+            UUID id = parseUuid(command.externalTransactionId());
+            if (id != null) {
+                Optional<UnifiedDelivery> byId =
+                        deliveryRepository.findByIdAndIsDeletedFalse(id);
+                if (byId.isPresent()) {
+                    return byId;
                 }
             }
         }
@@ -107,12 +107,12 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
         if (command.externalTransactionId() == null) {
             return;
         }
-        UUID externalId = parseUuid(command.externalTransactionId());
-        if (externalId == null) {
+        UUID id = parseUuid(command.externalTransactionId());
+        if (id == null) {
             return;
         }
 
-        oilSaleRepository.findByExternalIdAndIsDeletedFalse(externalId).ifPresent(sale -> {
+        oilSaleRepository.findByIdAndIsDeletedFalse(id).ifPresent(sale -> {
             if (command.invoiceReference() != null && sale.getInvoiceNumber() == null) {
                 sale.setInvoiceNumber(command.invoiceReference());
             }
@@ -125,12 +125,12 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
         if (command.externalTransactionId() == null) {
             return;
         }
-        UUID externalId = parseUuid(command.externalTransactionId());
-        if (externalId == null) {
+        UUID id = parseUuid(command.externalTransactionId());
+        if (id == null) {
             return;
         }
 
-        wasteRepository.findByExternalIdAndIsDeletedFalse(externalId).ifPresent(waste -> {
+        wasteRepository.findByIdAndIsDeletedFalse(id).ifPresent(waste -> {
             if (command.invoiceReference() != null && waste.getInvoiceNumber() == null) {
                 waste.setInvoiceNumber(command.invoiceReference());
             }

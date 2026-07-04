@@ -43,7 +43,9 @@ public class CompanyProfileReadPortImpl implements CompanyProfileReadPort {
                 nullToEmpty(profile.getPhone()),
                 nullToEmpty(profile.getWebsite()),
                 profile.getLogoData(),
-                profile.getLogoContentType());
+                profile.getLogoContentType(),
+                nullToEmpty(profile.getCnssNumber()),
+                nullToEmpty(profile.getRegistrationNumber()));
     }
 
     private String buildAddress(CompanyProfile profile) {

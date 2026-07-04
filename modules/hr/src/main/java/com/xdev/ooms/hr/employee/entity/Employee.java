@@ -1,77 +1,58 @@
 package com.xdev.ooms.hr.employee.entity;
 
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.xdev.ooms.hr.contract.entity.Contract;
-import com.xdev.ooms.hr.department.entity.Department;
-import com.xdev.ooms.hr.payroll.entity.PayRolls;
-import com.xdev.ooms.hr.pointage.entity.Pointage;
-import com.xdev.ooms.sharedkernel.Enum.Gender;
-import com.xdev.ooms.sharedkernel.Enum.MaritalStatus;
+import com.xdev.ooms.hr.common.enums.EmployeeStatus;
+import com.xdev.ooms.hr.common.enums.PaymentMode;
+import com.xdev.ooms.hr.common.enums.SalaryType;
+import com.xdev.ooms.hr.common.enums.WorkRegime;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Table;
 
 import java.io.Serializable;
 import java.time.LocalDate;
-import java.util.List;
 
 @Entity
+@Table(name = "hr_employee")
 public class Employee extends BaseEntity implements Serializable {
 
+    @Column(nullable = false)
     private String firstName;
+
+    @Column(nullable = false)
     private String lastName;
-    private LocalDate hireDate;
-    private LocalDate birthDate;
+
+    @Column(length = 32)
     private String cin;
+
+    @Column(length = 32)
+    private String cnssMatricule;
+
     private String email;
     private String phone;
     private String address;
-    private String postalCode;
-    private String city;
-    private String country;
-    private boolean active=false;
 
+    private LocalDate birthDate;
+    private LocalDate hireDate;
 
-    @Enumerated(EnumType.STRING)
-    private Gender gender;
+    private String jobTitle;
+    private String department;
 
     @Enumerated(EnumType.STRING)
-    private MaritalStatus maritalStatus;
+    private EmployeeStatus status;
 
+    @Enumerated(EnumType.STRING)
+    private SalaryType salaryType;
 
+    @Enumerated(EnumType.STRING)
+    private PaymentMode paymentMode;
 
-    //relation avec contrat
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    private List<Contract> contrats;
+    private String bankAccountRef;
 
-    // Relation avec Department
- //  @OneToOne(mappedBy = "manager")
-   //@JsonBackReference
-    //private Department managedDepartment;
-
-    @ManyToOne
-    @JoinColumn(name = "department_id")
-    @JsonBackReference
-    private Department department;
-
-    // Relation avec Payroll
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
-    private List<PayRolls> payrolls;
-    // Relation avec Pointage
-
-    @OneToMany(mappedBy = "employee", cascade = CascadeType.ALL)
-    private List<Pointage> pointages;
-
-
-    //geter et seter
-    public List<Contract> getContrats() {
-        return contrats;
-    }
-
-    public void setContrats(List<Contract> contrats) {
-        this.contrats = contrats;
-    }
+    @Enumerated(EnumType.STRING)
+    private WorkRegime workRegime;
 
     public String getFirstName() {
         return firstName;
@@ -89,20 +70,20 @@ public class Employee extends BaseEntity implements Serializable {
         this.lastName = lastName;
     }
 
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
     public String getCin() {
         return cin;
     }
 
     public void setCin(String cin) {
         this.cin = cin;
+    }
+
+    public String getCnssMatricule() {
+        return cnssMatricule;
+    }
+
+    public void setCnssMatricule(String cnssMatricule) {
+        this.cnssMatricule = cnssMatricule;
     }
 
     public String getEmail() {
@@ -125,65 +106,16 @@ public class Employee extends BaseEntity implements Serializable {
         return address;
     }
 
-
     public void setAddress(String address) {
         this.address = address;
     }
 
-    public String getCity() {
-        return city;
+    public LocalDate getBirthDate() {
+        return birthDate;
     }
 
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
-    public Gender getGender() {
-        return gender;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
-    public MaritalStatus getMaritalStatus() {
-        return maritalStatus;
-    }
-
-    public Department getDepartment() {
-        return department;
-    }
-
-    public void setDepartment(Department department) {
-        this.department = department;
-    }
-
-    public List<PayRolls> getPayrolls() {
-        return payrolls;
-    }
-
-    public void setPayrolls(List<PayRolls> payrolls) {
-        this.payrolls = payrolls;
-    }
-
-    public List<Pointage> getPointages() {
-        return pointages;
-    }
-
-    public void setPointages(List<Pointage> pointages) {
-        this.pointages = pointages;
-    }
-
-    public void setMaritalStatus(MaritalStatus maritalStatus) {
-        this.maritalStatus = maritalStatus;
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
     }
 
     public LocalDate getHireDate() {
@@ -194,20 +126,59 @@ public class Employee extends BaseEntity implements Serializable {
         this.hireDate = hireDate;
     }
 
-    public String getPostalCode() {
-        return postalCode;
+    public String getJobTitle() {
+        return jobTitle;
     }
 
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
     }
 
-
-    public boolean isActive() {
-        return active;
+    public String getDepartment() {
+        return department;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public EmployeeStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EmployeeStatus status) {
+        this.status = status;
+    }
+
+    public SalaryType getSalaryType() {
+        return salaryType;
+    }
+
+    public void setSalaryType(SalaryType salaryType) {
+        this.salaryType = salaryType;
+    }
+
+    public PaymentMode getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(PaymentMode paymentMode) {
+        this.paymentMode = paymentMode;
+    }
+
+    public String getBankAccountRef() {
+        return bankAccountRef;
+    }
+
+    public void setBankAccountRef(String bankAccountRef) {
+        this.bankAccountRef = bankAccountRef;
+    }
+
+    public WorkRegime getWorkRegime() {
+        return workRegime;
+    }
+
+    public void setWorkRegime(WorkRegime workRegime) {
+        this.workRegime = workRegime;
     }
 }

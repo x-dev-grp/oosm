@@ -24,7 +24,6 @@ public final class ProductionSharedDtoMapper {
             return;
         }
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
         target.setActions(source.getActions());
     }
@@ -36,7 +35,6 @@ public final class ProductionSharedDtoMapper {
             return;
         }
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
         target.setActions(source.getActions());
     }

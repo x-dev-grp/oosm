@@ -20,6 +20,10 @@ ALTER TABLE IF EXISTS public.osm_user
     ADD COLUMN IF NOT EXISTS photo_data TEXT,
     ADD COLUMN IF NOT EXISTS photo_content_type VARCHAR(50);
 
+-- Company logo is stored as base64 (~200KB); ensure column accepts large payloads.
+ALTER TABLE IF EXISTS public.company_profile
+    ALTER COLUMN logo_data TYPE TEXT;
+
 -- If refresh/login fails with OSMUser serialVersionUID after entity changes, clear stored OAuth2
 -- authorizations once (users must sign in again). Uncomment only when needed:
 -- TRUNCATE TABLE public.authorization;

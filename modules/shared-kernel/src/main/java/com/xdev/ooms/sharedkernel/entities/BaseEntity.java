@@ -3,7 +3,6 @@ package com.xdev.ooms.sharedkernel.entities;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.utils.AuditEntityListener;
 import jakarta.persistence.*;
-import org.hibernate.annotations.NaturalId;
 import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.LastModifiedBy;
 
@@ -36,18 +35,6 @@ public class BaseEntity implements Serializable {
     private String lastModifiedBy;
 
     private LocalDateTime lastModifiedDate;
-
-    @NaturalId
-    private UUID externalId;
-
-
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
-    }
 
     public String getCreatedBy() {
         return createdBy;
@@ -135,9 +122,6 @@ public class BaseEntity implements Serializable {
 
     @PrePersist
     protected void onCreate() {
-        if (externalId == null) {
-            externalId = UUID.randomUUID();
-        }
         if( getTenantId() == null ) {
             setTenantId(TenantContext.getCurrentTenant());
         }
@@ -147,9 +131,6 @@ public class BaseEntity implements Serializable {
 
     @PreUpdate
     protected void onUpdate() {
-        if (externalId == null) {
-            externalId = UUID.randomUUID();
-        }
         if( getTenantId() == null ) {
             setTenantId(TenantContext.getCurrentTenant());
         }

@@ -5,11 +5,7 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
 import java.util.UUID;
@@ -46,7 +42,7 @@ public class DocumentController {
         return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
     }
 
-    static ResponseEntity<byte[]> pdfResponse(GeneratedDocument document, ContentDisposition.Builder disposition) {
+    public static ResponseEntity<byte[]> pdfResponse(GeneratedDocument document, ContentDisposition.Builder disposition) {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(document.mediaType()));
         headers.setContentDisposition(disposition.filename(document.fileName()).build());

@@ -219,8 +219,8 @@ final class ProductionModuleDtoCopy {
         if (source.getName() != null && !source.getName().isBlank()) {
             return Olive_Oil_Type.from(source.getName());
         }
-        if (source.getExternalId() != null) {
-            return Olive_Oil_Type.from(source.getExternalId().toString());
+        if (source.getId() != null) {
+            return Olive_Oil_Type.from(source.getId().toString());
         }
         return null;
     }
@@ -245,7 +245,6 @@ final class ProductionModuleDtoCopy {
             BaseDto source,
             com.xdev.ooms.sharedkernel.dtos.BaseDto<?> target) {
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
     }
 
@@ -253,7 +252,6 @@ final class ProductionModuleDtoCopy {
             com.xdev.ooms.sharedkernel.dtos.BaseDto<?> source,
             BaseDto target) {
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
     }
 }

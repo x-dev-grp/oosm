@@ -271,12 +271,76 @@
     ],
     "READ_ONLY": [
       "READ"
+    ],
+    "HR_MASTER": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "EXPORT"
+    ],
+    "HR_EMPLOYEE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "EXPORT",
+      "GEN_PDF"
+    ],
+    "HR_CONTRACT": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "GEN_PDF",
+      "UPDATE_STATUS"
+    ],
+    "HR_ATTENDANCE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "GEN_PDF",
+      "EXPORT"
+    ],
+    "HR_LEAVE": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "APPROVE",
+      "REJECT",
+      "CANCEL",
+      "GEN_PDF"
+    ],
+    "HR_PAYROLL_PERIOD": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "CALCULATE",
+      "VALIDATE",
+      "PAY",
+      "CLOSE",
+      "EXPORT",
+      "REPORT"
+    ],
+    "HR_PAYSLIP": [
+      "READ",
+      "CREATE",
+      "UPDATE",
+      "DELETE",
+      "CALCULATE",
+      "VALIDATE",
+      "PAY",
+      "GEN_PDF",
+      "EXPORT"
     ]
   },
   "modules": {
     "HR": {
       "value": 0,
-      "description": "Human Resources module"
+      "description": "Human Resources — employees, contracts, payroll, attendance"
     },
     "RECEPTION": {
       "value": 1,
@@ -323,6 +387,7 @@
     "ASSIGN_SUPPLIER": "Assign suppliers to operations",
     "COMPLETE_PAYMENT_DETAILS": "Complete payment information",
     "VALIDATE": "Validate operations or data",
+    "CALCULATE": "Run payroll or calculation workflows",
     "PAY": "Process payments",
     "GEN_PDF": "Generate PDF documents",
     "APPROVE": "Approve operations or requests",
@@ -359,6 +424,48 @@
       "description": "Bank account management",
       "section": "entities",
       "profile": "CRUD"
+    },
+    "EMPLOYEE": {
+      "module": "HR",
+      "description": "Employee records",
+      "section": "entities",
+      "profile": "HR_EMPLOYEE"
+    },
+    "POSTE": {
+      "module": "HR",
+      "description": "Job positions",
+      "section": "entities",
+      "profile": "HR_MASTER"
+    },
+    "CONTRACT": {
+      "module": "HR",
+      "description": "Employment contracts",
+      "section": "entities",
+      "profile": "HR_CONTRACT"
+    },
+    "POINTAGE": {
+      "module": "HR",
+      "description": "Attendance records",
+      "section": "entities",
+      "profile": "HR_ATTENDANCE"
+    },
+    "LEAVEREQUEST": {
+      "module": "HR",
+      "description": "Leave requests",
+      "section": "entities",
+      "profile": "HR_LEAVE"
+    },
+    "PAYROLLPERIOD": {
+      "module": "HR",
+      "description": "Payroll periods",
+      "section": "entities",
+      "profile": "HR_PAYROLL_PERIOD"
+    },
+    "PAYSLIP": {
+      "module": "HR",
+      "description": "Employee payslips",
+      "section": "entities",
+      "profile": "HR_PAYSLIP"
     },
     "base_type": {
       "module": "PRODUCTION",
@@ -419,6 +526,18 @@
     "MAINTENANCEWORKORDER": {
       "module": "PRODUCTION",
       "description": "Equipment maintenance work orders",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "MILLEQUIPMENT": {
+      "module": "PRODUCTION",
+      "description": "Mill mobile equipment registry (tractors, tools)",
+      "section": "entities",
+      "profile": "CRUD"
+    },
+    "EQUIPMENTSERVICEMISSION": {
+      "module": "PRODUCTION",
+      "description": "External equipment service missions",
       "section": "entities",
       "profile": "CRUD"
     },
@@ -530,48 +649,6 @@
       "description": "User management",
       "section": "security_entities",
       "profile": "CRUD_PDF"
-    },
-    "CONTRACT": {
-      "module": "HR",
-      "description": "Employee contracts",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "DEPARTMENT": {
-      "module": "HR",
-      "description": "Departments",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "EMPLOYEE": {
-      "module": "HR",
-      "description": "Employee profiles",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "LEAVEREQUEST": {
-      "module": "HR",
-      "description": "Employee leave requests",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "PAYROLL": {
-      "module": "HR",
-      "description": "Payroll runs and items",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "POINTAGE": {
-      "module": "HR",
-      "description": "Time clock entries",
-      "section": "entities",
-      "profile": "CRUD"
-    },
-    "POSTE": {
-      "module": "HR",
-      "description": "Job positions",
-      "section": "entities",
-      "profile": "CRUD"
     },
     "CLIENT": {
       "module": "CONDITIONING",
@@ -727,6 +804,60 @@
       "sourceEntity": "STORAGEUNIT",
       "targetModule": "PRODUCTION",
       "targetEntity": "OILCONTAINER"
+    }
+  ],
+  "rolePresets": [
+    {
+      "name": "HR_CLERK",
+      "description": "Daily HR operations — employee records, attendance, leave submission",
+      "grants": [
+        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT"] },
+        { "module": "HR", "entity": "POSTE", "actions": ["READ"] },
+        { "module": "HR", "entity": "CONTRACT", "actions": ["READ"] },
+        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT"] },
+        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "CANCEL"] },
+        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ"] },
+        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ"] }
+      ]
+    },
+    {
+      "name": "HR_MANAGER",
+      "description": "HR supervision — approve leave, manage contracts, employee documents",
+      "grants": [
+        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT", "GEN_PDF"] },
+        { "module": "HR", "entity": "POSTE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
+        { "module": "HR", "entity": "CONTRACT", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "GEN_PDF", "UPDATE_STATUS"] },
+        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "GEN_PDF", "EXPORT"] },
+        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "CANCEL", "GEN_PDF"] },
+        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ", "REPORT", "EXPORT"] },
+        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ", "GEN_PDF", "EXPORT"] }
+      ]
+    },
+    {
+      "name": "HR_PAYROLL_OFFICER",
+      "description": "Payroll processing — calculate, validate, pay and close periods",
+      "grants": [
+        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "EXPORT"] },
+        { "module": "HR", "entity": "POSTE", "actions": ["READ"] },
+        { "module": "HR", "entity": "CONTRACT", "actions": ["READ", "GEN_PDF"] },
+        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "EXPORT", "GEN_PDF"] },
+        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ"] },
+        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ", "CREATE", "UPDATE", "CALCULATE", "VALIDATE", "PAY", "CLOSE", "EXPORT", "REPORT"] },
+        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ", "CREATE", "UPDATE", "CALCULATE", "VALIDATE", "PAY", "GEN_PDF", "EXPORT"] }
+      ]
+    },
+    {
+      "name": "HR_ADMIN",
+      "description": "Full HR module access — all actions on all HR entities",
+      "grants": [
+        { "module": "HR", "entity": "EMPLOYEE", "profile": "HR_EMPLOYEE" },
+        { "module": "HR", "entity": "POSTE", "profile": "HR_MASTER" },
+        { "module": "HR", "entity": "CONTRACT", "profile": "HR_CONTRACT" },
+        { "module": "HR", "entity": "POINTAGE", "profile": "HR_ATTENDANCE" },
+        { "module": "HR", "entity": "LEAVEREQUEST", "profile": "HR_LEAVE" },
+        { "module": "HR", "entity": "PAYROLLPERIOD", "profile": "HR_PAYROLL_PERIOD" },
+        { "module": "HR", "entity": "PAYSLIP", "profile": "HR_PAYSLIP" }
+      ]
     }
   ]
 }

@@ -1,40 +1,41 @@
 package com.xdev.ooms.hr.leave.entity;
 
-import com.xdev.ooms.sharedkernel.Enum.LeaveStatus;
-import com.xdev.ooms.sharedkernel.Enum.LeaveType;
+import com.xdev.ooms.hr.common.enums.LeaveStatus;
+import com.xdev.ooms.hr.common.enums.LeaveType;
+import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
+import jakarta.persistence.*;
 
 import java.io.Serializable;
 import java.time.LocalDate;
 
 @Entity
+@Table(name = "hr_leave_request")
 public class LeaveRequest extends BaseEntity implements Serializable {
 
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "employee_id", nullable = false)
+    private Employee employee;
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private LeaveType leaveType;
+    @Column(nullable = false)
     private LocalDate startDate;
+    @Column(nullable = false)
     private LocalDate endDate;
-    private String reason;
-    private long duration_days;
-
+    private Double durationDays;
     @Enumerated(EnumType.STRING)
     private LeaveStatus status;
-    @Enumerated(EnumType.STRING)
-    private LeaveType leaveType;
 
-
-    public long getDuration_days() {
-        return duration_days;
+    public Employee getEmployee() {
+        return employee;
     }
 
-    public void setDuration_days(long duration_days) {
-        this.duration_days = duration_days;
+    public void setEmployee(Employee employee) {
+        this.employee = employee;
     }
 
 
-
-    // Getters et Setters
     public LeaveType getLeaveType() {
         return leaveType;
     }
@@ -59,12 +60,12 @@ public class LeaveRequest extends BaseEntity implements Serializable {
         this.endDate = endDate;
     }
 
-    public String getReason() {
-        return reason;
+    public Double getDurationDays() {
+        return durationDays;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
+    public void setDurationDays(Double durationDays) {
+        this.durationDays = durationDays;
     }
 
     public LeaveStatus getStatus() {

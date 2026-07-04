@@ -1217,7 +1217,6 @@ public class LabelContentService {
 
         dto.setId(labelContent.getId());
         dto.setDeleted(labelContent.getDeleted());
-        dto.setExternalId(labelContent.getExternalId());
         dto.setLotId(labelContent.getLotId());
         dto.setTraceabilityLotId(labelContent.getTraceabilityLotId());
         dto.setProductId(labelContent.getProductId());
@@ -1272,7 +1271,6 @@ public class LabelContentService {
 
         snapshotDto.setId(snapshot.getId());
         snapshotDto.setDeleted(snapshot.getDeleted());
-        snapshotDto.setExternalId(snapshot.getExternalId());
         snapshotDto.setSourceType(snapshot.getSourceType());
         snapshotDto.setSourceId(snapshot.getSourceId());
         snapshotDto.setSourceBusinessKey(snapshot.getSourceBusinessKey());

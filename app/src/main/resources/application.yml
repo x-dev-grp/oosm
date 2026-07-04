@@ -16,6 +16,8 @@ server:
 spring:
   application:
     name: ${SPRING_APP_NAME:oosm-monolith}
+  config:
+    import: optional:classpath:version.properties
   main:
     lazy-initialization: ${SPRING_MAIN_LAZY_INITIALIZATION:true}
     banner-mode: console
@@ -26,7 +28,7 @@ spring:
     enabled: ${SPRING_JMX_ENABLED:false}
 
   datasource:
-    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:oosm}}
+    url: ${DB_URL:jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:osm}}
     username: ${DB_USER:${PGUSER:postgres}}
     password: ${DB_PASS:${PGPASSWORD:root}}
     driver-class-name: org.postgresql.Driver
@@ -130,6 +132,8 @@ app:
   security:
     jwt:
       secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
+    legacy-user-migration:
+      enabled: ${SECURITY_LEGACY_USER_MIGRATION_ENABLED:true}
     bootstrap:
       enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
       username: ${SECURITY_BOOTSTRAP_USERNAME:oosmAdmin}
@@ -159,6 +163,13 @@ springdoc:
   swagger-ui:
     enabled: ${SPRINGDOC_ENABLED:false}
     path: /swagger-ui.html
+
+info:
+  app:
+    name: OOSM
+    version: ${app.version:0.0.0}
+    git-sha: ${app.git.sha:unknown}
+    built-at: ${app.built.at:unknown}
 
 management:
   endpoints:

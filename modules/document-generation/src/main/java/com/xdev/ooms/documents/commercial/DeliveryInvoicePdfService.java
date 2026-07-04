@@ -90,7 +90,7 @@ public class DeliveryInvoicePdfService {
         line.setVatRatePercent(TunisiaVatDefaults.STANDARD_RATE);
 
         UnifiedDeliveryBillLineQuery query = new UnifiedDeliveryBillLineQuery(
-                delivery.getExternalId() == null ? null : delivery.getExternalId().toString(),
+                delivery.getId().toString(),
                 delivery.getLotNumber(),
                 delivery.getOperationType(),
                 money(delivery.getPrice()));

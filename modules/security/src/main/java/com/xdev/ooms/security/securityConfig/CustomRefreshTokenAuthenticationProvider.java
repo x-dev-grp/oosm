@@ -26,7 +26,10 @@ import org.springframework.security.oauth2.server.authorization.token.DefaultOAu
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 @Configuration
 class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider {
@@ -72,6 +75,34 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.UNAUTHORIZED_CLIENT);
         }
         return client;
+    }
+
+    private static boolean isPlatformAdmin(OOSMUser user) {
+        if (user.getRole() == null || user.getRole().getRoleName() == null) {
+            return false;
+        }
+        String roleName = user.getRole().getRoleName();
+        return "OOSMADMIN".equalsIgnoreCase(roleName) || "OSMADMIN".equalsIgnoreCase(roleName);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return OAuth2RefreshTokenAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
+
+    public OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(Authentication authentication) {
+        OAuth2ClientAuthenticationToken clientPrincipal = null;
+        if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getPrincipal().getClass())) {
+            clientPrincipal = (OAuth2ClientAuthenticationToken) authentication.getPrincipal();
+        }
+        if (clientPrincipal != null && clientPrincipal.isAuthenticated()) {
+            return clientPrincipal;
+        }
+
+        OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_CLIENT_NOT_AUTHENTICATED",
+            "Client not authenticated during refresh token authentication");
+        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
     }
 
     @Override
@@ -122,7 +153,7 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                     "Account locked during refresh token authentication: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
-            if(!user.getRole().getRoleName().equalsIgnoreCase("OOSMADMIN")) {
+            if (!isPlatformAdmin(user)) {
                 CompanyProfile companyProfile =companyProfileRepository.findById(user.getTenantId()).orElse(null);
                 if ( companyProfile ==null || !companyProfile.isActive() ) {
                     throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
@@ -208,25 +239,5 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
                 "Unexpected error during refresh token authentication", e);
             throw e;
         }
-    }
-
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return OAuth2RefreshTokenAuthenticationToken.class.isAssignableFrom(authentication);
-    }
-
-
-    public OAuth2ClientAuthenticationToken getAuthenticatedClientElseThrowInvalidClient(Authentication authentication) {
-        OAuth2ClientAuthenticationToken clientPrincipal = null;
-        if (OAuth2ClientAuthenticationToken.class.isAssignableFrom(authentication.getPrincipal().getClass())) {
-            clientPrincipal = (OAuth2ClientAuthenticationToken) authentication.getPrincipal();
-        }
-        if (clientPrincipal != null && clientPrincipal.isAuthenticated()) {
-            return clientPrincipal;
-        }
-
-        OOSMLogger.logSecurityEvent(this.getClass(), "REFRESH_CLIENT_NOT_AUTHENTICATED",
-            "Client not authenticated during refresh token authentication");
-        throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
     }
 }

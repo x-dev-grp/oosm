@@ -69,6 +69,22 @@ Define once in `actionProfiles`, reference with `"profile": "CRUD"` on entities.
 
 Both are applied by `PermissionCatalogSyncService` at startup when sync is enabled.
 
+## HR action profiles
+
+| Profile | Entity | Notable actions beyond CRUD |
+|---------|--------|----------------------------|
+| `HR_MASTER` | POSTE | EXPORT |
+| `HR_EMPLOYEE` | EMPLOYEE | EXPORT, GEN_PDF |
+| `HR_CONTRACT` | CONTRACT | GEN_PDF, UPDATE_STATUS |
+| `HR_ATTENDANCE` | POINTAGE | GEN_PDF, EXPORT |
+| `HR_LEAVE` | LEAVEREQUEST | APPROVE, REJECT, CANCEL, GEN_PDF |
+| `HR_PAYROLL_PERIOD` | PAYROLLPERIOD | CALCULATE, VALIDATE, PAY, CLOSE, EXPORT, REPORT |
+| `HR_PAYSLIP` | PAYSLIP | CALCULATE, VALIDATE, PAY, GEN_PDF, EXPORT |
+
+## HR role presets (reference)
+
+`rolePresets` in `permissions-spec.json` documents suggested grants for **HR_CLERK**, **HR_MANAGER**, **HR_PAYROLL_OFFICER**, and **HR_ADMIN**. These are not auto-created as roles — use them when configuring roles in User management.
+
 ## Commands
 
 ```bash
@@ -91,12 +107,15 @@ When `app.security.permissions.sync-on-startup=true` (`PERMISSIONS_SYNC_ON_START
 - **Reactivates** soft-deleted rows that match the catalog
 - Merges legacy aliases and role mirrors (legacy rows are soft-deleted only when the canonical permission exists)
 
-Manual trigger (authenticated):
+Manual trigger (OOSM admin only):
 
 ```http
+GET /api/security/permission/catalog-status
 POST /api/security/permission/sync-catalog
-Authorization: Bearer <token>
+Authorization: Bearer <OOSMADMIN token>
 ```
+
+Administration UI: **Administration → Permission catalog** (`/administration/permission-catalog`).
 
 ## Troubleshooting empty `fetchAll` / empty permission table
 
@@ -105,12 +124,15 @@ The app **auto-seeds on startup when the permission table is empty** (reads `per
 If the table is still empty after restart:
 
 1. Check backend logs for `Permission catalog sync complete: created=…`
-2. Manual trigger (authenticated):
+2. Manual trigger (OOSM admin UI or API):
 
 ```http
+GET /api/security/permission/catalog-status
 POST /api/security/permission/sync-catalog
-Authorization: Bearer <token>
+Authorization: Bearer <OOSMADMIN token>
 ```
+
+Or open **Administration → Permission catalog** in the app.
 
 3. Or run the SQL seed (PostgreSQL security DB):
 

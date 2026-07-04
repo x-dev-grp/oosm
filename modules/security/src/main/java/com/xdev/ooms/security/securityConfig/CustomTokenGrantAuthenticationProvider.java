@@ -64,6 +64,19 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
         }
     }
 
+    private static boolean isPlatformAdmin(OOSMUser user) {
+        if (user.getRole() == null || user.getRole().getRoleName() == null) {
+            return false;
+        }
+        String roleName = user.getRole().getRoleName();
+        return "OOSMADMIN".equalsIgnoreCase(roleName) || "OSMADMIN".equalsIgnoreCase(roleName);
+    }
+
+    @Override
+    public boolean supports(Class<?> authentication) {
+        return CustomTokenGrantAuthenticationToken.class.isAssignableFrom(authentication);
+    }
+
     @Override
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         long startTime = System.currentTimeMillis();
@@ -88,7 +101,7 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                     "Authentication failed - Account locked: " + username);
                 throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
             }
-            if(!user.getRole().getRoleName().equalsIgnoreCase("OOSMADMIN")) {
+            if (!isPlatformAdmin(user)) {
                 CompanyProfile companyProfile =companyProfileRepository.findById(user.getTenantId()).orElse(null);
                 if ( companyProfile ==null || !companyProfile.isActive() ) {
                     throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
@@ -238,11 +251,6 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                 "Unexpected error during token grant authentication for user: " + username + ", client: " + clientId, e);
             throw e;
         }
-    }
-
-    @Override
-    public boolean supports(Class<?> authentication) {
-        return CustomTokenGrantAuthenticationToken.class.isAssignableFrom(authentication);
     }
 }
 

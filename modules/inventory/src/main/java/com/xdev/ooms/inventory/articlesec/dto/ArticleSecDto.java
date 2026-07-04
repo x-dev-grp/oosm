@@ -19,7 +19,6 @@ public class ArticleSecDto extends BaseDto<ArticleSec> implements Serializable {
   private  LocalDateTime createdDate;
   private  String lastModifiedBy;
   private  LocalDateTime lastModifiedDate;
-  private  UUID externalId;
   private UniteMesure um;
   private  String nom;
   private  CategorieArticle categorie;
@@ -60,10 +59,6 @@ public class ArticleSecDto extends BaseDto<ArticleSec> implements Serializable {
 
     public LocalDateTime getLastModifiedDate() {
         return lastModifiedDate;
-    }
-
-    public UUID getExternalId() {
-        return externalId;
     }
 
     public UniteMesure getUm() {
@@ -136,10 +131,6 @@ public class ArticleSecDto extends BaseDto<ArticleSec> implements Serializable {
 
     public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
     }
 
     public void setUm(UniteMesure um) {

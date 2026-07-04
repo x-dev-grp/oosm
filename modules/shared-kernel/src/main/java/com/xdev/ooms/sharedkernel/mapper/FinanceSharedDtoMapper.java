@@ -20,7 +20,6 @@ public final class FinanceSharedDtoMapper {
             return;
         }
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
         target.setActions(source.getActions());
     }

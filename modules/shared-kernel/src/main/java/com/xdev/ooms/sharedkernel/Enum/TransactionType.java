@@ -43,6 +43,9 @@ public enum TransactionType {
     // ==================== STORAGE TRANSACTIONS ====================
     STORAGE_RENTAL,
 
+    // ==================== EQUIPMENT SERVICE TRANSACTIONS ====================
+    EQUIPMENT_SERVICE,
+
     // ==================== BANKING TRANSACTIONS ====================
     DEPOSIT,
     WITHDRAWAL,

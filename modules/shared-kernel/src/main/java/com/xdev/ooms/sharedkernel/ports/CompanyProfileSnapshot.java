@@ -10,5 +10,7 @@ public record CompanyProfileSnapshot(
         String phone,
         String website,
         String logoBase64,
-        String logoContentType) {
+        String logoContentType,
+        String cnssNumber,
+        String registrationNumber) {
 }

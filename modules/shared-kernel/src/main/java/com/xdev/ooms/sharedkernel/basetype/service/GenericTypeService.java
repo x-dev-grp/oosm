@@ -25,8 +25,8 @@ public class GenericTypeService extends BaseServiceImpl<BaseType, BaseTypeDto, B
         if (dto == null) {
             return null;
         }
-        if (dto.getExternalId() != null) {
-            BaseType existing = repository.findByExternalId(dto.getExternalId()).orElse(null);
+        if (dto.getId() != null) {
+            BaseType existing = repository.findById(dto.getId()).orElse(null);
             if (existing != null) {
                 return existing;
             }

@@ -18,7 +18,6 @@ public class LigneBonCommandeDto extends BaseDto<LigneBonCommande> implements Se
     LocalDateTime createdDate;
     String lastModifiedBy;
     LocalDateTime lastModifiedDate;
-    UUID externalId;
     ArticleSecDto article;
     Integer quantiteCommandee;
     Integer quantiteRecue;
@@ -95,16 +94,6 @@ public class LigneBonCommandeDto extends BaseDto<LigneBonCommande> implements Se
     @Override
     public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
-    }
-
-    @Override
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    @Override
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
     }
 
     public ArticleSecDto getArticle() {

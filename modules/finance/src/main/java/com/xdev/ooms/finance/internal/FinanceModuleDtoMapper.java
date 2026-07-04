@@ -113,7 +113,6 @@ public class FinanceModuleDtoMapper {
         com.xdev.ooms.sharedkernel.communicator.models.shared.ExpenseDto target =
                 new com.xdev.ooms.sharedkernel.communicator.models.shared.ExpenseDto();
         target.setId(entity.getId());
-        target.setExternalId(entity.getExternalId());
         return target;
     }
 
@@ -146,7 +145,6 @@ public class FinanceModuleDtoMapper {
             BaseDto source,
             com.xdev.ooms.sharedkernel.dtos.BaseDto<?> target) {
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
     }
 
@@ -154,7 +152,6 @@ public class FinanceModuleDtoMapper {
             com.xdev.ooms.sharedkernel.dtos.BaseDto<?> source,
             BaseDto target) {
         target.setId(source.getId());
-        target.setExternalId(source.getExternalId());
         target.setDeleted(source.getDeleted());
     }
 }

@@ -4,15 +4,15 @@ import com.xdev.ooms.hr.poste.entity.Poste;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 public class PosteDto extends BaseDto<Poste> {
-    private String name;
+    private String title;
     private String description;
 
-    public String getName() {
-        return name;
+    public String getTitle() {
+        return title;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public String getDescription() {

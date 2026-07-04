@@ -56,12 +56,6 @@ public class BonCommandeService extends BaseServiceImpl<BonCommande, BonCommande
         BonCommandeDto dto = new BonCommandeDto();
         dto.setId(bonCommande.getId());
         dto.setTenantId(bonCommande.getTenantId());
-        dto.setCreatedBy(bonCommande.getCreatedBy());
-        dto.setCreatedDate(bonCommande.getCreatedDate());
-        dto.setLastModifiedBy(bonCommande.getLastModifiedBy());
-        dto.setLastModifiedDate(bonCommande.getLastModifiedDate());
-        dto.setExternalId(bonCommande.getExternalId());
-        dto.setNumeroBC(bonCommande.getNumeroBC());
         dto.setDateValidation(bonCommande.getDateValidation());
         dto.setDateReceptionPrevue(bonCommande.getDateReceptionPrevue());
         dto.setStatus(bonCommande.getStatus());

@@ -18,7 +18,6 @@ public class BonCommandeDto extends BaseDto<BonCommande> implements Serializable
     private LocalDateTime createdDate;
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
-    private UUID externalId;
     private String numeroBC;
     private LocalDateTime dateValidation;
     private LocalDateTime dateReceptionPrevue;
@@ -80,14 +79,6 @@ public class BonCommandeDto extends BaseDto<BonCommande> implements Serializable
 
     public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
-    }
-
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
     }
 
     public String getNumeroBC() {

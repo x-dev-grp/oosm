@@ -1,75 +1,35 @@
 package com.xdev.ooms.hr.pointage.entity;
 
+import com.xdev.ooms.hr.common.enums.AttendanceStatus;
 import com.xdev.ooms.hr.employee.entity.Employee;
-import com.xdev.ooms.sharedkernel.Enum.PointageStatus;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.*;
 
 import java.io.Serializable;
-import java.sql.Time;
-import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
 @Entity
+@Table(name = "hr_pointage")
 public class Pointage extends BaseEntity implements Serializable {
 
-    private LocalDate date;
-    private LocalTime checkIn;
-    private LocalTime checkOut;
-
-    private Time pointageDuree;
-
-    @Enumerated(EnumType.STRING)
-    private PointageStatus status;
-
-    // relation
-    @ManyToOne
-    @JoinColumn(name = "employee_id")
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "employee_id", nullable = false)
     private Employee employee;
 
-    // Getters et Setters
-    public LocalDate getDate() {
-        return date;
-    }
+    @Column(nullable = false)
+    private LocalDate workDate;
 
-    public void setDate(LocalDate date) {
-        this.date = date;
-    }
+    private LocalTime checkIn;
+    private LocalTime checkOut;
+    private Double workedHours;
+    private Integer breakMinutes;
 
-    public LocalTime getCheckIn() {
-        return checkIn;
-    }
+    @Enumerated(EnumType.STRING)
+    private AttendanceStatus status;
 
-    public void setCheckIn(LocalTime checkIn) {
-        this.checkIn = checkIn;
-        updateDuration();
-    }
-
-    public LocalTime getCheckOut() {
-        return checkOut;
-    }
-
-    public void setCheckOut(LocalTime checkOut) {
-        this.checkOut = checkOut;
-        updateDuration();
-    }
-
-    public Time getPointageDuree() {
-        return pointageDuree;
-    }
-
-    private void updateDuration() {
-        if (checkIn != null && checkOut != null) {
-            Duration duration = Duration.between(checkIn, checkOut);
-            // Ensure positive duration (checkOut after checkIn)
-            if (!duration.isNegative()) {
-                this.pointageDuree = new Time(duration.toMillis());
-            } else {
-                this.pointageDuree = null;
-            }
-        }
-    }
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     public Employee getEmployee() {
         return employee;
@@ -79,11 +39,59 @@ public class Pointage extends BaseEntity implements Serializable {
         this.employee = employee;
     }
 
-    public PointageStatus getStatus() {
+    public LocalDate getWorkDate() {
+        return workDate;
+    }
+
+    public void setWorkDate(LocalDate workDate) {
+        this.workDate = workDate;
+    }
+
+    public LocalTime getCheckIn() {
+        return checkIn;
+    }
+
+    public void setCheckIn(LocalTime checkIn) {
+        this.checkIn = checkIn;
+    }
+
+    public LocalTime getCheckOut() {
+        return checkOut;
+    }
+
+    public void setCheckOut(LocalTime checkOut) {
+        this.checkOut = checkOut;
+    }
+
+    public Double getWorkedHours() {
+        return workedHours;
+    }
+
+    public void setWorkedHours(Double workedHours) {
+        this.workedHours = workedHours;
+    }
+
+    public Integer getBreakMinutes() {
+        return breakMinutes;
+    }
+
+    public void setBreakMinutes(Integer breakMinutes) {
+        this.breakMinutes = breakMinutes;
+    }
+
+    public AttendanceStatus getStatus() {
         return status;
     }
 
-    public void setStatus(PointageStatus status) {
+    public void setStatus(AttendanceStatus status) {
         this.status = status;
+    }
+
+    public String getNotes() {
+        return notes;
+    }
+
+    public void setNotes(String notes) {
+        this.notes = notes;
     }
 }

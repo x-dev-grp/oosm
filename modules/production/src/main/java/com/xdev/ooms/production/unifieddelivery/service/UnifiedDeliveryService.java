@@ -59,7 +59,6 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     public static final String ID = "id";
     public static final String SUPPLIER = "supplier";
     public static final String STORAGE_UNIT = "storageUnit";
-    public static final String EXTERNAL_ID = "externalId";
     public static final String PAID = "paid";
     private final DeliveryRepository deliveryRepository;
     private final SupplierRepository supplierRepository;
@@ -171,7 +170,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         UnifiedDelivery existing = deliveryRepository.findByIdAndIsDeletedFalse(dto.getId()).orElseThrow(() -> new RuntimeException("UnifiedDelivery not found with id: " + dto.getId()));
 
         // 2. Copy simple fields (exclude those we manage manually, including status)
-        BeanUtils.copyProperties(dto, existing, "id", "supplier", "storageUnit", "externalId", "paid", "oliveVariety", "parcel", "status");
+        BeanUtils.copyProperties(dto, existing, "id", "supplier", "storageUnit", "paid", "oliveVariety", "parcel", "status");
 
         // 3. Resolve Supplier
         if (dto.getSupplier() != null && dto.getSupplier().getId() != null) {
@@ -1338,7 +1337,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         financialTransactionDto.setApproved(true);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());
         financialTransactionDto.setOperationType(simpleReception);
-        financialTransactionDto.setExternalTransactionId(delivery.getExternalId().toString());
+        financialTransactionDto.setExternalTransactionId(delivery.getId().toString());
         financialTransactionDto.setResourceName(ResourceName.UnifiedDelivery);
 //todo recheck the supplier id saved
         // Send to finance service

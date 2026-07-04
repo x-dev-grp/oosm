@@ -1,23 +1,36 @@
 package com.xdev.ooms.hr.leave.dto;
 
-import com.xdev.ooms.sharedkernel.Enum.LeaveStatus;
-import com.xdev.ooms.sharedkernel.Enum.LeaveType;
+import com.xdev.ooms.hr.common.enums.LeaveStatus;
+import com.xdev.ooms.hr.common.enums.LeaveType;
+import com.xdev.ooms.hr.employee.dto.EmployeeDto;
 import com.xdev.ooms.hr.leave.entity.LeaveRequest;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 
 import java.time.LocalDate;
 
 public class LeaveRequestDto extends BaseDto<LeaveRequest> {
+    private EmployeeDto employee;
+    private LeaveType leaveType;
     private LocalDate startDate;
     private LocalDate endDate;
-    private String reason;
-
-    @Enumerated(EnumType.STRING)
+    private Double durationDays;
     private LeaveStatus status;
-    @Enumerated(EnumType.STRING)
-    private LeaveType leaveType;
+
+    public EmployeeDto getEmployee() {
+        return employee;
+    }
+
+    public void setEmployee(EmployeeDto employee) {
+        this.employee = employee;
+    }
+
+    public LeaveType getLeaveType() {
+        return leaveType;
+    }
+
+    public void setLeaveType(LeaveType leaveType) {
+        this.leaveType = leaveType;
+    }
 
     public LocalDate getStartDate() {
         return startDate;
@@ -35,12 +48,12 @@ public class LeaveRequestDto extends BaseDto<LeaveRequest> {
         this.endDate = endDate;
     }
 
-    public String getReason() {
-        return reason;
+    public Double getDurationDays() {
+        return durationDays;
     }
 
-    public void setReason(String reason) {
-        this.reason = reason;
+    public void setDurationDays(Double durationDays) {
+        this.durationDays = durationDays;
     }
 
     public LeaveStatus getStatus() {
@@ -49,13 +62,5 @@ public class LeaveRequestDto extends BaseDto<LeaveRequest> {
 
     public void setStatus(LeaveStatus status) {
         this.status = status;
-    }
-
-    public LeaveType getLeaveType() {
-        return leaveType;
-    }
-
-    public void setLeaveType(LeaveType leaveType) {
-        this.leaveType = leaveType;
     }
 }

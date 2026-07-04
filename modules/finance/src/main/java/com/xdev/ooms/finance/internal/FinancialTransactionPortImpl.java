@@ -52,24 +52,24 @@ public class FinancialTransactionPortImpl implements FinancialTransactionPort {
     }
 
     private void resolveSupplier(FinancialTransactionDto request) {
-        if (request.getsupplier() == null || request.getsupplier().getExternalId() == null) {
+        if (request.getsupplier() == null || request.getsupplier().getId() == null) {
             return;
         }
         var supplier = supplierRepository
-                .findByExternalIdAndIsDeletedFalse(request.getsupplier().getExternalId())
+                .findByIdAndIsDeletedFalse(request.getsupplier().getId())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Supplier not found: " + request.getsupplier().getExternalId()));
+                        "Supplier not found: " + request.getsupplier().getId()));
         request.setsupplier(modelMapper.map(supplier, SupplierDto.class));
     }
 
     private void resolveBankAccount(FinancialTransactionDto request) {
-        if (request.getBankAccount() == null || request.getBankAccount().getExternalId() == null) {
+        if (request.getBankAccount() == null || request.getBankAccount().getId() == null) {
             return;
         }
         var bankAccount = bankAccountRepository
-                .findByExternalIdAndIsDeletedFalse(request.getBankAccount().getExternalId())
+                .findByIdAndIsDeletedFalse(request.getBankAccount().getId())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Bank account not found: " + request.getBankAccount().getExternalId()));
+                        "Bank account not found: " + request.getBankAccount().getId()));
         request.setBankAccount(moduleDtoMapper.toSharedBankAccount(bankAccount));
     }
 }

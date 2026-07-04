@@ -1,13 +1,14 @@
 package com.xdev.ooms.hr.employee.dto;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.xdev.ooms.hr.contract.dto.ContractDto;
-import com.xdev.ooms.hr.department.dto.DepartmentDto;
-import com.xdev.ooms.hr.payroll.dto.PayRollsDto;
-import com.xdev.ooms.hr.pointage.dto.PointageDto;
-import com.xdev.ooms.sharedkernel.Enum.Gender;
-import com.xdev.ooms.sharedkernel.Enum.MaritalStatus;
+import com.xdev.ooms.hr.common.enums.EmployeeStatus;
+import com.xdev.ooms.hr.common.enums.PaymentMode;
+import com.xdev.ooms.hr.common.enums.SalaryType;
+import com.xdev.ooms.hr.common.enums.WorkRegime;
+import com.xdev.ooms.hr.contract.dto.EmploymentContractDto;
 import com.xdev.ooms.hr.employee.entity.Employee;
+import com.xdev.ooms.hr.leave.dto.LeaveRequestDto;
+import com.xdev.ooms.hr.payslip.dto.PayslipDto;
+import com.xdev.ooms.hr.pointage.dto.PointageDto;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 import java.time.LocalDate;
@@ -16,33 +17,25 @@ import java.util.List;
 public class EmployeeDto extends BaseDto<Employee> {
     private String firstName;
     private String lastName;
-    private Gender gender;
-    private LocalDate birthDate;
     private String cin;
+    private String cnssMatricule;
     private String email;
     private String phone;
     private String address;
-    private String city;
-    private String country;
+    private LocalDate birthDate;
     private LocalDate hireDate;
-    private String postalCode;
-    private boolean active;
-    private MaritalStatus maritalStatus;
-
-    @JsonIgnoreProperties({"employee"})
-    private List<ContractDto> contrats;
-
-    @JsonIgnoreProperties({"employees","manager"})
-    private DepartmentDto department;
-
-    @JsonIgnoreProperties({"employee"})
-    private List<PayRollsDto> payrolls;
-
-
-    @JsonIgnoreProperties({"employee"})
+    private String jobTitle;
+    private String department;
+    private EmployeeStatus status;
+    private SalaryType salaryType;
+    private PaymentMode paymentMode;
+    private String bankAccountRef;
+    private WorkRegime workRegime;
+    private List<EmploymentContractDto> contracts;
+    private EmploymentContractDto activeContract;
     private List<PointageDto> pointages;
-
-    //geter and seter
+    private List<LeaveRequestDto> leaveRequests;
+    private List<PayslipDto> payslips;
 
     public String getFirstName() {
         return firstName;
@@ -60,28 +53,20 @@ public class EmployeeDto extends BaseDto<Employee> {
         this.lastName = lastName;
     }
 
-    public Gender getGender() {
-        return gender;
-    }
-
-    public void setGender(Gender gender) {
-        this.gender = gender;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public void setBirthDate(LocalDate birthDate) {
-        this.birthDate = birthDate;
-    }
-
     public String getCin() {
         return cin;
     }
 
     public void setCin(String cin) {
         this.cin = cin;
+    }
+
+    public String getCnssMatricule() {
+        return cnssMatricule;
+    }
+
+    public void setCnssMatricule(String cnssMatricule) {
+        this.cnssMatricule = cnssMatricule;
     }
 
     public String getEmail() {
@@ -108,22 +93,13 @@ public class EmployeeDto extends BaseDto<Employee> {
         this.address = address;
     }
 
-    public String getCity() {
-        return city;
+    public LocalDate getBirthDate() {
+        return birthDate;
     }
 
-    public void setCity(String city) {
-        this.city = city;
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
     }
-
-    public String getCountry() {
-        return country;
-    }
-
-    public void setCountry(String country) {
-        this.country = country;
-    }
-
 
     public LocalDate getHireDate() {
         return hireDate;
@@ -133,45 +109,76 @@ public class EmployeeDto extends BaseDto<Employee> {
         this.hireDate = hireDate;
     }
 
-    public String getPostalCode() {
-        return postalCode;
+    public String getJobTitle() {
+        return jobTitle;
     }
 
-    public void setPostalCode(String postalCode) {
-        this.postalCode = postalCode;
+    public void setJobTitle(String jobTitle) {
+        this.jobTitle = jobTitle;
     }
 
-
-    public MaritalStatus getMaritalStatus() {
-        return maritalStatus;
-    }
-
-    public void setMaritalStatus(MaritalStatus maritalStatus) {
-        this.maritalStatus = maritalStatus;
-    }
-
-    public List<ContractDto> getContrats() {
-        return contrats;
-    }
-
-    public void setContrats(List<ContractDto> contrats) {
-        this.contrats = contrats;
-    }
-
-    public DepartmentDto getDepartment() {
+    public String getDepartment() {
         return department;
     }
 
-    public void setDepartment(DepartmentDto department) {
+    public void setDepartment(String department) {
         this.department = department;
     }
 
-    public List<PayRollsDto> getPayrolls() {
-        return payrolls;
+    public EmployeeStatus getStatus() {
+        return status;
     }
 
-    public void setPayrolls(List<PayRollsDto> payrolls) {
-        this.payrolls = payrolls;
+    public void setStatus(EmployeeStatus status) {
+        this.status = status;
+    }
+
+    public SalaryType getSalaryType() {
+        return salaryType;
+    }
+
+    public void setSalaryType(SalaryType salaryType) {
+        this.salaryType = salaryType;
+    }
+
+    public PaymentMode getPaymentMode() {
+        return paymentMode;
+    }
+
+    public void setPaymentMode(PaymentMode paymentMode) {
+        this.paymentMode = paymentMode;
+    }
+
+    public String getBankAccountRef() {
+        return bankAccountRef;
+    }
+
+    public void setBankAccountRef(String bankAccountRef) {
+        this.bankAccountRef = bankAccountRef;
+    }
+
+    public WorkRegime getWorkRegime() {
+        return workRegime;
+    }
+
+    public void setWorkRegime(WorkRegime workRegime) {
+        this.workRegime = workRegime;
+    }
+
+    public List<EmploymentContractDto> getContracts() {
+        return contracts;
+    }
+
+    public void setContracts(List<EmploymentContractDto> contracts) {
+        this.contracts = contracts;
+    }
+
+    public EmploymentContractDto getActiveContract() {
+        return activeContract;
+    }
+
+    public void setActiveContract(EmploymentContractDto activeContract) {
+        this.activeContract = activeContract;
     }
 
     public List<PointageDto> getPointages() {
@@ -182,14 +189,19 @@ public class EmployeeDto extends BaseDto<Employee> {
         this.pointages = pointages;
     }
 
-    public boolean isActive() {
-        return active;
+    public List<LeaveRequestDto> getLeaveRequests() {
+        return leaveRequests;
     }
 
-    public void setActive(boolean active) {
-        this.active = active;
+    public void setLeaveRequests(List<LeaveRequestDto> leaveRequests) {
+        this.leaveRequests = leaveRequests;
     }
 
+    public List<PayslipDto> getPayslips() {
+        return payslips;
+    }
+
+    public void setPayslips(List<PayslipDto> payslips) {
+        this.payslips = payslips;
+    }
 }
-
-

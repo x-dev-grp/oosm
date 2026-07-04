@@ -104,7 +104,7 @@ public class OilContainerService extends BaseServiceImpl<OilContainer, OilContai
                 "Achat conteneur d'huile",
                 purchaseLabel,
                 notes,
-                saved.getExternalId() != null ? saved.getExternalId().toString() : saved.getId().toString()));
+                saved.getId().toString()));
 
         OilContainerPurchaseResult result = new OilContainerPurchaseResult();
         result.setContainer(modelMapper.map(saved, OilContainerDTO.class));

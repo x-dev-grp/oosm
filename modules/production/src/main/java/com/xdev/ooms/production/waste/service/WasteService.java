@@ -100,7 +100,8 @@ public class WasteService extends BaseServiceImpl<Waste, WasteDTO, WasteDTO> {
         financialTransactionDto.setApproved(true);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());
         financialTransactionDto.setApprovedBy(null);
-        financialTransactionDto.setExternalTransactionId(delivery.getExternalId().toString());
+        financialTransactionDto.setExternalTransactionId(delivery.getId().toString());
+        financialTransactionDto.setResourceName(ResourceName.Waste);
         financialTransactionDto.setOperationType(wasteSale);
         if (delivery.getInvoiceNumber() != null && !delivery.getInvoiceNumber().isBlank()) {
             financialTransactionDto.setInvoiceReference(delivery.getInvoiceNumber());

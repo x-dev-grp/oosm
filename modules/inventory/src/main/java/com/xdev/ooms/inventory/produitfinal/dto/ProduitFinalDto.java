@@ -23,7 +23,6 @@ public class ProduitFinalDto extends BaseDto<ProduitFinal> implements Serializab
     LocalDateTime createdDate;
     String lastModifiedBy;
     LocalDateTime lastModifiedDate;
-    UUID externalId;
     String name;
     @JsonAlias("skuCode")
     String code;
@@ -152,16 +151,6 @@ public class ProduitFinalDto extends BaseDto<ProduitFinal> implements Serializab
     @Override
     public void setLastModifiedDate(LocalDateTime lastModifiedDate) {
         this.lastModifiedDate = lastModifiedDate;
-    }
-
-    @Override
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    @Override
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
     }
 
     public String getName() {

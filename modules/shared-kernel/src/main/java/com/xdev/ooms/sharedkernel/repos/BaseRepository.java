@@ -15,8 +15,6 @@ import java.util.UUID;
 public interface BaseRepository<E extends BaseEntity> extends JpaRepository<E, UUID>, JpaSpecificationExecutor<E> {
     List<E> findByTenantId(UUID tenantId);
 
-    Optional<E> findByExternalIdAndIsDeletedFalse(UUID externalId);
-
     Optional<E> findByIdAndTenantIdAndIsDeletedFalse(UUID id, UUID tenantId);
 
     List<E> findAllByTenantIdAndIsDeletedFalse(UUID tenantId);

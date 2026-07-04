@@ -14,7 +14,6 @@ public class BaseDto<E extends BaseEntity> implements Serializable {
     private UUID tenantId;
     private Set<Action> actions = Collections.emptySet();
     private Boolean isDeleted = false;
-    private UUID externalId;
     private LocalDateTime createdDate;
     private String createdBy;
     private String lastModifiedBy;
@@ -83,14 +82,6 @@ public class BaseDto<E extends BaseEntity> implements Serializable {
 
     public void setId(UUID id) {
         this.id = id;
-    }
-
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
     }
 
     public String getQrHex() {

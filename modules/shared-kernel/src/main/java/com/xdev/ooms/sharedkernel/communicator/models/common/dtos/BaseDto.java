@@ -9,15 +9,6 @@ public class BaseDto implements Serializable {
    private UUID id ;
    private Set<String> actions= Collections.emptySet();
    private Boolean isDeleted = false;
-    private UUID externalId ;
-
-    public UUID getExternalId() {
-        return externalId;
-    }
-
-    public void setExternalId(UUID externalId) {
-        this.externalId = externalId;
-    }
 
     public Boolean getDeleted() {
         return isDeleted;

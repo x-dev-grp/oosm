@@ -15,6 +15,7 @@ import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
+import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.access.AccessDeniedException;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -219,16 +221,64 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
 
     */
     @Override
+    @Transactional
     public CompanyProfileDTO update(CompanyProfileDTO dto) {
-        Optional<CompanyProfile> existingOpt = repository.findById(dto.getId());
-        if (existingOpt.isEmpty()) {
-            throw new IllegalArgumentException("Company profile not found for tenantId: " + dto.getId());
+        if (dto == null || dto.getId() == null) {
+            throw new IllegalArgumentException("Company profile id is required");
         }
-        CompanyProfile company = existingOpt.get();
-        UUID originalId = company.getExternalId();
-        modelMapper.map(dto, company);
-        company.setExternalId(originalId); // Restore the correct ID after mapping
+
+        CompanyProfile company = repository.findById(dto.getId())
+                .orElseThrow(() -> new IllegalArgumentException("Company profile not found for tenantId: " + dto.getId()));
+
+        LocalDateTime preservedCreatedDate = company.getCreatedDate();
+        String preservedCreatedBy = company.getCreatedBy();
+        UUID preservedTenantId = company.getTenantId();
+        Boolean preservedDeleted = company.getDeleted();
+
+        applyDtoToEntity(dto, company);
+
+        company.setCreatedDate(preservedCreatedDate);
+        company.setCreatedBy(preservedCreatedBy);
+        company.setTenantId(preservedTenantId != null ? preservedTenantId : dto.getId());
+        company.setDeleted(preservedDeleted != null ? preservedDeleted : Boolean.FALSE);
+
+        AuditHelper.applyAuditOnUpdate(company);
+
         CompanyProfile updated = repository.save(company);
         return modelMapper.map(updated, CompanyProfileDTO.class);
+    }
+
+    private void applyDtoToEntity(CompanyProfileDTO dto, CompanyProfile company) {
+        company.setLegalName(dto.getLegalName());
+        company.setRegistrationNumber(dto.getRegistrationNumber());
+        company.setTaxId(dto.getTaxId());
+        company.setCnssNumber(dto.getCnssNumber());
+        company.setLegalForm(dto.getLegalForm());
+        company.setCapital(dto.getCapital());
+        company.setEmail(dto.getEmail());
+        company.setPhone(dto.getPhone());
+        company.setWebsite(dto.getWebsite());
+        company.setAddressLine1(dto.getAddressLine1());
+        company.setCity(dto.getCity());
+        company.setPostalCode(dto.getPostalCode());
+        company.setGovernorate(dto.getGovernorate());
+        company.setCampaignStartAt(dto.getCampaignStartAt());
+        company.setCampaignEndAt(dto.getCampaignEndAt());
+        company.setCampaignStartMonth(dto.getCampaignStartMonth());
+        company.setCampaignStartDay(dto.getCampaignStartDay());
+        company.setCampaignEndMonth(dto.getCampaignEndMonth());
+        company.setCampaignEndDay(dto.getCampaignEndDay());
+
+        if (dto.getLogoData() != null) {
+            String logoData = dto.getLogoData().trim();
+            if (logoData.contains(",")) {
+                logoData = logoData.substring(logoData.indexOf(',') + 1);
+            }
+            if (logoData.length() > 280_000) {
+                throw new IllegalArgumentException("Logo exceeds maximum allowed size (200KB)");
+            }
+            company.setLogoData(logoData);
+            company.setLogoContentType(dto.getLogoContentType());
+        }
     }
 }

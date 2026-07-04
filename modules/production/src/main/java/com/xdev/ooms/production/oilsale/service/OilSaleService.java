@@ -152,9 +152,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         financialTransactionDto.setsupplier(paymentDTO.getSupplier() != null ? modelMapper.map(paymentDTO.getSupplier(), com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class) : null);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());
         financialTransactionDto.setOperationType(OIL_SALE);
-        financialTransactionDto.setExternalTransactionId(oilSale.getExternalId() != null
-                ? oilSale.getExternalId().toString()
-                : oilSale.getId().toString());
+        financialTransactionDto.setExternalTransactionId(oilSale.getId().toString());
         financialTransactionDto.setResourceName(ResourceName.OILSALE);
         financialTransactionDto.setInvoiceReference(oilSale.getInvoiceNumber());
         financialTransactionDto.setDescription(buildPaymentDescription(oilSale));
@@ -367,7 +365,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     }
 
     private String saleExternalReference(OilSale sale) {
-        return sale.getExternalId() != null ? sale.getExternalId().toString() : sale.getId().toString();
+        return sale.getId().toString();
     }
 
     private BigDecimal oilLineTotal(OilSale sale) {

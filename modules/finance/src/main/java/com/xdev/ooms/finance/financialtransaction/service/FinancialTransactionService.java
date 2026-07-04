@@ -122,9 +122,7 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         if (existed == null) {
             return null;
         }
-        UUID externalId = existed.getExternalId();
         modelMapper.map(request, existed);
-        existed.setExternalId(externalId);
         attachRelations(existed, request);
         return modelMapper.map(financialTransactionRepository.save(existed), FinancialTransactionDto.class);
     }
@@ -168,9 +166,6 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         if (supplierDto == null) {
             return null;
         }
-        if (supplierDto.getExternalId() != null) {
-            return supplierRepository.findByExternalIdAndIsDeletedFalse(supplierDto.getExternalId()).orElse(null);
-        }
         if (supplierDto.getId() != null) {
             return supplierRepository.findByIdAndIsDeletedFalse(supplierDto.getId()).orElse(null);
         }
@@ -181,9 +176,6 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         if (bankAccountDto == null) {
             return null;
         }
-        if (bankAccountDto.getExternalId() != null) {
-            return bankAccountRepository.findByExternalIdAndIsDeletedFalse(bankAccountDto.getExternalId()).orElse(null);
-        }
         if (bankAccountDto.getId() != null) {
             return bankAccountRepository.findByIdAndIsDeletedFalse(bankAccountDto.getId()).orElse(null);
         }
@@ -193,9 +185,6 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
     private Expense resolveExpense(ExpenseDto expenseDto) {
         if (expenseDto == null) {
             return null;
-        }
-        if (expenseDto.getExternalId() != null) {
-            return expensesRepository.findByExternalIdAndIsDeletedFalse(expenseDto.getExternalId()).orElse(null);
         }
         if (expenseDto.getId() != null) {
             return expensesRepository.findByIdAndIsDeletedFalse(expenseDto.getId()).orElse(null);

@@ -21,7 +21,6 @@ public class FiltrationOperationDto implements Serializable {
     LocalDateTime createdDate;
     String lastModifiedBy;
     LocalDateTime lastModifiedDate;
-    UUID externalId;
     String qrHex;
     String qrImageBase64;
     StorageUnitDto sourceStorageUnit;

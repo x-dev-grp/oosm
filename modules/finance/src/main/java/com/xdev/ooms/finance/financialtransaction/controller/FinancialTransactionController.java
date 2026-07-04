@@ -174,10 +174,10 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
             return;
         }
         SupplierDto supplierDto = dto.getSupplier();
-        if (supplierDto.getExternalId() == null) {
+        if (supplierDto.getId() == null) {
             return;
         }
-        supplierRepository.findByExternalIdAndIsDeletedFalse(supplierDto.getExternalId())
+        supplierRepository.findByIdAndIsDeletedFalse(supplierDto.getId())
                 .map(supplier -> modelMapper.map(supplier, SupplierDto.class))
                 .ifPresent(dto::setSupplier);
     }
