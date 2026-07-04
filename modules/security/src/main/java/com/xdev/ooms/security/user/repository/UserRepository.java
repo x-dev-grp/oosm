@@ -43,6 +43,8 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
 
     List<OOSMUser> findByRoleRoleNameAndTenantId(String roleName, UUID tenantId);
 
+    List<OOSMUser> findByRole_Id(UUID roleId);
+
     @Query("SELECT u FROM OOSMUser u JOIN u.role r WHERE r.roleName = :roleName " +
             "AND (u.tenantId = :tenantId OR u.tenantId IS NULL) AND COALESCE(u.isDeleted, FALSE) = FALSE")
     List<OOSMUser> findByRoleNameAndTenant(@Param("roleName") String roleName,

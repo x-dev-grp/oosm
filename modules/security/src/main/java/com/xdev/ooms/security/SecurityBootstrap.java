@@ -26,6 +26,7 @@ public class SecurityBootstrap {
 
     private static final Logger log = LoggerFactory.getLogger(SecurityBootstrap.class);
     public static final String OOSMADMIN = "OOSMADMIN";
+    private static final String LEGACY_OSMADMIN = "OSMADMIN";
 
     private final UserService userService;
     private final RoleService roleService;
@@ -71,11 +72,7 @@ public class SecurityBootstrap {
     }
 
     private RoleDTO ensureRole() {
-        roleRepository.findByRoleName("OSMADMIN").ifPresent(legacy -> {
-            legacy.setRoleName(OOSMADMIN);
-            roleRepository.save(legacy);
-            log.info("Migrated legacy role OSMADMIN to {}", OOSMADMIN);
-        });
+        migrateLegacyOsmAdminRole();
 
         Optional<Role> existing = roleRepository.findByRoleName(OOSMADMIN);
         if (existing.isPresent()) {
@@ -91,6 +88,41 @@ public class SecurityBootstrap {
         RoleDTO dto = new RoleDTO();
         dto.setRoleName(OOSMADMIN);
         return roleService.save(dto);
+    }
+
+    /**
+     * Renames legacy OSMADMIN to OOSMADMIN when safe; otherwise reassigns users and retires the legacy row.
+     */
+    private void migrateLegacyOsmAdminRole() {
+        Optional<Role> legacyOpt = roleRepository.findByRoleName(LEGACY_OSMADMIN);
+        if (legacyOpt.isEmpty()) {
+            return;
+        }
+
+        Role legacy = legacyOpt.get();
+        Optional<Role> targetOpt = roleRepository.findByRoleName(OOSMADMIN);
+
+        if (targetOpt.isPresent()) {
+            Role target = targetOpt.get();
+            reassignUsersToRole(legacy, target);
+            legacy.setRoleName(LEGACY_OSMADMIN + "_DEPRECATED_" + legacy.getId().toString().replace("-", ""));
+            roleRepository.save(legacy);
+            log.info("Merged legacy role {} into existing {} (retired legacy id={})",
+                    LEGACY_OSMADMIN, OOSMADMIN, legacy.getId());
+            return;
+        }
+
+        legacy.setRoleName(OOSMADMIN);
+        roleRepository.save(legacy);
+        log.info("Migrated legacy role {} to {}", LEGACY_OSMADMIN, OOSMADMIN);
+    }
+
+    private void reassignUsersToRole(Role from, Role to) {
+        for (OOSMUser user : userRepository.findByRole_Id(from.getId())) {
+            user.setRole(to);
+            userRepository.save(user);
+            log.info("Reassigned user '{}' from role {} to {}", user.getUsername(), from.getRoleName(), to.getRoleName());
+        }
     }
 
     private void ensureUser(RoleDTO role) {
