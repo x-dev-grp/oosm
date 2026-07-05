@@ -3,7 +3,7 @@ services:
     name: oosm-api
     runtime: docker
     repo: https://github.com/x-dev-grp/oosm
-    branch: main
+    branch: pfe-v2-final
     dockerfilePath: ./Dockerfile
     dockerContext: .
     region: frankfurt

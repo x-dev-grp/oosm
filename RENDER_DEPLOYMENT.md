@@ -6,7 +6,7 @@ The Blueprint deploys only the `oosm-api` Spring Boot service.
 
 ```text
 Repository: https://github.com/x-dev-grp/oosm
-Branch: main
+Branch: pfe-v2-final
 Blueprint: render.yaml
 Runtime: Docker
 Region: Frankfurt
