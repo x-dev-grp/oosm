@@ -57,6 +57,7 @@ public class AdminUserService {
         }
 
         String rawPassword = userService.generateSecureCode(8);
+        OOSMLogger.logMethodEntry(this.getClass(), "TemporaryPassword=", rawPassword);
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setNewUser(true);
 
