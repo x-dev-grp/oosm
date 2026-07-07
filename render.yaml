@@ -22,7 +22,7 @@ services:
       - key: SPRING_APP_NAME
         sync: false
       - key: HIBERNATE_DDL_AUTO
-        value: none
+        value: update
       - key: HIBERNATE_ALLOW_JDBC_METADATA_ACCESS
         value: "false"
       - key: JPA_REPOSITORY_BOOTSTRAP_MODE
@@ -83,22 +83,16 @@ services:
         sync: false
       - key: SECURITY_BOOTSTRAP_PHONE
         sync: false
-      - key: MAIL_HOST
-        value: smtp.gmail.com
-      - key: MAIL_PORT
-        value: "587"
-      - key: MAIL_USER
+      - key: RESEND_API_KEY
         sync: false
-      - key: MAIL_PASS
+      - key: MAIL_FROM_ADDRESS
         sync: false
-      - key: MAIL_SMTP_AUTH
+      - key: MAIL_FROM_NAME
+        value: OOSM
+      - key: MAIL_SUPPORT_EMAIL
+        sync: false
+      - key: MAIL_ENABLED
         value: "true"
-      - key: MAIL_STARTTLS
-        value: "true"
-      - key: MAIL_TIMEOUT
-        value: "5000"
-      - key: MAIL_CONN_TIMEOUT
-        value: "5000"
       - key: ONESIGNAL_APP_ID
         sync: false
       - key: ONESIGNAL_API_KEY

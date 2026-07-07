@@ -47,8 +47,8 @@ APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://<frontend-domain>,https://*.up.railway.
 JWT_ISSUER_URI=https://<backend-domain>
 JWK_SET_URI=https://<backend-domain>/oauth2/jwks
 OAUTH2_CLIENT_SECRET=<oauth2-client-secret>
-MAIL_USER=<smtp-user>
-MAIL_PASS=<smtp-password>
+RESEND_API_KEY=<resend-api-key>
+MAIL_FROM_ADDRESS=<verified-sender@your-domain.com>
 ONESIGNAL_APP_ID=<onesignal-app-id>
 ONESIGNAL_API_KEY=<onesignal-api-key>
 ```

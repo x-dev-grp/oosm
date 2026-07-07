@@ -35,8 +35,8 @@ DB_PASS=<render-database-password>
 For the current database, the non-secret values are:
 
 ```text
-DB_URL=jdbc:postgresql://dpg-d8mm0t3tqb8s73c8v73g-a:5432/oosm?sslmode=require
-DB_USER=oosm_user
+DB_URL=jdbc:postgresql://dpg-d9576om7r5hc73e40l7g-a:5432/oosm_fawv
+DB_USER=oosm_fawv_user
 ```
 
 Use the database's current password from Render as `DB_PASS`. Do not use the
@@ -63,18 +63,17 @@ use `http://localhost:4200` while no deployed frontend exists.
 
 ## Optional Placeholders
 
-Mail:
+Resend (transactional email):
 
 ```text
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USER=CHANGE_ME_SMTP_USER
-MAIL_PASS=CHANGE_ME_SMTP_PASSWORD
-MAIL_SMTP_AUTH=true
-MAIL_STARTTLS=true
+RESEND_API_KEY=re_xxxxxxxx
+MAIL_FROM_ADDRESS=noreply@your-verified-domain.com
+MAIL_FROM_NAME=OOSM
+MAIL_SUPPORT_EMAIL=support@your-verified-domain.com
+MAIL_ENABLED=true
 ```
 
-OneSignal:
+`MAIL_FROM_ADDRESS` must use a domain verified in Resend.
 
 ```text
 ONESIGNAL_APP_ID=CHANGE_ME_ONESIGNAL_APP_ID

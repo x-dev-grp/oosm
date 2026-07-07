@@ -83,23 +83,6 @@ spring:
         jwt:
           jwk-set-uri: ${JWK_SET_URI:${RENDER_EXTERNAL_URL:http://localhost:8084}/oauth2/jwks}
 
-  mail:
-    host: ${MAIL_HOST:smtp.gmail.com}
-    port: ${MAIL_PORT:587}
-    username: ${MAIL_USER:xdevgroupe@gmail.com}
-    password: ${MAIL_PASS:jzea krmd ubpo nlos}
-    protocol: smtp
-    default-encoding: UTF-8
-    properties:
-      mail:
-        smtp:
-          auth: ${MAIL_SMTP_AUTH:true}
-          starttls:
-            enable: ${MAIL_STARTTLS:true}
-          timeout: ${MAIL_TIMEOUT:5000}
-          connectiontimeout: ${MAIL_CONN_TIMEOUT:5000}
-          writetimeout: ${MAIL_WRITE_TIMEOUT:5000}
-
 oauth2:
   client:
     id: ${OAUTH2_CLIENT_ID:oosm-client}
@@ -122,10 +105,13 @@ app:
   frontend:
     base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
   mail:
-    from-name: ${MAIL_FROM_NAME:OOSM}
-    support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_USER:}}
-    debug: ${MAIL_DEBUG:false}
     enabled: ${MAIL_ENABLED:true}
+    from-name: ${MAIL_FROM_NAME:OOSM}
+    from-address: ${MAIL_FROM_ADDRESS:}
+    support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_FROM_ADDRESS:}}
+    debug: ${MAIL_DEBUG:false}
+    resend:
+      api-key: ${RESEND_API_KEY:}
   cors:
     allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}

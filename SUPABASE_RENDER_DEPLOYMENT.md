@@ -25,8 +25,8 @@ HIBERNATE_DDL_AUTO=update
 SHOW_SQL=false
 APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://*.onrender.com
 OAUTH2_CLIENT_SECRET=<oauth2-client-secret>
-MAIL_USER=<smtp-user>
-MAIL_PASS=<smtp-password>
+RESEND_API_KEY=<resend-api-key>
+MAIL_FROM_ADDRESS=<verified-sender@your-domain.com>
 ONESIGNAL_APP_ID=<onesignal-app-id>
 ONESIGNAL_API_KEY=<onesignal-api-key>
 ```

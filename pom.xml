@@ -29,6 +29,7 @@
         <poi.version>5.2.3</poi.version>
         <zxing.version>3.5.3</zxing.version>
         <logstash-logback.version>7.4</logstash-logback.version>
+        <resend-java.version>4.4.0</resend-java.version>
     </properties>
 
     <modules>
@@ -153,6 +154,11 @@
                 <groupId>net.logstash.logback</groupId>
                 <artifactId>logstash-logback-encoder</artifactId>
                 <version>${logstash-logback.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.resend</groupId>
+                <artifactId>resend-java</artifactId>
+                <version>${resend-java.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
