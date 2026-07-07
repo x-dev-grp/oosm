@@ -131,15 +131,15 @@ app:
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
   security:
     jwt:
-      secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
+      secret: ${JWT_SECRET}
     legacy-user-migration:
       enabled: ${SECURITY_LEGACY_USER_MIGRATION_ENABLED:true}
     bootstrap:
       enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
-      username: ${SECURITY_BOOTSTRAP_USERNAME:oosmAdmin}
-      password: ${SECURITY_BOOTSTRAP_PASSWORD:}
-      email: ${SECURITY_BOOTSTRAP_EMAIL:oosmAdmin@example.com}
-      phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
+      username: ${SECURITY_BOOTSTRAP_USERNAME}
+      password: ${SECURITY_BOOTSTRAP_PASSWORD}
+      email: ${SECURITY_BOOTSTRAP_EMAIL}
+      phone: ${SECURITY_BOOTSTRAP_PHONE}
       reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:true}
     permissions:
       # Always seeds when the permission table is empty. Set true to re-sync on every startup.
