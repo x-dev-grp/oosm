@@ -152,6 +152,21 @@ bootstrap_new_relic_from_db
 
 export NEW_RELIC_REGION="${NEW_RELIC_REGION:-EU}"
 
+# Render free/starter web instances have a 512MiB cgroup limit. The New Relic Java agent
+# adds native overhead; override generous Render defaults when APM is enabled.
+configure_jvm_for_observability() {
+  if [ "${NEW_RELIC_APM_ENABLED:-false}" != "true" ]; then
+    return 0
+  fi
+  export JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms48m -Xmx160m -Xss384k -XX:MaxMetaspaceSize=80m -XX:ReservedCodeCacheSize=24m -XX:MaxDirectMemorySize=16m -XX:+ExitOnOutOfMemoryError"
+  if [ "${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED:-}" != "true" ]; then
+    export NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false
+  fi
+  echo "New Relic: compact JVM profile applied for 512MiB containers (heap 160m, log forwarding=${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED})"
+}
+
+configure_jvm_for_observability
+
 # New Relic Java agent (APM + Logback log forwarding).
 # NEW_RELIC_LICENSE_KEY must be set on the host (Render env). Other flags may come from app_setting above.
 if [ "${NEW_RELIC_APM_ENABLED:-false}" = "true" ] && [ -f /app/newrelic/newrelic.jar ]; then

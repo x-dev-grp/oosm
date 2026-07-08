@@ -112,9 +112,9 @@ services:
         value: INFO
       - key: LOG_LEVEL_REST
         value: WARN
-      # New Relic APM — set NEW_RELIC_LICENSE_KEY in Render dashboard; toggle/name also in Admin → Integrations
+      # New Relic APM — off by default on 512MiB free tier; enable in dashboard after reading RENDER_DEPLOYMENT.md
       - key: NEW_RELIC_APM_ENABLED
-        sync: false
+        value: "false"
       - key: NEW_RELIC_LICENSE_KEY
         sync: false
       - key: NEW_RELIC_APP_NAME
@@ -122,4 +122,4 @@ services:
       - key: NEW_RELIC_REGION
         value: EU
       - key: NEW_RELIC_LOG_FORWARDING_ENABLED
-        value: "true"
+        value: "false"

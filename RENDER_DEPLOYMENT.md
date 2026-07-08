@@ -99,15 +99,23 @@ This creates the browser SPA app, an ingest license key, writes `newrelic-oosm-c
 
 ### 2. Render backend env (`oosm-api`)
 
+**Memory (512 MiB free/starter):** The New Relic Java agent adds ~80–120 MiB native overhead. With `NEW_RELIC_APM_ENABLED=true`, Render killed the container (`Out of memory (used over 512Mi)`). Options:
+
+1. **Free tier (recommended):** Keep `NEW_RELIC_APM_ENABLED=false` and use **browser monitoring only** (section 3).
+2. **APM on 512 MiB:** Set `NEW_RELIC_APM_ENABLED=true` — the Docker entrypoint applies a compact JVM profile (160m heap). Disable log forwarding unless needed: `NEW_RELIC_LOG_FORWARDING_ENABLED=false`.
+3. **APM + log forwarding:** Upgrade Render to a plan with **≥1 GiB RAM**.
+
 Set these in Render (or `.env.render`):
 
 ```text
-NEW_RELIC_APM_ENABLED=true
+NEW_RELIC_APM_ENABLED=false
 NEW_RELIC_LICENSE_KEY=<ingest-license-key>
 NEW_RELIC_APP_NAME=oosm-monolith
 NEW_RELIC_REGION=EU
-NEW_RELIC_LOG_FORWARDING_ENABLED=true
+NEW_RELIC_LOG_FORWARDING_ENABLED=false
 ```
+
+When enabling APM, set `NEW_RELIC_APM_ENABLED=true` and keep log forwarding off on 512 MiB.
 
 `NEW_RELIC_LICENSE_KEY` is required on the host — the JVM agent starts before Spring and cannot read encrypted DB secrets.
 
