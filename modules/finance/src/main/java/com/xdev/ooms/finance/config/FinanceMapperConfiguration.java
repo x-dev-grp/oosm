@@ -17,7 +17,8 @@ public class FinanceMapperConfiguration {
                 })
                 .implicitMappings();
 
-        modelMapper.typeMap(FinancialTransaction.class, FinancialTransactionDto.class)
-                .addMappings(mapper -> mapper.skip(FinancialTransactionDto::setSyncProductionState));
+        modelMapper.emptyTypeMap(FinancialTransaction.class, FinancialTransactionDto.class)
+                .addMappings(mapper -> mapper.skip(FinancialTransactionDto::setSyncProductionState))
+                .implicitMappings();
     }
 }

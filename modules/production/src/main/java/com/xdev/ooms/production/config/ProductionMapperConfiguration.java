@@ -16,48 +16,54 @@ public class ProductionMapperConfiguration {
     public ProductionMapperConfiguration(ModelMapper modelMapper, StorageUnitRepo storageUnitRepo) {
         modelMapper.getConfiguration().setAmbiguityIgnored(true);
 
-        modelMapper.typeMap(StorageUnit.class, StorageUnitDto.class)
+        modelMapper.emptyTypeMap(StorageUnit.class, StorageUnitDto.class)
                 .addMappings(mapper -> {
                     mapper.skip(StorageUnitDto::setSupplier);
                     mapper.skip(StorageUnitDto::setPublicCode);
                     mapper.skip(StorageUnitDto::setQrUrl);
                     mapper.skip(StorageUnitDto::setQrImageBase64);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(StorageUnitDto.class, StorageUnit.class)
-                .addMappings(mapper -> mapper.skip(StorageUnit::setSupplier));
+        modelMapper.emptyTypeMap(StorageUnitDto.class, StorageUnit.class)
+                .addMappings(mapper -> mapper.skip(StorageUnit::setSupplier))
+                .implicitMappings();
 
-        modelMapper.typeMap(Supplier.class, SupplierDto.class)
+        modelMapper.emptyTypeMap(Supplier.class, SupplierDto.class)
                 .addMappings(mapper -> {
                     mapper.map(Supplier::getName, SupplierDto::setName);
                     mapper.map(Supplier::getLastname, SupplierDto::setLastname);
                     mapper.map(Supplier::getFullName, SupplierDto::setFullName);
                     mapper.skip(SupplierDto::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(SupplierDto.class, Supplier.class)
+        modelMapper.emptyTypeMap(SupplierDto.class, Supplier.class)
                 .addMappings(mapper -> {
                     mapper.map(SupplierDto::getName, Supplier::setName);
                     mapper.map(SupplierDto::getLastname, Supplier::setLastname);
                     mapper.skip(Supplier::setFullName);
                     mapper.skip(Supplier::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(Supplier.class, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class)
+        modelMapper.emptyTypeMap(Supplier.class, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class)
                 .addMappings(mapper -> {
                     mapper.map(Supplier::getName, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setName);
                     mapper.map(Supplier::getLastname, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setLastname);
                     mapper.skip(com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(SupplierDto.class, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class)
+        modelMapper.emptyTypeMap(SupplierDto.class, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class)
                 .addMappings(mapper -> {
                     mapper.map(SupplierDto::getName, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setName);
                     mapper.map(SupplierDto::getLastname, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setLastname);
                     mapper.skip(com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class, Supplier.class)
+        modelMapper.emptyTypeMap(com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class, Supplier.class)
                 .addMappings(mapper -> {
                     mapper.map(
                             com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto::getName,
@@ -67,16 +73,19 @@ public class ProductionMapperConfiguration {
                             Supplier::setLastname);
                     mapper.skip(Supplier::setFullName);
                     mapper.skip(Supplier::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(OilSaleDTO.class, OilSale.class)
+        modelMapper.emptyTypeMap(OilSaleDTO.class, OilSale.class)
                 .addMappings(mapper -> {
                     mapper.skip(OilSale::setSupplier);
                     mapper.skip(OilSale::setStorageUnit);
-                });
+                })
+                .implicitMappings();
 
-        modelMapper.typeMap(OilSale.class, OilSaleDTO.class)
+        modelMapper.emptyTypeMap(OilSale.class, OilSaleDTO.class)
                 .addMappings(mapper -> mapper.skip(OilSaleDTO::setStorageUnit))
+                .implicitMappings()
                 .setPostConverter(context -> {
                     OilSale sale = context.getSource();
                     OilSaleDTO dto = context.getDestination();
