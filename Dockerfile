@@ -34,15 +34,13 @@ COPY --from=build --chown=oosm:oosm /workspace/app/src/main/resources/newrelic.y
 COPY --chown=oosm:oosm docker/entrypoint.sh /app/entrypoint.sh
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 
-ENV SERVER_PORT=8084 \
-    JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError" \
-    JAVA_OPTS=""
+ENV JAVA_OPTS=""
 
 USER oosm
 
 EXPOSE 8084
 
-HEALTHCHECK --interval=15s --timeout=5s --start-period=120s --retries=8 \
+HEALTHCHECK --interval=15s --timeout=5s --start-period=300s --retries=10 \
     CMD sh -c 'curl --fail --silent "http://127.0.0.1:${PORT:-8084}/actuator/health/liveness" > /dev/null || exit 1'
 
 ENTRYPOINT ["/app/entrypoint.sh"]

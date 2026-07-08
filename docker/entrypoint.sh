@@ -152,20 +152,27 @@ bootstrap_new_relic_from_db
 
 export NEW_RELIC_REGION="${NEW_RELIC_REGION:-EU}"
 
-# Render free/starter web instances have a 512MiB cgroup limit. The New Relic Java agent
-# adds native overhead; override generous Render defaults when APM is enabled.
-configure_jvm_for_observability() {
-  if [ "${NEW_RELIC_APM_ENABLED:-false}" != "true" ]; then
+# Render free/starter instances are capped at 512MiB. Keep JVM + native overhead under that limit.
+apply_compact_jvm() {
+  if [ "${OOSM_SKIP_JVM_TUNING:-false}" = "true" ]; then
     return 0
   fi
-  export JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms48m -Xmx160m -Xss384k -XX:MaxMetaspaceSize=80m -XX:ReservedCodeCacheSize=24m -XX:MaxDirectMemorySize=16m -XX:+ExitOnOutOfMemoryError"
-  if [ "${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED:-}" != "true" ]; then
-    export NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false
+  local heap="192m"
+  local metaspace="96m"
+  if [ "${NEW_RELIC_APM_ENABLED:-false}" = "true" ]; then
+    heap="160m"
+    metaspace="80m"
   fi
-  echo "New Relic: compact JVM profile applied for 512MiB containers (heap 160m, log forwarding=${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED})"
+  export JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms48m -Xmx${heap} -Xss384k -XX:MaxMetaspaceSize=${metaspace} -XX:ReservedCodeCacheSize=32m -XX:MaxDirectMemorySize=16m -XX:+ExitOnOutOfMemoryError"
+  echo "JVM: compact profile for 512MiB containers (heap=${heap}, metaspace=${metaspace}, nr=${NEW_RELIC_APM_ENABLED:-false})"
 }
 
-configure_jvm_for_observability
+apply_compact_jvm
+
+if [ "${NEW_RELIC_APM_ENABLED:-false}" = "true" ] && [ "${NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED:-true}" != "false" ]; then
+  export NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=false
+  echo "New Relic: log forwarding disabled on 512MiB containers (set NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED=true on 1GiB+ plans)"
+fi
 
 # New Relic Java agent (APM + Logback log forwarding).
 # NEW_RELIC_LICENSE_KEY must be set on the host (Render env). Other flags may come from app_setting above.
@@ -183,5 +190,8 @@ if [ "${NEW_RELIC_APM_ENABLED:-false}" = "true" ] && [ -f /app/newrelic/newrelic
     echo "New Relic Java agent enabled (app=${NEW_RELIC_APP_NAME}, region=${NEW_RELIC_REGION})"
   fi
 fi
+
+listen_port="${PORT:-${SERVER_PORT:-8084}}"
+echo "Starting oosm-monolith on 0.0.0.0:${listen_port} (PORT=${PORT:-unset}, SERVER_PORT=${SERVER_PORT:-unset})"
 
 exec java ${JAVA_OPTS:-} -jar /app/oosm-monolith.jar

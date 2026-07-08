@@ -99,11 +99,15 @@ This creates the browser SPA app, an ingest license key, writes `newrelic-oosm-c
 
 ### 2. Render backend env (`oosm-api`)
 
-**Memory (512 MiB free/starter):** The New Relic Java agent adds ~80–120 MiB native overhead. With `NEW_RELIC_APM_ENABLED=true`, Render killed the container (`Out of memory (used over 512Mi)`). Options:
+**Memory (512 MiB free/starter):** The New Relic Java agent adds ~80–120 MiB native overhead. With `NEW_RELIC_APM_ENABLED=true`, Render killed the container (`Out of memory (used over 512Mi)`). A later deploy also **timed out** because startup took ~4 minutes and lazy-init health checks raced during bean creation.
+
+Options:
 
 1. **Free tier (recommended):** Keep `NEW_RELIC_APM_ENABLED=false` and use **browser monitoring only** (section 3).
-2. **APM on 512 MiB:** Set `NEW_RELIC_APM_ENABLED=true` — the Docker entrypoint applies a compact JVM profile (160m heap). Disable log forwarding unless needed: `NEW_RELIC_LOG_FORWARDING_ENABLED=false`.
+2. **APM on 512 MiB:** Set `NEW_RELIC_APM_ENABLED=true` — the Docker entrypoint applies a compact JVM profile (160m heap). Log forwarding stays off unless you run 1GiB+ RAM.
 3. **APM + log forwarding:** Upgrade Render to a plan with **≥1 GiB RAM**.
+
+The Docker entrypoint always applies compact JVM tuning on Render unless `OOSM_SKIP_JVM_TUNING=true`. Keep `SPRING_MAIN_LAZY_INITIALIZATION=false` on Render so health checks run after the context is fully ready.
 
 Set these in Render (or `.env.render`):
 
