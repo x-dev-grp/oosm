@@ -8,6 +8,7 @@ import com.xdev.ooms.security.user.dto.OOSMUserDTO;
 import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.security.user.service.UserService;
+import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -64,10 +65,10 @@ public class SecurityBootstrap {
     @Bean
     public CommandLineRunner initAdminUser() {
         return args -> {
-            log.info("Bootstrapping default security data...");
+            OOSMLogger.info(getClass(),"Bootstrapping default security data...");
             RoleDTO oosmAdminRole = ensureRole();
             ensureUser(oosmAdminRole);
-            log.info("Security bootstrap complete.");
+            OOSMLogger.info(getClass(),"Security bootstrap complete.");
         };
     }
 
@@ -77,14 +78,14 @@ public class SecurityBootstrap {
         Optional<Role> existing = roleRepository.findByRoleName(OOSMADMIN);
         if (existing.isPresent()) {
             Role role = existing.get();
-            log.debug("Role '{}' already exists (id={})", role.getRoleName(), role.getId());
+            OOSMLogger.info(getClass(),"Role '{}' already exists (id={})", role.getRoleName(), role.getId());
             RoleDTO dto = new RoleDTO();
             dto.setId(role.getId());
             dto.setRoleName(role.getRoleName());
             return dto;
         }
 
-        log.info("Creating role '{}'", OOSMADMIN);
+        OOSMLogger.info(getClass(),"Creating role '{}'", OOSMADMIN);
         RoleDTO dto = new RoleDTO();
         dto.setRoleName(OOSMADMIN);
         return roleService.save(dto);
@@ -107,21 +108,21 @@ public class SecurityBootstrap {
             reassignUsersToRole(legacy, target);
             legacy.setRoleName(LEGACY_OSMADMIN + "_DEPRECATED_" + legacy.getId().toString().replace("-", ""));
             roleRepository.save(legacy);
-            log.info("Merged legacy role {} into existing {} (retired legacy id={})",
+             OOSMLogger.info(getClass(),"Merged legacy role {} into existing {} (retired legacy id={})",
                     LEGACY_OSMADMIN, OOSMADMIN, legacy.getId());
             return;
         }
 
         legacy.setRoleName(OOSMADMIN);
         roleRepository.save(legacy);
-        log.info("Migrated legacy role {} to {}", LEGACY_OSMADMIN, OOSMADMIN);
+         OOSMLogger.info(getClass(),"Migrated legacy role {} to {}", LEGACY_OSMADMIN, OOSMADMIN);
     }
 
     private void reassignUsersToRole(Role from, Role to) {
         for (OOSMUser user : userRepository.findByRole_Id(from.getId())) {
             user.setRole(to);
             userRepository.save(user);
-            log.info("Reassigned user '{}' from role {} to {}", user.getUsername(), from.getRoleName(), to.getRoleName());
+             OOSMLogger.info(getClass(),"Reassigned user '{}' from role {} to {}", user.getUsername(), from.getRoleName(), to.getRoleName());
         }
     }
 
@@ -134,7 +135,7 @@ public class SecurityBootstrap {
         Optional<OOSMUser> existing = userRepository.findByUsername(adminUsername);
         if (existing.isPresent()) {
             OOSMUser user = existing.get();
-            log.info("User '{}' already exists (id={})", adminUsername, user.getId());
+             OOSMLogger.info(getClass(),"User '{}' already exists (id={})", adminUsername, user.getId());
             if (resetExistingAdminPassword) {
                 user.setPassword(passwordEncoder.encode(adminPassword));
                 user.setLocked(false);
@@ -144,12 +145,12 @@ public class SecurityBootstrap {
                     user.setRole(roleRepository.findByRoleName(OOSMADMIN).orElseThrow());
                 }
                 userRepository.save(user);
-                log.info("Reset bootstrap password for user '{}'", adminUsername);
+                 OOSMLogger.info(getClass(),"Reset bootstrap password for user '{}'", adminUsername);
             }
             return;
         }
 
-        log.info("Creating user '{}'", adminUsername);
+         OOSMLogger.info(getClass(),"Creating user '{}'", adminUsername);
         OOSMUserDTO dto = new OOSMUserDTO();
         dto.setUsername(adminUsername);
         dto.setPassword(passwordEncoder.encode(adminPassword));

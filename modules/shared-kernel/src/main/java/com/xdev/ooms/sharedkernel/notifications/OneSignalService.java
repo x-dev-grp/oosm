@@ -2,20 +2,22 @@ package com.xdev.ooms.sharedkernel.notifications;
 
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
 import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
+import com.xdev.ooms.sharedkernel.settings.service.AppSettingsService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
-public class OneSignalService  implements OneSignalServiceImpl {
+public class OneSignalService implements OneSignalServiceImpl {
 
     public static final String AUTHORIZATION = "Authorization";
     public static final String BASIC = "Basic ";
@@ -25,19 +27,28 @@ public class OneSignalService  implements OneSignalServiceImpl {
     public static final String CONTENTS = "contents";
     public static final String HEADINGS = "headings";
     public static final String DATA = "data";
+
     private final RestTemplate restTemplate = new RestTemplate();
-    @Value("${onesignal.app-id}")
-    private String appId;
-    @Value("${onesignal.api-key}")
-    private String apiKey;
-    @Value("${onesignal.endpoint}")
-    private String endpoint;
+    private final AppSettingsService appSettingsService;
+
+    public OneSignalService(AppSettingsService appSettingsService) {
+        this.appSettingsService = appSettingsService;
+    }
 
     public String sendNotification(NotificationRequest notificationRequest) {
+        String appId = appSettingsService.getString("ONESIGNAL_APP_ID", "");
+        Optional<String> apiKey = appSettingsService.getSecret("ONESIGNAL_API_KEY");
+        String endpoint = appSettingsService.getString(
+                "ONESIGNAL_ENDPOINT", "https://onesignal.com/api/v1/notifications");
+
+        if (!StringUtils.hasText(appId) || apiKey.isEmpty()) {
+            OOSMLogger.warn(OneSignalService.class, "OneSignal is not configured (missing app ID or API key)");
+            return "ONESIGNAL_NOT_CONFIGURED";
+        }
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(AUTHORIZATION, BASIC + apiKey);
+        headers.set(AUTHORIZATION, BASIC + apiKey.get());
 
         Map<String, Object> body = new HashMap<>();
         body.put(APP_ID, appId);

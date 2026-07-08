@@ -61,8 +61,7 @@ services:
         value: "100"
       - key: TOMCAT_ACCEPT_COUNT
         value: "50"
-      - key: SPRINGDOC_ENABLED
-        value: "false"
+      # SPRINGDOC_ENABLED: Administration → Settings → Diagnostics (not set here)
       - key: SEARCH_DEBUG_ON_STARTUP
         value: "false"
       - key: FRONTEND_ENTRY_POINT
@@ -82,6 +81,8 @@ services:
       - key: SECURITY_BOOTSTRAP_EMAIL
         sync: false
       - key: SECURITY_BOOTSTRAP_PHONE
+        sync: false
+      - key: APP_SETTINGS_ENCRYPTION_KEY
         sync: false
       - key: RESEND_API_KEY
         sync: false
@@ -111,3 +112,14 @@ services:
         value: INFO
       - key: LOG_LEVEL_REST
         value: WARN
+      # New Relic APM — set NEW_RELIC_LICENSE_KEY in Render dashboard; toggle/name also in Admin → Integrations
+      - key: NEW_RELIC_APM_ENABLED
+        sync: false
+      - key: NEW_RELIC_LICENSE_KEY
+        sync: false
+      - key: NEW_RELIC_APP_NAME
+        value: oosm-monolith
+      - key: NEW_RELIC_REGION
+        value: EU
+      - key: NEW_RELIC_LOG_FORWARDING_ENABLED
+        value: "true"

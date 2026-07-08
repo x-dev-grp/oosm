@@ -1,15 +1,18 @@
 package com.xdev.ooms.sharedkernel.qr.Component;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.xdev.ooms.sharedkernel.settings.service.AppSettingsService;
 import org.springframework.stereotype.Component;
 
 @Component
 public class QrConfig {
 
-    @Value("${qr.base-url:https://x-dev.pro/q/v1}")
-    private String baseUrl;
+    private final AppSettingsService appSettingsService;
+
+    public QrConfig(AppSettingsService appSettingsService) {
+        this.appSettingsService = appSettingsService;
+    }
 
     public String getBaseUrl() {
-        return baseUrl;
+        return appSettingsService.getString("QR_BASE_URL", "https://x-dev.pro/q/v1");
     }
 }

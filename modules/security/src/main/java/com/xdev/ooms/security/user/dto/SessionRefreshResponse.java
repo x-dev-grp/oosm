@@ -14,12 +14,15 @@ public class SessionRefreshResponse {
 
     private List<String> authorities;
 
+    private List<String> enabledModules;
+
     public SessionRefreshResponse() {
     }
 
-    public SessionRefreshResponse(String accessToken, List<String> authorities) {
+    public SessionRefreshResponse(String accessToken, List<String> authorities, List<String> enabledModules) {
         this.accessToken = accessToken;
         this.authorities = authorities;
+        this.enabledModules = enabledModules;
     }
 
     public String getAccessToken() {
@@ -44,5 +47,13 @@ public class SessionRefreshResponse {
 
     public void setAuthorities(List<String> authorities) {
         this.authorities = authorities;
+    }
+
+    public List<String> getEnabledModules() {
+        return enabledModules;
+    }
+
+    public void setEnabledModules(List<String> enabledModules) {
+        this.enabledModules = enabledModules;
     }
 }

@@ -1,7 +1,7 @@
 package com.xdev.ooms.documents.commercial;
 
-import com.xdev.ooms.documents.commercial.dto.BillGenerationRequest;
 import com.xdev.ooms.documents.commercial.dto.BillFooterContactDto;
+import com.xdev.ooms.documents.commercial.dto.BillGenerationRequest;
 import com.xdev.ooms.documents.commercial.dto.BillPartyDto;
 import com.xdev.ooms.production.oilsale.entity.OilSale;
 import com.xdev.ooms.production.oilsale.repository.OilSaleRepository;
@@ -73,6 +73,7 @@ public class OilSaleInvoicePdfService {
         request.setFooterContact(buildFooter(profile));
         request.setSourceType("OilSale");
         request.setSourceId(sale.getId());
+        request.setVatMode(BillVatMode.NONE);
         if (sale.getDescription() != null && !sale.getDescription().isBlank()) {
             request.setNotes(sale.getDescription().trim());
         }

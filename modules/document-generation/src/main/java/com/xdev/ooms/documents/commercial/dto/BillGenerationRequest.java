@@ -1,5 +1,7 @@
 package com.xdev.ooms.documents.commercial.dto;
 
+import com.xdev.ooms.documents.commercial.BillVatMode;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -30,6 +32,7 @@ public class BillGenerationRequest {
     private String ttnReference;
     private String issuerElectronicSeal;
     private String notes;
+    private BillVatMode vatMode = BillVatMode.STANDARD;
 
     public String getTitle() {
         return title;
@@ -213,5 +216,13 @@ public class BillGenerationRequest {
 
     public void setNotes(String notes) {
         this.notes = notes;
+    }
+
+    public BillVatMode getVatMode() {
+        return vatMode;
+    }
+
+    public void setVatMode(BillVatMode vatMode) {
+        this.vatMode = vatMode;
     }
 }

@@ -1,6 +1,7 @@
 package com.xdev.ooms.security.companyprofile.controller;
 
 
+import com.xdev.ooms.security.companyprofile.dto.UpdateTenantModulesRequest;
 import com.xdev.ooms.security.companyprofile.dto.CompanyProfileDTO;
 import com.xdev.ooms.security.companyprofile.dto.CompanyUserDTO;
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
@@ -54,6 +55,25 @@ public class CompanyProfileController extends BaseControllerImpl<CompanyProfile,
             return ResponseEntity.ok(updatedProfile);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Message error: " + e.getMessage());
+        }
+    }
+
+    @PutMapping("/{tenantId}/modules")
+    @PreAuthorize("authentication.tokenAttributes['role'] == 'OOSMADMIN' or hasAnyAuthority('OOSMADMIN', 'ROLE_OOSMADMIN')")
+    public ResponseEntity<?> updateEnabledModules(@PathVariable UUID tenantId,
+                                                  @RequestBody UpdateTenantModulesRequest request) {
+        try {
+            CompanyProfileDTO updated = companyProfileService.updateEnabledModules(
+                    tenantId, request.getEnabledModules());
+            return ResponseEntity.ok(updated);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Message error: " + e.getMessage());
         }

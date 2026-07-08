@@ -1,6 +1,8 @@
 package com.xdev.ooms.finance.billing.service;
 
 import com.xdev.ooms.documents.commercial.BillLabelResolver;
+import com.xdev.ooms.documents.commercial.BillVatMode;
+import com.xdev.ooms.documents.commercial.BillVatPolicyResolver;
 import com.xdev.ooms.documents.commercial.OilSaleBillLineBuilder;
 import com.xdev.ooms.documents.commercial.TunisiaVatDefaults;
 import com.xdev.ooms.documents.commercial.dto.BillBankInfoDto;
@@ -38,6 +40,7 @@ public class TransactionBillMapper {
     private final UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort;
     private final OilSaleRepository oilSaleRepository;
     private final OilSaleBillLineBuilder oilSaleBillLineBuilder;
+    private final BillVatPolicyResolver billVatPolicyResolver;
 
     public TransactionBillMapper(
             SupplierRepository supplierRepository,
@@ -45,13 +48,15 @@ public class TransactionBillMapper {
             BillLabelResolver billLabelResolver,
             UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort,
             OilSaleRepository oilSaleRepository,
-            OilSaleBillLineBuilder oilSaleBillLineBuilder) {
+            OilSaleBillLineBuilder oilSaleBillLineBuilder,
+            BillVatPolicyResolver billVatPolicyResolver) {
         this.supplierRepository = supplierRepository;
         this.entityManagerFactory = entityManagerFactory;
         this.billLabelResolver = billLabelResolver;
         this.unifiedDeliveryBillLinePort = unifiedDeliveryBillLinePort;
         this.oilSaleRepository = oilSaleRepository;
         this.oilSaleBillLineBuilder = oilSaleBillLineBuilder;
+        this.billVatPolicyResolver = billVatPolicyResolver;
     }
 
     public BillGenerationRequest fromTransaction(FinancialTransaction tx, TransactionBillRequest options) {
@@ -77,11 +82,13 @@ public class TransactionBillMapper {
         request.setTtnReference(safeOptions.getTtnReference());
         request.setIssuerElectronicSeal(safeOptions.getIssuerElectronicSeal());
         request.setNotes(safeOptions.getNotes());
+        request.setVatMode(billVatPolicyResolver.resolve(tx.getOperationType(), tx.getTransactionType()));
 
         Optional<OilSale> linkedOilSale = resolveLinkedOilSale(tx);
         if (linkedOilSale.isPresent()) {
             OilSale sale = linkedOilSale.get();
             request.setLines(oilSaleBillLineBuilder.buildLines(sale));
+            request.setVatMode(BillVatMode.NONE);
             request.setInvoiceNumber(firstNonBlank(sale.getInvoiceNumber(), request.getInvoiceNumber()));
             request.setSourceType("OilSale");
             request.setSourceId(sale.getId());
@@ -121,7 +128,7 @@ public class TransactionBillMapper {
                 firstNonBlank(safeOptions.getDesignation(), tx.getDescription()),
                 tx.getOperationType(),
                 tx.getTransactionType()));
-        line.setVatRatePercent(TunisiaVatDefaults.resolveRate(safeOptions.getVatRatePercent()));
+        line.setVatRatePercent(TunisiaVatDefaults.resolvePurchaseRate(safeOptions.getVatRatePercent()));
 
         UnifiedDeliveryBillLineQuery query = new UnifiedDeliveryBillLineQuery(
                 tx.getExternalTransactionId(),

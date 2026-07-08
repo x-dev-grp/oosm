@@ -83,6 +83,63 @@ ONESIGNAL_ENDPOINT=https://onesignal.com/api/v1/notifications
 
 Mail and OneSignal credentials may remain empty when those features are unused.
 
+## New Relic (APM + browser logs)
+
+### 1. Provision in New Relic (CLI)
+
+On your machine:
+
+```powershell
+cd F:\oosm
+$env:NEWRELIC_API_KEY = "YOUR_USER_API_KEY"
+powershell -File scripts\Setup-NewRelic.ps1 -AccountId YOUR_ACCOUNT_ID -Region EU -ApplyToDatabase
+```
+
+This creates the browser SPA app, an ingest license key, writes `newrelic-oosm-config.json`, and optionally upserts `app_setting` rows.
+
+### 2. Render backend env (`oosm-api`)
+
+Set these in Render (or `.env.render`):
+
+```text
+NEW_RELIC_APM_ENABLED=true
+NEW_RELIC_LICENSE_KEY=<ingest-license-key>
+NEW_RELIC_APP_NAME=oosm-monolith
+NEW_RELIC_REGION=EU
+NEW_RELIC_LOG_FORWARDING_ENABLED=true
+```
+
+`NEW_RELIC_LICENSE_KEY` is required on the host — the JVM agent starts before Spring and cannot read encrypted DB secrets.
+
+APM enabled/app name/region/log forwarding can also be toggled in **Administration → Settings → Integrations**; the Docker entrypoint reads those from `app_setting` on startup when Render env vars are not set.
+
+### 3. OOSM admin (browser monitoring)
+
+**Administration → Settings → Integrations**:
+
+```text
+NEW_RELIC_BROWSER_ENABLED=true
+NEW_RELIC_BROWSER_ACCOUNT_ID=<from Setup-NewRelic.ps1 output>
+NEW_RELIC_BROWSER_APPLICATION_ID=<from output>
+NEW_RELIC_BROWSER_LICENSE_KEY=<from output>
+```
+
+Reload settings cache. Redeploy the frontend (`osm-ms-fe`) so the browser agent loads `/api/public/observability-config`.
+
+### 4. Verify
+
+```text
+# Backend logs on deploy:
+New Relic Java agent enabled (app=oosm-monolith, region=EU)
+
+# Public config (no auth):
+https://<backend-host>/api/public/observability-config
+
+# New Relic UI:
+APM → oosm-monolith → Logs
+Browser → oosm-frontend → Page views
+```
+
 Render supplies `PORT` and `RENDER_EXTERNAL_URL`. Do not define them manually.
 Do not define `JWK_SET_URI`; the application derives it from
 `RENDER_EXTERNAL_URL`.

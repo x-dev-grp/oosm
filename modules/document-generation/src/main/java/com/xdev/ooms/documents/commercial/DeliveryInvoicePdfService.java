@@ -31,6 +31,7 @@ public class DeliveryInvoicePdfService {
     private final BillLabelResolver billLabelResolver;
     private final CompanyProfileReadPort companyProfileReadPort;
     private final InvoiceNumberPort invoiceNumberPort;
+    private final BillVatPolicyResolver billVatPolicyResolver;
 
     public DeliveryInvoicePdfService(
             DeliveryRepository deliveryRepository,
@@ -38,13 +39,15 @@ public class DeliveryInvoicePdfService {
             UnifiedDeliveryBillLinePort unifiedDeliveryBillLinePort,
             BillLabelResolver billLabelResolver,
             CompanyProfileReadPort companyProfileReadPort,
-            InvoiceNumberPort invoiceNumberPort) {
+            InvoiceNumberPort invoiceNumberPort,
+            BillVatPolicyResolver billVatPolicyResolver) {
         this.deliveryRepository = deliveryRepository;
         this.billPdfGeneratorService = billPdfGeneratorService;
         this.unifiedDeliveryBillLinePort = unifiedDeliveryBillLinePort;
         this.billLabelResolver = billLabelResolver;
         this.companyProfileReadPort = companyProfileReadPort;
         this.invoiceNumberPort = invoiceNumberPort;
+        this.billVatPolicyResolver = billVatPolicyResolver;
     }
 
     @Transactional
@@ -73,21 +76,25 @@ public class DeliveryInvoicePdfService {
         request.setLogoContentType(profile.logoContentType());
         request.setIssuer(toIssuer(profile));
         request.setClient(toClient(delivery.getSupplier()));
-        request.setLines(List.of(buildLine(delivery)));
+        BillVatMode vatMode = billVatPolicyResolver.resolve(delivery.getOperationType(), null);
+        request.setVatMode(vatMode);
+        request.setLines(List.of(buildLine(delivery, vatMode)));
         request.setFooterContact(buildFooter(profile));
         request.setSourceType("UnifiedDelivery");
         request.setSourceId(delivery.getId());
         return request;
     }
 
-    private BillLineDto buildLine(UnifiedDelivery delivery) {
+    private BillLineDto buildLine(UnifiedDelivery delivery, BillVatMode vatMode) {
         BillLineDto line = new BillLineDto();
         String description = billLabelResolver.operationTypeLabel(delivery.getOperationType());
         if (description == null || description.isBlank()) {
             description = delivery.getDeliveryType() == DeliveryType.OIL ? "Huile d'olive" : "Olives";
         }
         line.setDesignation(description);
-        line.setVatRatePercent(TunisiaVatDefaults.STANDARD_RATE);
+        line.setVatRatePercent(vatMode == BillVatMode.NONE
+                ? BigDecimal.ZERO
+                : TunisiaVatDefaults.resolvePurchaseRate(null));
 
         UnifiedDeliveryBillLineQuery query = new UnifiedDeliveryBillLineQuery(
                 delivery.getId().toString(),

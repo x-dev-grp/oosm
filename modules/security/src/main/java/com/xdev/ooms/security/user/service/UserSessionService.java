@@ -2,6 +2,7 @@ package com.xdev.ooms.security.user.service;
 
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
+import com.xdev.ooms.security.tenantmodule.service.TenantModuleService;
 import com.xdev.ooms.security.user.dto.SessionRefreshResponse;
 import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
@@ -38,6 +39,7 @@ public class UserSessionService {
     private final RegisteredClientRepository registeredClientRepository;
     private final UserService userService;
     private final CompanyProfileRepository companyProfileRepository;
+    private final TenantModuleService tenantModuleService;
     private final AuthorizationServerContext authorizationServerContext;
 
     public UserSessionService(OAuth2AuthorizationService authorizationService,
@@ -45,12 +47,14 @@ public class UserSessionService {
                               RegisteredClientRepository registeredClientRepository,
                               UserService userService,
                               CompanyProfileRepository companyProfileRepository,
+                              TenantModuleService tenantModuleService,
                               @Value("${spring.security.oauth2.resource-server.jwt.jwk-set-uri}") String jwkSetUri) {
         this.authorizationService = authorizationService;
         this.tokenGenerator = tokenGenerator;
         this.registeredClientRepository = registeredClientRepository;
         this.userService = userService;
         this.companyProfileRepository = companyProfileRepository;
+        this.tenantModuleService = tenantModuleService;
         String resolvedIssuer = resolveIssuer(jwkSetUri);
         this.authorizationServerContext = new StaticAuthorizationServerContext(resolvedIssuer);
     }
@@ -79,8 +83,11 @@ public class UserSessionService {
             throw new OAuth2AuthenticationException(OAuth2ErrorCodes.INVALID_CLIENT);
         }
 
+        List<GrantedAuthority> filteredAuthorities = tenantModuleService.filterAuthorities(
+                user.getTenantId(), user.getAuthorities());
+
         UsernamePasswordAuthenticationToken freshPrincipal =
-                new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities());
+                new UsernamePasswordAuthenticationToken(user, null, filteredAuthorities);
 
         Set<String> scopes = Collections.emptySet();
         AuthorizationServerContextHolder.setContext(authorizationServerContext);
@@ -119,15 +126,16 @@ public class UserSessionService {
 
             authorizationService.save(saveBuilder.build());
 
-            List<String> authorities = user.getAuthorities().stream()
+            List<String> authorities = filteredAuthorities.stream()
                     .map(GrantedAuthority::getAuthority)
                     .toList();
+            List<String> enabledModules = tenantModuleService.getEnabledModuleNames(user.getTenantId());
 
             OOSMLogger.logMethodExit(this.getClass(), "refreshSession",
                     "Session refreshed for user: " + username + ", authorities: " + authorities.size());
             OOSMLogger.logPerformance(this.getClass(), "refreshSession", startTime, System.currentTimeMillis());
 
-            return new SessionRefreshResponse(accessToken.getTokenValue(), authorities);
+            return new SessionRefreshResponse(accessToken.getTokenValue(), authorities, enabledModules);
         } finally {
             AuthorizationServerContextHolder.resetContext();
         }

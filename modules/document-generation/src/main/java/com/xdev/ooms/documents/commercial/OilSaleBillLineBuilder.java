@@ -36,7 +36,7 @@ public class OilSaleBillLineBuilder {
             oilLine.setQuantity(quantity.setScale(2, RoundingMode.HALF_UP));
             oilLine.setUnit("L");
             oilLine.setUnitPriceExcludingVat(unitPrice.setScale(3, RoundingMode.HALF_UP));
-            oilLine.setVatRatePercent(TunisiaVatDefaults.STANDARD_RATE);
+            oilLine.setVatRatePercent(BigDecimal.ZERO);
             lines.add(oilLine);
         }
 
@@ -55,7 +55,7 @@ public class OilSaleBillLineBuilder {
                     ? BigDecimal.ZERO
                     : containerSale.getUnitPrice().setScale(3, RoundingMode.HALF_UP);
             line.setUnitPriceExcludingVat(unitPriceHt);
-            line.setVatRatePercent(TunisiaVatDefaults.STANDARD_RATE);
+            line.setVatRatePercent(BigDecimal.ZERO);
             lines.add(line);
         }
 
@@ -66,7 +66,7 @@ public class OilSaleBillLineBuilder {
             fallback.setUnit("U");
             fallback.setUnitPriceExcludingVat(
                     sale.getTotalAmount() == null ? BigDecimal.ZERO : sale.getTotalAmount().setScale(3, RoundingMode.HALF_UP));
-            fallback.setVatRatePercent(TunisiaVatDefaults.STANDARD_RATE);
+            fallback.setVatRatePercent(BigDecimal.ZERO);
             lines.add(fallback);
         }
         return lines;

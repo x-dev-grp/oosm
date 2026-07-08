@@ -23,11 +23,13 @@ FROM (VALUES
     ('K270',            'K270',                         'NUMERIC', true,  0,          0.25,       NULL,                           'Tunisia default — COI/Tunisia — EVOO ≤0.22, Vierge ≤0.25'),
     ('DeltaK',          'Delta K',                      'NUMERIC', true,  0,          0.01,       NULL,                           'Tunisia default — COI/Tunisia — Delta K ≤0.01'),
     ('IndicePreoxyde',  'Indice peroxyde (meq O2/kg)',  'NUMERIC', true,  0,          20,         NULL,                           'Tunisia default — COI/Tunisia — indice de peroxyde ≤20'),
+    ('EtatCamion',      'État camion',                  'STRING',  true,  NULL::real, NULL::real, 'Conforme,Non conforme',        'Tunisia default — état du camion à réception huile'),
     -- Olive QC (oil_qc = false)
     ('Infestees',       'Infestées %',                  'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives infestées (%)'),
     ('Fermentees',      'Fermentées %',                 'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives fermentées (%)'),
     ('Endommagees',     'Endommagées %',                'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives endommagées (%)'),
-    ('Categorie',       'Catégorie Olive',              'STRING',  false, NULL::real, NULL::real, 'Vierge Extra,Vierge,Lampante', 'Tunisia default — catégorie olives à réception')
+    ('Categorie',       'Catégorie Olive',              'STRING',  false, NULL::real, NULL::real, 'Vierge Extra,Vierge,Lampante', 'Tunisia default — catégorie olives à réception'),
+    ('EtatCamion',      'État camion',                  'STRING',  false, NULL::real, NULL::real, 'Conforme,Non conforme',        'Tunisia default — état du camion à réception olive')
 ) AS v(rule_key, rule_name, rule_type, oil_qc, min_value, max_value, rule_text_value, description)
 WHERE NOT EXISTS (
     SELECT 1
@@ -37,3 +39,9 @@ WHERE NOT EXISTS (
       AND r.rule_key = v.rule_key
       AND COALESCE(r.oil_qc, false) = v.oil_qc
 );
+
+-- Fix duplicated prefix on olive rules provisioned via API before TunisiaQualityControlDefaults was corrected:
+-- UPDATE quality_control_rule
+-- SET description = regexp_replace(description, '^Tunisia default — Tunisia default — ', 'Tunisia default — ')
+-- WHERE is_deleted = false
+--   AND description LIKE 'Tunisia default — Tunisia default — %';

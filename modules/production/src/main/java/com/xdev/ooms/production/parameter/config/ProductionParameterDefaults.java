@@ -31,6 +31,13 @@ public final class ProductionParameterDefaults {
                     ParameterType.DOUBLE,
                     "0",
                     "Milling price per kg (TND)"
+            ),
+            new ProductionParameterDefault(
+                    "TVA_ACHAT_AUTO_CALC",
+                    FINANCE_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Auto-calculate purchase VAT from TTC prices on buy invoices"
             )
     );
 

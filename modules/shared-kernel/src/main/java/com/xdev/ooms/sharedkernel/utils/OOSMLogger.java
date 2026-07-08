@@ -128,7 +128,7 @@ public class OOSMLogger {
             // Add context information
             report.append("\n=== CONTEXT INFORMATION ===\n");
             report.append("Thread: ").append(Thread.currentThread().getName()).append("\n");
-            report.append("Thread ID: ").append(Thread.currentThread().getId()).append("\n");
+            report.append("Thread ID: ").append(Thread.currentThread().threadId()).append("\n");
 
             // Log based on severity
             switch (severity) {

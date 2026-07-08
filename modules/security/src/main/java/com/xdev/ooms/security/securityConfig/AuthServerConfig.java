@@ -3,6 +3,7 @@ package com.xdev.ooms.security.securityConfig;
 import com.xdev.ooms.security.companyprofile.repository.CompanyProfileRepository;
 import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -76,6 +77,10 @@ public class AuthServerConfig {
                     .securityMatcher(
                             "/actuator/health",
                             "/actuator/health/**",
+                            "/api/public/health",
+                            "/api/public/health/**",
+                            "/api/public/observability-config",
+                            "/api/public/observability-config/**",
                             "/api/security/user/auth/**",
                             "/api/security/user/me/refresh-session"
                     )
@@ -99,9 +104,28 @@ public class AuthServerConfig {
         }
     }
 
-    // Main security filter chain for OAuth2 server and secured APIs
+    // OpenAPI docs — OOSMADMIN only (UI is embedded in the Angular admin app)
     @Bean
     @Order(2)
+    @ConditionalOnProperty(name = "springdoc.api-docs.enabled", havingValue = "true")
+    public SecurityFilterChain swaggerSecurityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .securityMatcher("/v3/api-docs", "/v3/api-docs/**")
+                .authorizeHttpRequests(auth -> auth
+                        .anyRequest().hasAnyAuthority("OOSMADMIN", "ROLE_OOSMADMIN"))
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(authenticationEntryPoint))
+                .csrf(csrf -> csrf.disable())
+                .cors(Customizer.withDefaults())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .oauth2ResourceServer(oauth -> oauth.jwt(
+                        jwt -> jwt.jwtAuthenticationConverter(osmJwtAuthenticationConverter)));
+
+        return http.build();
+    }
+
+    // Main security filter chain for OAuth2 server and secured APIs
+    @Bean
+    @Order(3)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http) throws Exception {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "authorizationServerSecurityFilterChain", "Configuring OAuth2 authorization server");
@@ -117,10 +141,7 @@ public class AuthServerConfig {
                             .requestMatchers(
                                     "/oauth2/**",
                                     "/jwks",
-                                    "/.well-known/**",
-                                    "/v3/api-docs/**",
-                                    "/swagger-ui/**",
-                                    "/swagger-resources/**"
+                                    "/.well-known/**"
                             ).permitAll()
                             .anyRequest().authenticated()
                     )
@@ -148,12 +169,19 @@ public class AuthServerConfig {
     }
 
     @Bean
-    @Order(3)
+    @Order(4)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http) throws Exception {
         http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/actuator/health", "/actuator/health/**").permitAll()
+                        .requestMatchers(
+                                "/actuator/health",
+                                "/actuator/health/**",
+                                "/api/public/health",
+                                "/api/public/health/**",
+                                "/api/public/observability-config",
+                                "/api/public/observability-config/**"
+                        ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())

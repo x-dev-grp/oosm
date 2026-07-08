@@ -4,6 +4,7 @@ import com.xdev.ooms.security.permission.repository.PermissionRepository;
 import com.xdev.ooms.security.role.repository.RoleRepository;
 import com.xdev.ooms.security.companyprofile.dto.CompanyProfileDTO;
 import com.xdev.ooms.security.companyprofile.dto.CompanyUserDTO;
+import com.xdev.ooms.security.tenantmodule.service.TenantModuleService;
 import com.xdev.ooms.security.user.dto.OOSMUserOUTDTO;
 import com.xdev.ooms.security.role.dto.RoleDTO;
 import com.xdev.ooms.security.companyprofile.entity.CompanyProfile;
@@ -11,6 +12,8 @@ import com.xdev.ooms.security.permission.entity.Permission;
 import com.xdev.ooms.security.role.entity.Role;
 import com.xdev.ooms.security.user.service.UserService;
 import com.xdev.ooms.sharedkernel.events.TenantCreatedEvent;
+import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
+import com.xdev.ooms.sharedkernel.models.SearchData;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
@@ -40,14 +43,16 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
     private final PermissionRepository permissionRepository;
     private final SearchSpecificationBuilder<CompanyProfile> specificationBuilder;
     private final ApplicationEventPublisher eventPublisher;
+    private final TenantModuleService tenantModuleService;
 
-    public CompanyProfileService(BaseRepository<CompanyProfile> repository, ModelMapper modelMapper, UserService userService, RoleRepository roleRepository, PermissionRepository permissionRepository, SearchSpecificationBuilder<CompanyProfile> specificationBuilder, ApplicationEventPublisher eventPublisher) {
+    public CompanyProfileService(BaseRepository<CompanyProfile> repository, ModelMapper modelMapper, UserService userService, RoleRepository roleRepository, PermissionRepository permissionRepository, SearchSpecificationBuilder<CompanyProfile> specificationBuilder, ApplicationEventPublisher eventPublisher, TenantModuleService tenantModuleService) {
         super(repository, modelMapper);
         this.userService = userService;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
         this.specificationBuilder = specificationBuilder;
         this.eventPublisher = eventPublisher;
+        this.tenantModuleService = tenantModuleService;
     }
 
 
@@ -82,6 +87,8 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         company.setActive(true);
         CompanyProfile companyProfile = repository.save(company);
 
+        tenantModuleService.setEnabledModules(companyProfile.getId(), dto.getEnabledModules());
+
         OOSMUserOUTDTO userDto = modelMapper.map(dto.getCompanyUser(), OOSMUserOUTDTO.class);
         Role adminRole = roleRepository.findByRoleName("ADMIN").orElse(null);
         if (adminRole == null) {
@@ -101,7 +108,25 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         CompanyUserDTO companyUserDTO = new CompanyUserDTO();
         companyUserDTO.setLegalName(companyProfile.getLegalName());
         companyUserDTO.setCompanyUser(userDto);
+        companyUserDTO.setEnabledModules(tenantModuleService.getEnabledModuleNames(companyProfile.getId()));
         return companyUserDTO;
+    }
+
+    @Transactional
+    public CompanyProfileDTO updateEnabledModules(UUID tenantId, List<String> enabledModules) {
+        if (!SecurityUtils.isOosmAdmin()) {
+            throw new AccessDeniedException("Only OOSM administrators can manage tenant modules");
+        }
+        repository.findByIdAndIsDeletedFalse(tenantId)
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with this id " + tenantId));
+        tenantModuleService.setEnabledModules(tenantId, enabledModules);
+        return findById(tenantId);
+    }
+
+    private void enrichWithEnabledModules(CompanyProfileDTO dto) {
+        if (dto != null && dto.getId() != null) {
+            dto.setEnabledModules(tenantModuleService.getEnabledModuleNames(dto.getId()));
+        }
     }
     @Transactional(readOnly = true)
     @Override
@@ -116,6 +141,7 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
                 throw new EntityNotFoundException("Entity not found with this id " + id);
             } else {
                 CompanyProfileDTO result = modelMapper.map(data.get(), outDTOClass);
+                enrichWithEnabledModules(result);
                 OOSMLogger.logMethodExit(this.getClass(), "findById", result);
                 OOSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
                 OOSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
@@ -134,7 +160,11 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
 
         try {
             Collection<CompanyProfile> data = repository.findAllByIsDeletedFalse();
-            List<CompanyProfileDTO> result = data.stream().map(item -> modelMapper.map(item, outDTOClass)).toList();
+            List<CompanyProfileDTO> result = data.stream().map(item -> {
+                CompanyProfileDTO mapped = modelMapper.map(item, outDTOClass);
+                enrichWithEnabledModules(mapped);
+                return mapped;
+            }).toList();
             OOSMLogger.logMethodExit(this.getClass(), "findAll", "Found " + result.size() + " entities");
             OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
             OOSMLogger.logDataAccess(this.getClass(), "READ_ALL", entityClass.getSimpleName());
@@ -156,7 +186,11 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
             Pageable pageable = PageRequest.of(page, size, sortObject);
             Page<CompanyProfile> data = repository.findAllByIsDeletedFalse(pageable);
 
-            Page<CompanyProfileDTO> result = data.map(item -> modelMapper.map(item, outDTOClass));
+            Page<CompanyProfileDTO> result = data.map(item -> {
+                CompanyProfileDTO mapped = modelMapper.map(item, outDTOClass);
+                enrichWithEnabledModules(mapped);
+                return mapped;
+            });
             OOSMLogger.logMethodExit(this.getClass(), "findAll", "Page " + page + " with " + result.getContent().size() + " entities");
             OOSMLogger.logPerformance(this.getClass(), "findAll", startTime, System.currentTimeMillis());
             OOSMLogger.logDataAccess(this.getClass(), "READ_PAGEABLE", entityClass.getSimpleName());
@@ -165,6 +199,15 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
             OOSMLogger.logException(this.getClass(), "Error finding entities with pagination", e);
             throw e;
         }
+    }
+
+    @Override
+    public SearchResponse<CompanyProfile, CompanyProfileDTO> search(SearchData searchData) {
+        SearchResponse<CompanyProfile, CompanyProfileDTO> response = super.search(searchData);
+        if (response.getData() != null) {
+            response.getData().forEach(this::enrichWithEnabledModules);
+        }
+        return response;
     }
 
     /*
@@ -245,7 +288,9 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         AuditHelper.applyAuditOnUpdate(company);
 
         CompanyProfile updated = repository.save(company);
-        return modelMapper.map(updated, CompanyProfileDTO.class);
+        CompanyProfileDTO result = modelMapper.map(updated, CompanyProfileDTO.class);
+        enrichWithEnabledModules(result);
+        return result;
     }
 
     private void applyDtoToEntity(CompanyProfileDTO dto, CompanyProfile company) {

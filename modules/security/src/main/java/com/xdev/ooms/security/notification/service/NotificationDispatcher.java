@@ -15,9 +15,9 @@ import com.xdev.ooms.sharedkernel.models.OOSMModule;
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
 import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
+import com.xdev.ooms.sharedkernel.settings.service.AppSettingsService;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import com.xdev.ooms.sharedkernel.utils.SecurityUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,9 +39,7 @@ public class NotificationDispatcher {
     private final NotificationMessageBuilder messageBuilder;
     private final OneSignalServiceImpl oneSignalService;
     private final ObjectMapper objectMapper;
-
-    @Value("${onesignal.app-id:}")
-    private String oneSignalAppId;
+    private final AppSettingsService appSettingsService;
 
     public NotificationDispatcher(
             NotificationRulesLoader rulesLoader,
@@ -49,13 +47,15 @@ public class NotificationDispatcher {
             UserNotificationRepository notificationRepository,
             NotificationMessageBuilder messageBuilder,
             OneSignalServiceImpl oneSignalService,
-            ObjectMapper objectMapper) {
+            ObjectMapper objectMapper,
+            AppSettingsService appSettingsService) {
         this.rulesLoader = rulesLoader;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
         this.messageBuilder = messageBuilder;
         this.oneSignalService = oneSignalService;
         this.objectMapper = objectMapper;
+        this.appSettingsService = appSettingsService;
     }
 
     @Transactional
@@ -144,8 +144,8 @@ public class NotificationDispatcher {
             notificationsToSave.add(notification);
 
             if (rule.isPushEnabled()
-                    && oneSignalAppId != null
-                    && !oneSignalAppId.isBlank()
+                    && appSettingsService.getSecret("ONESIGNAL_API_KEY").isPresent()
+                    && org.springframework.util.StringUtils.hasText(appSettingsService.getString("ONESIGNAL_APP_ID", ""))
                     && user.getOneSignalPlayerId() != null
                     && !user.getOneSignalPlayerId().isBlank()) {
                 playerIds.add(user.getOneSignalPlayerId());

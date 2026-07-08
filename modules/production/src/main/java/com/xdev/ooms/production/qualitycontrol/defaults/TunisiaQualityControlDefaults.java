@@ -38,15 +38,21 @@ public final class TunisiaQualityControlDefaults {
                         "COI/Tunisia — Delta K ≤0.01"),
                 oilRule("IndicePreoxyde", "Indice peroxyde (meq O2/kg)", RuleType.NUMERIC, 0f, 20f, null,
                         "COI/Tunisia — indice de peroxyde ≤20"),
+                oilRule("EtatCamion", "État camion", RuleType.STRING, null, null,
+                        "Conforme,Non conforme",
+                        "état du camion à réception huile"),
                 oliveRule("Infestees", "Infestées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "Tunisia default — olives infestées (%)"),
+                        "olives infestées (%)"),
                 oliveRule("Fermentees", "Fermentées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "Tunisia default — olives fermentées (%)"),
+                        "olives fermentées (%)"),
                 oliveRule("Endommagees", "Endommagées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "Tunisia default — olives endommagées (%)"),
+                        "olives endommagées (%)"),
                 oliveRule("Categorie", "Catégorie Olive", RuleType.STRING, null, null,
                         "Vierge Extra,Vierge,Lampante",
-                        "Tunisia default — catégorie olives à réception")
+                        "catégorie olives à réception"),
+                oliveRule("EtatCamion", "État camion", RuleType.STRING, null, null,
+                        "Conforme,Non conforme",
+                        "état du camion à réception olive")
         );
     }
 

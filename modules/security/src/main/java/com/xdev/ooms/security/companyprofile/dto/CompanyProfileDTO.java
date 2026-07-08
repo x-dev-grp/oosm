@@ -5,6 +5,7 @@ import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private String legalName;
@@ -28,6 +29,7 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private Integer campaignStartDay;
     private Integer campaignEndMonth;
     private Integer campaignEndDay;
+    private List<String> enabledModules;
 
     public String getLegalName() {
         return legalName;
@@ -196,5 +198,13 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
 
     public void setCampaignEndDay(Integer campaignEndDay) {
         this.campaignEndDay = campaignEndDay;
+    }
+
+    public List<String> getEnabledModules() {
+        return enabledModules;
+    }
+
+    public void setEnabledModules(List<String> enabledModules) {
+        this.enabledModules = enabledModules;
     }
 }

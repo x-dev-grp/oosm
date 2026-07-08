@@ -16,10 +16,24 @@ public final class TunisiaVatDefaults {
             "Facture établie conformément à l'article 18 du Code de la TVA tunisien. "
                     + "Prix unitaires hors TVA. Taux et montants de TVA mentionnés par ligne.";
 
+    public static final String INCLUSIVE_LEGAL_MENTION =
+            "Facture établie conformément à l'article 18 du Code de la TVA tunisien. "
+                    + "Prix TTC. TVA extraite du montant total conformément au taux applicable.";
+
     private TunisiaVatDefaults() {
     }
 
     public static BigDecimal resolveRate(BigDecimal requested) {
-        return requested == null ? STANDARD_RATE : requested;
+        if (requested == null) {
+            return STANDARD_RATE;
+        }
+        return requested;
+    }
+
+    public static BigDecimal resolvePurchaseRate(BigDecimal requested) {
+        if (requested == null || requested.signum() == 0) {
+            return STANDARD_RATE;
+        }
+        return requested;
     }
 }

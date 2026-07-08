@@ -1,6 +1,6 @@
 package com.xdev.ooms.sharedkernel.mail.templates;
 
-import com.xdev.ooms.sharedkernel.mail.config.OosmMailProperties;
+import com.xdev.ooms.sharedkernel.mail.config.DynamicMailSettings;
 import com.xdev.ooms.sharedkernel.mail.models.EmailBranding;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import org.springframework.stereotype.Component;
@@ -16,18 +16,18 @@ public class OosmMailComposer {
     private static final int RESET_CODE_EXPIRY_MINUTES = 10;
 
     private final EmailTemplateRenderer templateRenderer;
-    private final OosmMailProperties mailProperties;
+    private final DynamicMailSettings mailSettings;
 
-    public OosmMailComposer(EmailTemplateRenderer templateRenderer, OosmMailProperties mailProperties) {
+    public OosmMailComposer(EmailTemplateRenderer templateRenderer, DynamicMailSettings mailSettings) {
         this.templateRenderer = templateRenderer;
-        this.mailProperties = mailProperties;
+        this.mailSettings = mailSettings;
     }
 
     public EmailBranding defaultBranding() {
         return EmailBranding.defaults(
-                mailProperties.getFromName(),
-                mailProperties.getFrontendBaseUrl(),
-                mailProperties.getSupportEmail()
+                mailSettings.getFromName(),
+                mailSettings.getFrontendBaseUrl(),
+                mailSettings.getSupportEmail()
         );
     }
 

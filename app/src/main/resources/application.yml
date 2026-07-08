@@ -68,7 +68,7 @@ spring:
   sql:
     init:
       mode: always
-      schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql
+      schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql,classpath:db/app-settings-schema.sql,classpath:db/tenant-enabled-module-schema.sql
 
   data:
     jpa:
@@ -99,56 +99,50 @@ otp:
   max:
     attempts: 3
 
+# Infrastructure and bootstrap only.
+# Operational settings (mail, frontend URL, CORS, QR, OneSignal, log levels, etc.)
+# are managed via Administration → Settings using flat env vars as optional bootstrap:
+# MAIL_*, SMTP_*, FRONTEND_ENTRY_POINT, APP_CORS_ALLOWED_ORIGIN_PATTERNS,
+# ONESIGNAL_*, QR_BASE_URL, LOG_LEVEL_WEB, LOG_LEVEL_REST,
+# SPRINGDOC_ENABLED, HEALTH_SHOW_DETAILS, SEARCH_DEBUG_ON_STARTUP
 app:
   debug:
     search-on-startup: ${SEARCH_DEBUG_ON_STARTUP:false}
-  frontend:
-    base-url: ${FRONTEND_ENTRY_POINT:http://localhost:4200}
-  mail:
-    enabled: ${MAIL_ENABLED:true}
-    from-name: ${MAIL_FROM_NAME:OOSM}
-    from-address: ${MAIL_FROM_ADDRESS:}
-    support-email: ${MAIL_SUPPORT_EMAIL:${MAIL_FROM_ADDRESS:}}
-    debug: ${MAIL_DEBUG:false}
-    resend:
-      api-key: ${RESEND_API_KEY:}
-  cors:
-    allowed-origin-patterns: ${APP_CORS_ALLOWED_ORIGIN_PATTERNS:}
   internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
   security:
     jwt:
-      secret: ${JWT_SECRET}
+      secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}
     legacy-user-migration:
       enabled: ${SECURITY_LEGACY_USER_MIGRATION_ENABLED:true}
     bootstrap:
-      enabled: ${SECURITY_BOOTSTRAP_ENABLED:false}
-      username: ${SECURITY_BOOTSTRAP_USERNAME}
-      password: ${SECURITY_BOOTSTRAP_PASSWORD}
-      email: ${SECURITY_BOOTSTRAP_EMAIL}
-      phone: ${SECURITY_BOOTSTRAP_PHONE}
+      enabled: ${SECURITY_BOOTSTRAP_ENABLED:true}
+      username: ${SECURITY_BOOTSTRAP_USERNAME:oosmAdmin}
+      password: ${SECURITY_BOOTSTRAP_PASSWORD:oosmAdmin123+}
+      email: ${SECURITY_BOOTSTRAP_EMAIL:oosmAdmin@example.com}
+      phone: ${SECURITY_BOOTSTRAP_PHONE:1234567819}
       reset-existing-admin-password: ${SECURITY_BOOTSTRAP_RESET_PASSWORD:true}
     permissions:
       # Always seeds when the permission table is empty. Set true to re-sync on every startup.
       sync-on-startup: ${PERMISSIONS_SYNC_ON_STARTUP:false}
+  settings:
+    # Encrypts secrets stored in app_setting. Not exposed in admin UI (infrastructure).
+    encryption-key: ${APP_SETTINGS_ENCRYPTION_KEY:${app.security.jwt.secret:oosm-local-app-settings-encryption-key-32b}}
+    rate-limit:
+      mail-test-per-hour: ${ADMIN_SETTINGS_MAIL_TEST_LIMIT:20}
+      secret-rotation-per-day: ${ADMIN_SETTINGS_SECRET_ROTATE_LIMIT:10}
+      count-failed-mail-tests: ${ADMIN_SETTINGS_COUNT_FAILED_MAIL_TESTS:false}
   production:
     bootstrap:
       enabled: ${PRODUCTION_BOOTSTRAP_ENABLED:true}
-
-onesignal:
-  app-id: ${ONESIGNAL_APP_ID:}
-  api-key: ${ONESIGNAL_API_KEY:}
-  endpoint: ${ONESIGNAL_ENDPOINT:https://onesignal.com/api/v1/notifications}
-
-qr:
-  base-url: ${QR_BASE_URL:https://x-dev.pro/q/v1}
 
 springdoc:
   api-docs:
     enabled: ${SPRINGDOC_ENABLED:false}
     path: /v3/api-docs
   swagger-ui:
-    enabled: ${SPRINGDOC_ENABLED:false}
-    path: /swagger-ui.html
+    enabled: true
+  show-actuator: true
+  packages-to-scan: com.xdev.ooms
 
 info:
   app:

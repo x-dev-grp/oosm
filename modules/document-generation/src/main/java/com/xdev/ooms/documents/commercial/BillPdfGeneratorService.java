@@ -76,21 +76,11 @@ public class BillPdfGeneratorService {
     }
 
     public BillTotalsDto calculateTotals(BillGenerationRequest request) {
-        BillTotalsDto totals = new BillTotalsDto();
-        BigDecimal subtotal = BigDecimal.ZERO;
-        BigDecimal vat = BigDecimal.ZERO;
+        return BillVatCalculator.calculateTotals(resolveVatMode(request), request.getLines());
+    }
 
-        for (BillLineDto line : request.getLines()) {
-            BigDecimal lineHt = money(line.getQuantity()).multiply(money(line.getUnitPriceExcludingVat()));
-            BigDecimal lineVat = lineHt.multiply(percent(TunisiaVatDefaults.resolveRate(line.getVatRatePercent())));
-            subtotal = subtotal.add(lineHt);
-            vat = vat.add(lineVat);
-        }
-
-        totals.setSubtotalExcludingVat(money(subtotal));
-        totals.setVatAmount(money(vat));
-        totals.setTotalIncludingVat(money(subtotal.add(vat)));
-        return totals;
+    private BillVatMode resolveVatMode(BillGenerationRequest request) {
+        return request.getVatMode() == null ? BillVatMode.STANDARD : request.getVatMode();
     }
 
     private void addCommercialHeader(Document document, BillGenerationRequest request) throws DocumentException {
@@ -214,13 +204,21 @@ public class BillPdfGeneratorService {
     private void addCommercialLines(Document document, BillGenerationRequest request, BillTotalsDto totals)
             throws DocumentException {
         String currency = normalizeCurrency(request.getCurrency());
+        BillVatMode vatMode = resolveVatMode(request);
+
+        if (vatMode == BillVatMode.NONE) {
+            addNoVatLines(document, request, currency);
+            return;
+        }
 
         PdfPTable table = new PdfPTable(7);
         table.setWidthPercentage(100);
         table.setWidths(new float[]{3.2f, 1.2f, 0.9f, 1.2f, 0.8f, 1.2f, 1.2f});
         table.setSpacingAfter(4f);
 
-        String unitPriceHeader = "Prix unitaire HT " + currency + resolvePriceUnitSuffix(request.getLines());
+        String unitPriceHeader = vatMode == BillVatMode.INCLUSIVE
+                ? "Prix unitaire TTC " + currency + resolvePriceUnitSuffix(request.getLines())
+                : "Prix unitaire HT " + currency + resolvePriceUnitSuffix(request.getLines());
 
         addHeaderCell(table, "Description");
         addHeaderCell(table, unitPriceHeader);
@@ -231,17 +229,43 @@ public class BillPdfGeneratorService {
         addHeaderCell(table, "Total TTC " + currency);
 
         for (BillLineDto line : request.getLines()) {
-            BigDecimal lineHt = money(line.getQuantity()).multiply(money(line.getUnitPriceExcludingVat()));
-            BigDecimal lineVat = lineHt.multiply(percent(TunisiaVatDefaults.resolveRate(line.getVatRatePercent())));
-            BigDecimal lineTtc = money(lineHt.add(lineVat));
+            BillVatCalculator.LineAmounts amounts = BillVatCalculator.lineAmounts(vatMode, line);
+            BigDecimal displayedUnitPrice = vatMode == BillVatMode.INCLUSIVE
+                    ? line.getUnitPriceExcludingVat()
+                    : amounts.unitPriceExcludingVat();
 
+            addBodyCell(table, valueOrDefault(line.getDesignation(), ""), Element.ALIGN_LEFT);
+            addBodyCell(table, formatMoney(displayedUnitPrice, currency), Element.ALIGN_CENTER);
+            addBodyCell(table, formatQtyWithUnit(line.getQuantity(), line.getUnit()), Element.ALIGN_CENTER);
+            addBodyCell(table, formatMoney(amounts.lineHt(), currency), Element.ALIGN_CENTER);
+            addBodyCell(table, formatQty(TunisiaVatDefaults.resolveRate(line.getVatRatePercent())), Element.ALIGN_CENTER);
+            addBodyCell(table, formatMoney(amounts.lineVat(), currency), Element.ALIGN_CENTER);
+            addBodyCell(table, formatMoney(amounts.lineTtc(), currency), Element.ALIGN_CENTER);
+        }
+
+        document.add(table);
+    }
+
+    private void addNoVatLines(Document document, BillGenerationRequest request, String currency)
+            throws DocumentException {
+        PdfPTable table = new PdfPTable(4);
+        table.setWidthPercentage(100);
+        table.setWidths(new float[]{3.6f, 1.4f, 1.0f, 1.4f});
+        table.setSpacingAfter(4f);
+
+        String unitPriceHeader = "Prix unitaire " + currency + resolvePriceUnitSuffix(request.getLines());
+
+        addHeaderCell(table, "Description");
+        addHeaderCell(table, unitPriceHeader);
+        addHeaderCell(table, "Quantité");
+        addHeaderCell(table, "Montant " + currency);
+
+        for (BillLineDto line : request.getLines()) {
+            BillVatCalculator.LineAmounts amounts = BillVatCalculator.lineAmounts(BillVatMode.NONE, line);
             addBodyCell(table, valueOrDefault(line.getDesignation(), ""), Element.ALIGN_LEFT);
             addBodyCell(table, formatMoney(line.getUnitPriceExcludingVat(), currency), Element.ALIGN_CENTER);
             addBodyCell(table, formatQtyWithUnit(line.getQuantity(), line.getUnit()), Element.ALIGN_CENTER);
-            addBodyCell(table, formatMoney(lineHt, currency), Element.ALIGN_CENTER);
-            addBodyCell(table, formatQty(TunisiaVatDefaults.resolveRate(line.getVatRatePercent())), Element.ALIGN_CENTER);
-            addBodyCell(table, formatMoney(lineVat, currency), Element.ALIGN_CENTER);
-            addBodyCell(table, formatMoney(lineTtc, currency), Element.ALIGN_CENTER);
+            addBodyCell(table, formatMoney(amounts.lineTtc(), currency), Element.ALIGN_CENTER);
         }
 
         document.add(table);
@@ -250,11 +274,18 @@ public class BillPdfGeneratorService {
     private void addTaxSummary(Document document, BillGenerationRequest request, BillTotalsDto totals)
             throws DocumentException {
         String currency = normalizeCurrency(request.getCurrency());
+        BillVatMode vatMode = resolveVatMode(request);
 
         PdfPTable summary = new PdfPTable(2);
         summary.setWidthPercentage(42f);
         summary.setHorizontalAlignment(Element.ALIGN_RIGHT);
         summary.setSpacingAfter(8f);
+
+        if (vatMode == BillVatMode.NONE) {
+            addSummaryRow(summary, "Total " + currency, formatMoney(totals.getTotalIncludingVat(), currency));
+            document.add(summary);
+            return;
+        }
 
         addSummaryRow(summary, "Total HT " + currency, formatMoney(totals.getSubtotalExcludingVat(), currency));
         addSummaryRow(summary, "Total TVA " + currency, formatMoney(totals.getVatAmount(), currency));
@@ -268,8 +299,13 @@ public class BillPdfGeneratorService {
     }
 
     private void addTaxLegalMention(Document document, BillGenerationRequest request) throws DocumentException {
+        if (resolveVatMode(request) == BillVatMode.NONE) {
+            return;
+        }
         String mention = hasText(request.getTaxLegalMention())
                 ? request.getTaxLegalMention()
+                : resolveVatMode(request) == BillVatMode.INCLUSIVE
+                ? TunisiaVatDefaults.INCLUSIVE_LEGAL_MENTION
                 : TunisiaVatDefaults.LEGAL_MENTION;
         Paragraph legal = new Paragraph(mention, NORMAL_FONT);
         legal.setLeading(11f);

@@ -15,16 +15,22 @@ RUN VERSION=$(tr -d '\r\n' < VERSION) && \
 FROM eclipse-temurin:21-jre-jammy AS runtime
 
 ARG APP_VERSION=unknown
+ARG NEW_RELIC_AGENT_VERSION=8.19.0
 LABEL org.opencontainers.image.version="${APP_VERSION}"
 
 WORKDIR /app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends curl \
+    && apt-get install -y --no-install-recommends curl ca-certificates postgresql-client \
     && rm -rf /var/lib/apt/lists/* \
-    && useradd --system --uid 10001 --create-home oosm
+    && useradd --system --uid 10001 --create-home oosm \
+    && mkdir -p /app/newrelic \
+    && curl -fsSL "https://download.newrelic.com/newrelic/java-agent/newrelic-agent/${NEW_RELIC_AGENT_VERSION}/newrelic-agent-${NEW_RELIC_AGENT_VERSION}.jar" \
+        -o /app/newrelic/newrelic.jar \
+    && chown -R oosm:oosm /app/newrelic
 
 COPY --from=build --chown=oosm:oosm /workspace/app/target/oosm-monolith.jar /app/oosm-monolith.jar
+COPY --from=build --chown=oosm:oosm /workspace/app/src/main/resources/newrelic.yml /app/newrelic/newrelic.yml
 COPY --chown=oosm:oosm docker/entrypoint.sh /app/entrypoint.sh
 RUN sed -i 's/\r$//' /app/entrypoint.sh && chmod +x /app/entrypoint.sh
 

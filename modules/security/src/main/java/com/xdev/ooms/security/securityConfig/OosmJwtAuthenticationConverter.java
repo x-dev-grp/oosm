@@ -1,5 +1,6 @@
 package com.xdev.ooms.security.securityConfig;
 
+import com.xdev.ooms.security.tenantmodule.service.TenantModuleService;
 import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.service.UserService;
 import org.springframework.core.convert.converter.Converter;
@@ -20,10 +21,12 @@ import java.util.Map;
 public class OosmJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
     private final UserService userService;
+    private final TenantModuleService tenantModuleService;
     private final JwtAuthenticationConverter delegate;
 
-    public OosmJwtAuthenticationConverter(UserService userService) {
+    public OosmJwtAuthenticationConverter(UserService userService, TenantModuleService tenantModuleService) {
         this.userService = userService;
+        this.tenantModuleService = tenantModuleService;
         this.delegate = new JwtAuthenticationConverter();
         JwtGrantedAuthoritiesConverter authoritiesConverter = new JwtGrantedAuthoritiesConverter();
         authoritiesConverter.setAuthorityPrefix("");
@@ -44,7 +47,8 @@ public class OosmJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
             return token;
         }
 
-        List<GrantedAuthority> authorities = new ArrayList<>(user.getAuthorities());
+        List<GrantedAuthority> authorities = new ArrayList<>(tenantModuleService.filterAuthorities(
+                user.getTenantId(), user.getAuthorities()));
         String roleName = user.getRole().getRoleName();
         if (roleName != null && !roleName.isBlank()) {
             authorities.add(new SimpleGrantedAuthority(roleName.toUpperCase()));

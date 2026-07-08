@@ -57,15 +57,17 @@ $expectedRules = @(
     @{ ruleKey = 'K270'; oilQc = $true;  ruleName = 'K270' },
     @{ ruleKey = 'DeltaK'; oilQc = $true;  ruleName = 'Delta K' },
     @{ ruleKey = 'IndicePreoxyde'; oilQc = $true;  ruleName = 'Indice peroxyde (meq O2/kg)' },
+    @{ ruleKey = 'EtatCamion'; oilQc = $true;  ruleName = 'État camion' },
     @{ ruleKey = 'Infestees'; oilQc = $false; ruleName = 'Infestées %' },
     @{ ruleKey = 'Fermentees'; oilQc = $false; ruleName = 'Fermentées %' },
     @{ ruleKey = 'Endommagees'; oilQc = $false; ruleName = 'Endommagées %' },
-    @{ ruleKey = 'Categorie'; oilQc = $false; ruleName = 'Catégorie Olive' }
+    @{ ruleKey = 'Categorie'; oilQc = $false; ruleName = 'Catégorie Olive' },
+    @{ ruleKey = 'EtatCamion'; oilQc = $false; ruleName = 'État camion' }
 )
 
 function Write-ExpectedSummary {
     Write-Host ''
-    Write-Host 'Expected Tunisia defaults (10 rules):' -ForegroundColor Cyan
+    Write-Host 'Expected Tunisia defaults (12 rules):' -ForegroundColor Cyan
     foreach ($r in $expectedRules) {
         $scope = if ($r.oilQc) { 'oil' } else { 'olive' }
         Write-Host ("  - [{0}] {1} ({2})" -f $scope, $r.ruleKey, $r.ruleName)

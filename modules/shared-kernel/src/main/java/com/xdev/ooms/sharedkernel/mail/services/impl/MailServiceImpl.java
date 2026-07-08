@@ -4,29 +4,29 @@ import com.resend.Resend;
 import com.resend.core.exception.ResendException;
 import com.resend.services.emails.model.CreateEmailOptions;
 import com.resend.services.emails.model.CreateEmailResponse;
-import com.xdev.ooms.sharedkernel.mail.config.OosmMailProperties;
+import com.xdev.ooms.sharedkernel.mail.config.DynamicMailSettings;
+import com.xdev.ooms.sharedkernel.mail.config.MailProvider;
 import com.xdev.ooms.sharedkernel.mail.exception.MailDeliveryException;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 @Service
 public class MailServiceImpl implements MailService {
 
-    private final ObjectProvider<Resend> resendClient;
-    private final OosmMailProperties mailProperties;
+    private final DynamicMailSettings mailSettings;
+    private final SmtpMailSender smtpMailSender;
 
-    public MailServiceImpl(ObjectProvider<Resend> resendClient, OosmMailProperties mailProperties) {
-        this.resendClient = resendClient;
-        this.mailProperties = mailProperties;
+    public MailServiceImpl(DynamicMailSettings mailSettings, SmtpMailSender smtpMailSender) {
+        this.mailSettings = mailSettings;
+        this.smtpMailSender = smtpMailSender;
     }
 
     @Override
     public boolean isDeliveryEnabled() {
-        return mailProperties.isDeliveryEnabled();
+        return mailSettings.isDeliveryEnabled();
     }
 
     @Override
@@ -37,14 +37,27 @@ public class MailServiceImpl implements MailService {
             return;
         }
 
-        Resend client = resendClient.getIfAvailable();
-        if (client == null) {
+        if (mailSettings.getProvider() == MailProvider.SMTP) {
+            smtpMailSender.send(request);
+            OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
+                    "Email sent via SMTP to %s", request.getTo());
+            return;
+        }
+
+        sendViaResend(request);
+    }
+
+    private void sendViaResend(MailRequest request) throws MailDeliveryException {
+        String apiKey = mailSettings.getApiKey().orElse(null);
+        if (!StringUtils.hasText(apiKey)) {
             throw new MailDeliveryException("Resend client is not configured");
         }
 
+        Resend client = new Resend(apiKey);
+
         try {
             CreateEmailOptions.Builder builder = CreateEmailOptions.builder()
-                    .from(mailProperties.getFormattedFrom())
+                    .from(mailSettings.getFormattedFrom())
                     .to(request.getTo())
                     .subject(request.getSubject());
 
@@ -57,15 +70,27 @@ public class MailServiceImpl implements MailService {
                 builder.text(request.getBody());
             }
 
-            if (StringUtils.hasText(mailProperties.getSupportEmail())) {
-                builder.replyTo(mailProperties.getSupportEmail());
+            if (StringUtils.hasText(mailSettings.getSupportEmail())) {
+                builder.replyTo(mailSettings.getSupportEmail());
             }
 
             CreateEmailResponse response = client.emails().send(builder.build());
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO,
                     "Email sent via Resend to %s (id=%s)", request.getTo(), response.getId());
         } catch (ResendException ex) {
-            throw new MailDeliveryException("Failed to send email via Resend to " + request.getTo(), ex);
+            throw new MailDeliveryException(formatResendError(ex), ex);
         }
+    }
+
+    private static String formatResendError(ResendException ex) {
+        String raw = ex.getMessage();
+        if (raw == null) {
+            return "Resend rejected the email";
+        }
+        if (raw.contains("domain is not verified") || raw.contains("validation_error")) {
+            return "Resend rejected the sender: the From address domain is not verified. "
+                    + "Add and verify the domain at https://resend.com/domains, or use an address on a verified domain.";
+        }
+        return "Resend rejected the email: " + raw;
     }
 }
