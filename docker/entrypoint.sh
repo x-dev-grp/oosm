@@ -91,17 +91,6 @@ esac
 
 echo "Database: ${PGHOST:-from DB_URL}:${PGPORT:-5432}/${PGDATABASE:-?} user=${DB_USER}"
 
-# Render free/starter instances are capped at 512MiB.
-apply_compact_jvm() {
-  if [ "${OOSM_SKIP_JVM_TUNING:-false}" = "true" ]; then
-    return 0
-  fi
-  export JAVA_TOOL_OPTIONS="-XX:+UseContainerSupport -XX:+UseSerialGC -Xms48m -Xmx192m -Xss384k -XX:MaxMetaspaceSize=96m -XX:ReservedCodeCacheSize=32m -XX:MaxDirectMemorySize=16m -XX:+ExitOnOutOfMemoryError"
-  echo "JVM: compact profile for 512MiB containers (heap=192m, metaspace=96m)"
-}
-
-apply_compact_jvm
-
 listen_port="${PORT:-${SERVER_PORT:-8084}}"
 echo "Starting oosm-monolith on 0.0.0.0:${listen_port} (PORT=${PORT:-unset}, SERVER_PORT=${SERVER_PORT:-unset})"
 

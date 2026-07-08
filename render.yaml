@@ -11,9 +11,8 @@ services:
     autoDeployTrigger: off
     healthCheckPath: /actuator/health/liveness
     envVars:
-      # Entrypoint applies compact JVM tuning; set OOSM_SKIP_JVM_TUNING=true to use a custom JAVA_TOOL_OPTIONS.
       - key: JAVA_TOOL_OPTIONS
-        sync: false
+        value: -XX:+UseContainerSupport -XX:+UseSerialGC -Xms64m -Xmx256m -Xss512k -XX:MaxMetaspaceSize=128m -XX:ReservedCodeCacheSize=48m -XX:MaxDirectMemorySize=32m -XX:+ExitOnOutOfMemoryError
       - key: DB_URL
         sync: false
       - key: DB_USER

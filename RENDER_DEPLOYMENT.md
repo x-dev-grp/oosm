@@ -126,3 +126,29 @@ $env:DB_PASS="<database-password>"
 
 Run `-IncludeOneTimeSeeds` only once on a fresh database. Restart `oosm-api`
 after the scripts finish.
+
+## JVM memory (512 MiB free tier)
+
+Render free instances are capped at 512 MiB. JVM tuning is set via
+`JAVA_TOOL_OPTIONS` in `render.yaml` (same profile used before New Relic):
+
+```text
+-XX:+UseContainerSupport -XX:+UseSerialGC
+-Xms64m -Xmx256m -Xss512k
+-XX:MaxMetaspaceSize=128m
+-XX:ReservedCodeCacheSize=48m
+-XX:MaxDirectMemorySize=32m
+-XX:+ExitOnOutOfMemoryError
+```
+
+| Region | Limit |
+|--------|-------|
+| Heap (`-Xmx`) | 256m |
+| Metaspace | 128m |
+| Code cache | 48m |
+| Direct memory | 32m |
+| Thread stack | 512k |
+
+If you override `JAVA_TOOL_OPTIONS` in the Render dashboard, remove any stale
+compact-profile values from the New Relic era (e.g. `-Xmx192m`,
+`-XX:MaxMetaspaceSize=96m`). Redeploy after changing env vars.
