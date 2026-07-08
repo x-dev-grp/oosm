@@ -18,6 +18,8 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenGenerator;
 import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 
 @Configuration
 public class AuthServerConfig {
@@ -77,8 +79,7 @@ public class AuthServerConfig {
                     .securityMatcher(
                             "/actuator/health",
                             "/actuator/health/**",
-                            "/api/public/health",
-                            "/api/public/health/**",
+                            "/api/public/**",
                             "/api/security/user/auth/**",
                             "/api/security/user/me/refresh-session"
                     )
@@ -175,18 +176,29 @@ public class AuthServerConfig {
                         .requestMatchers(
                                 "/actuator/health",
                                 "/actuator/health/**",
-                                "/api/public/health",
-                                "/api/public/health/**"
+                                "/api/public/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .oauth2ResourceServer(oauth -> oauth.jwt(
-                        jwt -> jwt.jwtAuthenticationConverter(osmJwtAuthenticationConverter)));
+                .oauth2ResourceServer(oauth -> oauth
+                        .bearerTokenResolver(permitAllAwareBearerTokenResolver())
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(osmJwtAuthenticationConverter)));
 
         return http.build();
+    }
+
+    private BearerTokenResolver permitAllAwareBearerTokenResolver() {
+        DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
+        return request -> {
+            String path = request.getRequestURI();
+            if (path != null && (path.startsWith("/api/public/") || path.startsWith("/actuator/health"))) {
+                return null;
+            }
+            return defaultResolver.resolve(request);
+        };
     }
 
     private OAuth2AuthorizationServerConfigurer getOAuth2AuthorizationServerConfigurer() {
