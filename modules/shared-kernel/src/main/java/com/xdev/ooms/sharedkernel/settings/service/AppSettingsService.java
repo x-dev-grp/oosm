@@ -7,7 +7,6 @@ import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsListResponse;
 import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestResponse;
-import com.xdev.ooms.sharedkernel.settings.dto.PublicObservabilityConfigDto;
 import com.xdev.ooms.sharedkernel.settings.dto.RotateSecretRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.UpdateSettingRequest;
 import org.springframework.data.domain.Page;
@@ -39,6 +38,4 @@ public interface AppSettingsService {
     MailTestResponse sendMailTest(MailTestRequest request, AdminSettingsActor actor);
 
     Page<AdminSettingAuditDto> listAudit(String settingKey, Pageable pageable);
-
-    PublicObservabilityConfigDto getPublicObservabilityConfig();
 }

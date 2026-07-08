@@ -38,11 +38,7 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
     private static final Map<String, String> BOOTSTRAP_KEYS = Map.of(
             "SPRINGDOC_ENABLED", "SPRINGDOC_ENABLED",
             "SEARCH_DEBUG_ON_STARTUP", "SEARCH_DEBUG_ON_STARTUP",
-            "HEALTH_SHOW_DETAILS", "HEALTH_SHOW_DETAILS",
-            "NEW_RELIC_APM_ENABLED", "NEW_RELIC_APM_ENABLED",
-            "NEW_RELIC_APP_NAME", "NEW_RELIC_APP_NAME",
-            "NEW_RELIC_LOG_FORWARDING_ENABLED", "NEW_RELIC_LOG_FORWARDING_ENABLED",
-            "NEW_RELIC_REGION", "NEW_RELIC_REGION"
+            "HEALTH_SHOW_DETAILS", "HEALTH_SHOW_DETAILS"
     );
 
     /**
@@ -53,15 +49,12 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
     private static final Map<String, List<String>> DERIVED_PROPERTIES = Map.of(
             "SPRINGDOC_ENABLED", List.of("springdoc.api-docs.enabled"),
             "SEARCH_DEBUG_ON_STARTUP", List.of("app.debug.search-on-startup"),
-            "HEALTH_SHOW_DETAILS", List.of("management.endpoint.health.show-details"),
-            "NEW_RELIC_LOG_FORWARDING_ENABLED", List.of("NEW_RELIC_APPLICATION_LOGGING_FORWARDING_ENABLED")
+            "HEALTH_SHOW_DETAILS", List.of("management.endpoint.health.show-details")
     );
 
     private static final Set<String> BOOLEAN_BOOTSTRAP_KEYS = Set.of(
             "SPRINGDOC_ENABLED",
-            "SEARCH_DEBUG_ON_STARTUP",
-            "NEW_RELIC_APM_ENABLED",
-            "NEW_RELIC_LOG_FORWARDING_ENABLED"
+            "SEARCH_DEBUG_ON_STARTUP"
     );
 
     private final DeferredLog log;
@@ -97,10 +90,9 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
         environment.getPropertySources().addFirst(new MapPropertySource(PROPERTY_SOURCE_NAME, properties));
 
         String springdocRuntime = environment.getProperty("springdoc.api-docs.enabled", "false");
-        String newRelicApm = environment.getProperty("NEW_RELIC_APM_ENABLED", "false");
         log.info(
                 "app_setting bootstrap succeeded: loaded " + properties.size() + " propert(ies) " + properties.keySet()
-                        + " (springdoc.api-docs.enabled=" + springdocRuntime + ", NEW_RELIC_APM_ENABLED=" + newRelicApm + ")"
+                        + " (springdoc.api-docs.enabled=" + springdocRuntime + ")"
         );
     }
 

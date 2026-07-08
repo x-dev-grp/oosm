@@ -15,7 +15,6 @@ import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.FeatureStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestResponse;
-import com.xdev.ooms.sharedkernel.settings.dto.PublicObservabilityConfigDto;
 import com.xdev.ooms.sharedkernel.settings.dto.RotateSecretRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.UpdateSettingRequest;
 import com.xdev.ooms.sharedkernel.settings.entity.AppSetting;
@@ -285,8 +284,6 @@ public class AppSettingsServiceImpl implements AppSettingsService {
         features.put("qr", buildQrFeatureStatus());
         features.put("notifications", buildNotificationsFeatureStatus());
         features.put("swagger", buildSwaggerFeatureStatus());
-        features.put("newRelicApm", buildNewRelicApmFeatureStatus());
-        features.put("newRelicBrowser", buildNewRelicBrowserFeatureStatus());
         status.setFeatures(features);
 
         FeatureStatusDto mail = features.get("mail");
@@ -416,28 +413,6 @@ public class AppSettingsServiceImpl implements AppSettingsService {
                 ? auditRepository.findBySettingKeyOrderByChangedAtDesc(settingKey, pageable)
                 : auditRepository.findAllByOrderByChangedAtDesc(pageable);
         return page.map(this::toAuditDto);
-    }
-
-    @Override
-    public PublicObservabilityConfigDto getPublicObservabilityConfig() {
-        PublicObservabilityConfigDto config = new PublicObservabilityConfigDto();
-        boolean enabled = getBoolean("NEW_RELIC_BROWSER_ENABLED", false);
-        String accountId = getString("NEW_RELIC_BROWSER_ACCOUNT_ID", "");
-        String applicationId = getString("NEW_RELIC_BROWSER_APPLICATION_ID", "");
-        String licenseKey = getString("NEW_RELIC_BROWSER_LICENSE_KEY", "");
-
-        boolean configured = StringUtils.hasText(accountId)
-                && StringUtils.hasText(applicationId)
-                && StringUtils.hasText(licenseKey);
-
-        config.setNewRelicBrowserEnabled(enabled && configured);
-        if (enabled && configured) {
-            config.setAccountId(accountId.trim());
-            config.setApplicationId(applicationId.trim());
-            config.setLicenseKey(licenseKey.trim());
-            config.setTrustKey(accountId.trim());
-        }
-        return config;
     }
 
     private ResolvedSetting resolve(String key) {
@@ -624,69 +599,6 @@ public class AppSettingsServiceImpl implements AppSettingsService {
         status.setEnabled(appIdConfigured && apiKeyConfigured);
         status.setMissingKeys(missing);
         return status;
-    }
-
-    private FeatureStatusDto buildNewRelicApmFeatureStatus() {
-        boolean enabledFlag = getBoolean("NEW_RELIC_APM_ENABLED", false);
-        boolean appNameConfigured = StringUtils.hasText(getString("NEW_RELIC_APP_NAME", ""));
-        boolean licenseConfigured = getSecret("NEW_RELIC_LICENSE_KEY").isPresent()
-                || StringUtils.hasText(resolveEnv(requireDefinition("NEW_RELIC_LICENSE_KEY")));
-
-        List<String> missing = new ArrayList<>();
-        if (!licenseConfigured) {
-            missing.add("NEW_RELIC_LICENSE_KEY");
-        }
-        if (!appNameConfigured) {
-            missing.add("NEW_RELIC_APP_NAME");
-        }
-
-        boolean agentAttached = isNewRelicAgentAttached();
-        FeatureStatusDto status = new FeatureStatusDto();
-        status.setProvider("NEW_RELIC_APM");
-        status.setConfigured(enabledFlag && licenseConfigured && appNameConfigured);
-        status.setEnabled(enabledFlag && licenseConfigured && appNameConfigured && agentAttached);
-        status.setMissingKeys(enabledFlag ? missing : List.of("NEW_RELIC_APM_ENABLED"));
-        if (enabledFlag && licenseConfigured && !agentAttached) {
-            OOSMLogger.warn(this.getClass(),
-                    "NEW_RELIC_APM_ENABLED is true but the Java agent is not attached; "
-                            + "restart with -javaagent:newrelic.jar and NEW_RELIC_LICENSE_KEY on the host");
-        }
-        return status;
-    }
-
-    private FeatureStatusDto buildNewRelicBrowserFeatureStatus() {
-        boolean enabled = getBoolean("NEW_RELIC_BROWSER_ENABLED", false);
-        boolean accountConfigured = StringUtils.hasText(getString("NEW_RELIC_BROWSER_ACCOUNT_ID", ""));
-        boolean applicationConfigured = StringUtils.hasText(getString("NEW_RELIC_BROWSER_APPLICATION_ID", ""));
-        boolean licenseConfigured = StringUtils.hasText(getString("NEW_RELIC_BROWSER_LICENSE_KEY", ""));
-
-        List<String> missing = new ArrayList<>();
-        if (!accountConfigured) {
-            missing.add("NEW_RELIC_BROWSER_ACCOUNT_ID");
-        }
-        if (!applicationConfigured) {
-            missing.add("NEW_RELIC_BROWSER_APPLICATION_ID");
-        }
-        if (!licenseConfigured) {
-            missing.add("NEW_RELIC_BROWSER_LICENSE_KEY");
-        }
-
-        boolean configured = accountConfigured && applicationConfigured && licenseConfigured;
-        FeatureStatusDto status = new FeatureStatusDto();
-        status.setProvider("NEW_RELIC_BROWSER");
-        status.setConfigured(configured);
-        status.setEnabled(enabled && configured);
-        status.setMissingKeys(enabled ? missing : List.of("NEW_RELIC_BROWSER_ENABLED"));
-        return status;
-    }
-
-    private static boolean isNewRelicAgentAttached() {
-        try {
-            Class.forName("com.newrelic.api.agent.NewRelic");
-            return true;
-        } catch (ClassNotFoundException ex) {
-            return false;
-        }
     }
 
     private FeatureStatusDto buildSwaggerFeatureStatus() {

@@ -25,7 +25,6 @@ public class AppSettingDefinitionRegistry {
         registerQrSettings();
         registerNotificationSettings();
         registerDiagnosticSettings();
-        registerObservabilitySettings();
     }
 
     private void registerMailSettings() {
@@ -101,37 +100,6 @@ public class AppSettingDefinitionRegistry {
         register(setting(SettingCategory.DIAGNOSTICS, "SPRINGDOC_ENABLED", "OpenAPI / Swagger enabled",
                 "Expose /swagger-ui and /v3/api-docs. Requires restart.",
                 SettingValueType.BOOLEAN, false, true, "false", "SPRINGDOC_ENABLED", null, null));
-    }
-
-    private void registerObservabilitySettings() {
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_APM_ENABLED", "New Relic APM enabled",
-                "Attach the New Relic Java agent for APM and log forwarding. Requires restart. "
-                        + "Also set NEW_RELIC_LICENSE_KEY on the host if not stored below.",
-                SettingValueType.BOOLEAN, false, true, "false", "NEW_RELIC_APM_ENABLED", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_APP_NAME", "New Relic application name",
-                "APM entity name shown in New Relic (defaults to spring.application.name). Requires restart.",
-                SettingValueType.STRING, false, true, "oosm-monolith", "NEW_RELIC_APP_NAME", null, null));
-        register(secret(SettingCategory.INTEGRATIONS, "NEW_RELIC_LICENSE_KEY", "New Relic license key",
-                "APM license key. Also export NEW_RELIC_LICENSE_KEY on the host for JVM agent startup.",
-                "NEW_RELIC_LICENSE_KEY", null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_LOG_FORWARDING_ENABLED", "New Relic log forwarding",
-                "Forward Logback logs to New Relic when the Java agent is attached. Requires restart.",
-                SettingValueType.BOOLEAN, false, true, "true", "NEW_RELIC_LOG_FORWARDING_ENABLED", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_REGION", "New Relic region",
-                "Data region for the Java agent (EU or US). Requires restart.",
-                SettingValueType.STRING, false, true, "EU", "NEW_RELIC_REGION", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_BROWSER_ENABLED", "New Relic browser monitoring",
-                "Load the New Relic browser agent in the Angular app (RUM + browser logs).",
-                SettingValueType.BOOLEAN, false, false, "false", "NEW_RELIC_BROWSER_ENABLED", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_BROWSER_ACCOUNT_ID", "New Relic browser account ID",
-                "Account ID from the browser agent snippet in New Relic.",
-                SettingValueType.STRING, false, false, null, "NEW_RELIC_BROWSER_ACCOUNT_ID", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_BROWSER_APPLICATION_ID", "New Relic browser application ID",
-                "Browser application ID from the New Relic snippet.",
-                SettingValueType.STRING, false, false, null, "NEW_RELIC_BROWSER_APPLICATION_ID", null, null));
-        register(setting(SettingCategory.INTEGRATIONS, "NEW_RELIC_BROWSER_LICENSE_KEY", "New Relic browser license key",
-                "Browser ingest license key from the New Relic snippet (embedded in the client bundle).",
-                SettingValueType.STRING, false, false, null, "NEW_RELIC_BROWSER_LICENSE_KEY", null, null));
     }
 
     private static AppSettingDefinition settingEnum(

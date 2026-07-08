@@ -79,8 +79,6 @@ public class AuthServerConfig {
                             "/actuator/health/**",
                             "/api/public/health",
                             "/api/public/health/**",
-                            "/api/public/observability-config",
-                            "/api/public/observability-config/**",
                             "/api/security/user/auth/**",
                             "/api/security/user/me/refresh-session"
                     )
@@ -178,9 +176,7 @@ public class AuthServerConfig {
                                 "/actuator/health",
                                 "/actuator/health/**",
                                 "/api/public/health",
-                                "/api/public/health/**",
-                                "/api/public/observability-config",
-                                "/api/public/observability-config/**"
+                                "/api/public/health/**"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
