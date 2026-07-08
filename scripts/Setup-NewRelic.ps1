@@ -30,21 +30,87 @@ function Require-Command($name) {
     }
 }
 
-function Invoke-NrqJson {
+function Invoke-NerdGraph {
+    param(
+        [Parameter(Mandatory = $true)][string]$Query,
+        [Parameter(Mandatory = $true)][string]$Region,
+        [Parameter(Mandatory = $true)][string]$ApiKey
+    )
+    $endpoint = if ($Region -eq 'EU') { 'https://api.eu.newrelic.com/graphql' } else { 'https://api.newrelic.com/graphql' }
+    $body = @{ query = $Query } | ConvertTo-Json -Compress
+    $headers = @{
+        'API-Key'      = $ApiKey
+        'Content-Type' = 'application/json'
+    }
+    $response = Invoke-RestMethod -Method Post -Uri $endpoint -Headers $headers -Body $body
+    if ($response.errors) {
+        $message = ($response.errors | ForEach-Object { $_.message }) -join '; '
+        throw "NerdGraph error: $message"
+    }
+    return $response
+}
+
+function Invoke-NerdGraphData {
+    param(
+        [Parameter(Mandatory = $true)][string]$Query,
+        [Parameter(Mandatory = $true)][string]$Region,
+        [Parameter(Mandatory = $true)][string]$ApiKey
+    )
+    $response = Invoke-NerdGraph -Query $Query -Region $Region -ApiKey $ApiKey
+    if ($null -ne $response.data) {
+        return $response.data
+    }
+    return $response
+}
+
+function Invoke-NrqOutput {
     param([Parameter(Mandatory = $true)][string[]]$NrqArgs)
-    $raw = & nrq @NrqArgs 2>&1
-    if ($LASTEXITCODE -ne 0) {
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    try {
+        $raw = & nrq @NrqArgs 2>&1
+        $exitCode = $LASTEXITCODE
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
+    }
+    if ($exitCode -ne 0) {
         throw ($raw | Out-String).Trim()
     }
-    $text = ($raw | Out-String).Trim()
-    if ([string]::IsNullOrWhiteSpace($text)) {
-        return $null
-    }
-    return $text | ConvertFrom-Json
+    return $raw
 }
 
 function Escape-GraphQl([string]$value) {
     return $value.Replace('\', '\\').Replace('"', '\"')
+}
+
+function Test-NewRelicUserApiKey([string]$key) {
+    if ([string]::IsNullOrWhiteSpace($key)) {
+        return $false
+    }
+    return $key.Trim().StartsWith('NRAK-', [System.StringComparison]::OrdinalIgnoreCase)
+}
+
+function Show-NewRelicKeyHelp {
+    Write-Host ''
+    Write-Host 'Wrong API key type.' -ForegroundColor Red
+    Write-Host ''
+    Write-Host 'nrq / Setup-NewRelic.ps1 needs a USER API key (starts with NRAK-), NOT:' -ForegroundColor Yellow
+    Write-Host '  - License / ingest key  -> use for Render NEW_RELIC_LICENSE_KEY only'
+    Write-Host '  - Browser license key   -> use for OOSM Admin Integrations browser field only'
+    Write-Host ''
+    Write-Host 'Create a User key:' -ForegroundColor Cyan
+    Write-Host '  1. Open https://one.eu.newrelic.com/launcher/api-keys-ui.api-keys-launcher'
+    Write-Host '  2. Create key -> User key'
+    Write-Host '  3. Copy the full key (NRAK-...) — shown only once'
+    Write-Host ''
+    Write-Host 'Then run:' -ForegroundColor Cyan
+    Write-Host '  $env:NEWRELIC_API_KEY = ''NRAK-...'''
+    Write-Host '  powershell -File scripts\Setup-NewRelic.ps1 -AccountId 8261688 -Region EU'
+    Write-Host ''
+    Write-Host 'If you already have a license ingest key, pass it separately:' -ForegroundColor DarkGray
+    Write-Host '  -LicenseKey ''your-ingest-license-key'''
+    Write-Host ''
 }
 
 Write-Host '=== OOSM New Relic CLI setup (nrq) ===' -ForegroundColor Cyan
@@ -52,54 +118,50 @@ Write-Host '=== OOSM New Relic CLI setup (nrq) ===' -ForegroundColor Cyan
 Require-Command 'nrq'
 
 if ([string]::IsNullOrWhiteSpace($ApiKey)) {
-    throw @"
-NEWRELIC_API_KEY is required.
-1. New Relic UI -> Profile -> API keys -> Create a User key
-2. Run:
-   `$env:NEWRELIC_API_KEY = 'your-user-key'
-   powershell -File scripts/Setup-NewRelic.ps1 -AccountId YOUR_ACCOUNT_ID -Region EU
-"@
+    Show-NewRelicKeyHelp
+    throw 'NEWRELIC_API_KEY is required (User key starting with NRAK-).'
+}
+
+if (-not (Test-NewRelicUserApiKey $ApiKey)) {
+    Show-NewRelicKeyHelp
+    throw "NEWRELIC_API_KEY must be a User API key starting with NRAK-. You may have pasted a license/ingest key by mistake."
 }
 
 Write-Host 'Configuring nrq credentials...' -ForegroundColor DarkGray
-$env:NEWRELIC_API_KEY = $ApiKey
-& nrq set-credential --ref newrelic-cli/default --key api_key --from-env NEWRELIC_API_KEY --overwrite | Out-Null
-& nrq config set --account-id $AccountId --region $Region | Out-Null
+$env:NEWRELIC_API_KEY = $ApiKey.Trim()
+Invoke-NrqOutput -NrqArgs @('set-credential', '--ref', 'newrelic-cli/default', '--key', 'api_key', '--from-env', 'NEWRELIC_API_KEY', '--overwrite') | Out-Null
+Invoke-NrqOutput -NrqArgs @('config', 'set', '--account-id', "$AccountId", '--region', $Region) | Out-Null
 
-$me = Invoke-NrqJson -NrqArgs @('me')
-Write-Host ("Authenticated as {0}" -f $me.data.actor.user.email) -ForegroundColor Green
+try {
+    Invoke-NrqOutput -NrqArgs @('me') | Out-Null
+    Write-Host 'Authenticated with New Relic (nrq me OK).' -ForegroundColor Green
+}
+catch {
+    Show-NewRelicKeyHelp
+    throw "nrq authentication failed. Use a valid User API key (NRAK-) for account $AccountId region $Region. Original error: $_"
+}
 
 if ([string]::IsNullOrWhiteSpace($LicenseKey)) {
-    Write-Host 'Creating APM ingest (license) key...' -ForegroundColor DarkGray
-    $licenseResult = Invoke-NrqJson -NrqArgs @('keys', 'create', '--type', 'ingest', '--ingest-type', 'license', '--name', 'oosm-apm-license')
-    $LicenseKey = $licenseResult.ingestKey.key
-    if (-not $LicenseKey) { $LicenseKey = $licenseResult.key }
-    if ([string]::IsNullOrWhiteSpace($LicenseKey)) {
-        throw 'Failed to create license ingest key. Create one in New Relic UI -> API keys -> Ingest license key.'
-    }
-    Write-Host 'Created license ingest key.' -ForegroundColor Green
+    throw 'License key is required. Pass -LicenseKey or set NEW_RELIC_LICENSE_KEY.'
 }
+Write-Host 'Using provided APM license ingest key.' -ForegroundColor Green
 
 $browserGuid = $null
 if (-not $SkipBrowserCreate) {
     $escapedBrowserName = Escape-GraphQl $BrowserAppName
-    $searchQuery = "name = '$escapedBrowserName' AND domain = 'BROWSER'"
     Write-Host "Searching for browser app '$BrowserAppName'..." -ForegroundColor DarkGray
-    $search = Invoke-NrqJson -NrqArgs @('entities', 'search', $searchQuery)
-    $existing = @()
-    if ($search.entities) { $existing = @($search.entities) }
-    elseif ($search.results) { $existing = @($search.results) }
-    if ($existing.Count -gt 0) {
+    $searchQuery = "{ actor { entitySearch(query: `"name = '$escapedBrowserName' AND domain = 'BROWSER'`") { results { entities { guid name } } } } }"
+    $search = Invoke-NerdGraphData -Query $searchQuery -Region $Region -ApiKey $ApiKey.Trim()
+    $existing = @($search.actor.entitySearch.results.entities)
+    if ($existing.Count -gt 0 -and $null -ne $existing[0]) {
         $browserGuid = $existing[0].guid
         Write-Host "Reusing existing browser app (guid=$browserGuid)." -ForegroundColor Yellow
     }
     else {
         Write-Host "Creating browser SPA app '$BrowserAppName'..." -ForegroundColor DarkGray
-        $mutation = @"
-mutation { agentApplicationCreateBrowser(accountId: $AccountId, name: \"$escapedBrowserName\", settings: { loaderType: SPA, distributedTracingEnabled: true, cookiesEnabled: true }) { guid name settings { loaderType } } }
-"@
-        $create = Invoke-NrqJson -NrqArgs @('nerdgraph', 'query', $mutation)
-        $browserGuid = $create.data.agentApplicationCreateBrowser.guid
+        $mutation = "mutation { agentApplicationCreateBrowser(accountId: $AccountId, name: `"$escapedBrowserName`", settings: { loaderType: SPA, distributedTracingEnabled: true, cookiesEnabled: true }) { guid name settings { loaderType } } }"
+        $create = Invoke-NerdGraphData -Query $mutation -Region $Region -ApiKey $ApiKey.Trim()
+        $browserGuid = $create.agentApplicationCreateBrowser.guid
         if ([string]::IsNullOrWhiteSpace($browserGuid)) {
             throw 'Browser app creation failed. Check account permissions.'
         }
@@ -112,19 +174,41 @@ if ([string]::IsNullOrWhiteSpace($browserGuid)) {
 }
 
 Write-Host 'Fetching browser agent configuration...' -ForegroundColor DarkGray
-$configQuery = @"
-{ actor { entity(guid: \"$browserGuid\") { ... on BrowserApplicationEntity { guid name browserProperties { jsConfig } } } } }
-"@
-$browserConfig = Invoke-NrqJson -NrqArgs @('nerdgraph', 'query', $configQuery)
-$jsConfigRaw = $browserConfig.data.actor.entity.browserProperties.jsConfig
-if ([string]::IsNullOrWhiteSpace($jsConfigRaw)) {
+$configQuery = "{ actor { entity(guid: `"$browserGuid`") { ... on BrowserApplicationEntity { guid name browserProperties { jsConfig } } } } }"
+$browserConfig = Invoke-NerdGraphData -Query $configQuery -Region $Region -ApiKey $ApiKey.Trim()
+$entity = $browserConfig.actor.entity
+$jsConfigRaw = $entity.browserProperties.jsConfig
+if ($null -eq $jsConfigRaw) {
     throw 'Could not read browser jsConfig from New Relic.'
 }
-$jsConfig = $jsConfigRaw | ConvertFrom-Json
+if ($jsConfigRaw -is [string]) {
+    $jsConfig = $jsConfigRaw | ConvertFrom-Json
+}
+else {
+    $jsConfig = $jsConfigRaw
+}
 
-$browserAccountId = [string]$jsConfig.info.accountID
-$browserApplicationId = [string]$jsConfig.info.applicationID
-$browserLicenseKey = [string]$jsConfig.info.licenseKey
+$browserAccountId = if ($jsConfig.loader_config.accountID) {
+    [string]$jsConfig.loader_config.accountID
+}
+elseif ($jsConfig.info.accountID) {
+    [string]$jsConfig.info.accountID
+}
+else {
+    [string]$AccountId
+}
+$browserApplicationId = if ($jsConfig.info.applicationID) {
+    [string]$jsConfig.info.applicationID
+}
+else {
+    [string]$jsConfig.loader_config.applicationID
+}
+$browserLicenseKey = if ($jsConfig.info.licenseKey) {
+    [string]$jsConfig.info.licenseKey
+}
+else {
+    [string]$jsConfig.loader_config.licenseKey
+}
 
 if ([string]::IsNullOrWhiteSpace($browserAccountId) -or
     [string]::IsNullOrWhiteSpace($browserApplicationId) -or

@@ -2,8 +2,8 @@ package com.xdev.ooms.config;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
+import org.springframework.boot.logging.DeferredLog;
 import org.springframework.boot.logging.DeferredLogFactory;
-import org.springframework.boot.logging.Log;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
@@ -64,14 +64,16 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
             "NEW_RELIC_LOG_FORWARDING_ENABLED"
     );
 
-    private final Log log;
+    private final DeferredLog log;
 
     public AppSettingsEnvironmentPostProcessor(DeferredLogFactory logFactory) {
-        this.log = logFactory.getLog(getClass());
+        this.log = (DeferredLog) logFactory.getLog(AppSettingsEnvironmentPostProcessor.class);
     }
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
+        log.switchTo(getClass());
+
         String jdbcUrl = resolveJdbcUrl(environment);
         String username = resolveUsername(environment);
         String password = resolvePassword(environment);
@@ -81,14 +83,13 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
             return;
         }
 
-        log.info("Loading restart-required app_setting values from database (url={})", maskJdbcUrl(jdbcUrl));
+        log.info("Loading restart-required app_setting values from database (url=" + maskJdbcUrl(jdbcUrl) + ")");
 
         Map<String, Object> properties = loadBootstrapProperties(jdbcUrl, username, password);
         if (properties.isEmpty()) {
             log.warn(
-                    "app_setting bootstrap found no values for keys {} — "
-                            + "springdoc.api-docs.enabled and other restart-required settings will use application.yml defaults",
-                    BOOTSTRAP_KEYS.keySet()
+                    "app_setting bootstrap found no values for keys " + BOOTSTRAP_KEYS.keySet()
+                            + " — springdoc.api-docs.enabled and other restart-required settings will use application.yml defaults"
             );
             return;
         }
@@ -98,11 +99,8 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
         String springdocRuntime = environment.getProperty("springdoc.api-docs.enabled", "false");
         String newRelicApm = environment.getProperty("NEW_RELIC_APM_ENABLED", "false");
         log.info(
-                "app_setting bootstrap succeeded: loaded {} propert(ies) {} (springdoc.api-docs.enabled={}, NEW_RELIC_APM_ENABLED={})",
-                properties.size(),
-                properties.keySet(),
-                springdocRuntime,
-                newRelicApm
+                "app_setting bootstrap succeeded: loaded " + properties.size() + " propert(ies) " + properties.keySet()
+                        + " (springdoc.api-docs.enabled=" + springdocRuntime + ", NEW_RELIC_APM_ENABLED=" + newRelicApm + ")"
         );
     }
 
@@ -147,30 +145,24 @@ public class AppSettingsEnvironmentPostProcessor implements EnvironmentPostProce
                 lastFailure = ex;
                 if (attempt < JDBC_RETRY_ATTEMPTS) {
                     log.warn(
-                            "app_setting bootstrap JDBC attempt {}/{} failed ({}): {}",
-                            attempt,
-                            JDBC_RETRY_ATTEMPTS,
-                            ex.getSQLState(),
-                            ex.getMessage()
+                            "app_setting bootstrap JDBC attempt " + attempt + "/" + JDBC_RETRY_ATTEMPTS
+                                    + " failed (" + ex.getSQLState() + "): " + ex.getMessage()
                     );
                     sleep();
                 }
             } catch (ClassNotFoundException ex) {
-                log.error("app_setting bootstrap failed: PostgreSQL driver not on classpath — {}", ex.getMessage());
+                log.error("app_setting bootstrap failed: PostgreSQL driver not on classpath — " + ex.getMessage());
                 return properties;
             } catch (Exception ex) {
-                log.error("app_setting bootstrap failed unexpectedly: {}", ex.toString());
+                log.error("app_setting bootstrap failed unexpectedly: " + ex);
                 return properties;
             }
         }
 
         if (lastFailure != null) {
             log.error(
-                    "Failed to load app_setting bootstrap properties after {} attempts (url={}): [{}] {}",
-                    JDBC_RETRY_ATTEMPTS,
-                    maskJdbcUrl(jdbcUrl),
-                    lastFailure.getSQLState(),
-                    lastFailure.getMessage()
+                    "Failed to load app_setting bootstrap properties after " + JDBC_RETRY_ATTEMPTS + " attempts (url="
+                            + maskJdbcUrl(jdbcUrl) + "): [" + lastFailure.getSQLState() + "] " + lastFailure.getMessage()
             );
         }
         return properties;

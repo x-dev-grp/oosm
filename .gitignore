@@ -18,6 +18,7 @@ logs/
 .env
 .env.*
 !.env.render.example
+newrelic-oosm-config.json
 
 ### Local JWT signing keys ###
 app/src/main/resources/keys/*.pk8
