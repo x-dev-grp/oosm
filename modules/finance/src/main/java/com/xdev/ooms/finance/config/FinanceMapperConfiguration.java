@@ -9,12 +9,13 @@ import org.springframework.context.annotation.Configuration;
 public class FinanceMapperConfiguration {
 
     public FinanceMapperConfiguration(ModelMapper modelMapper) {
-        modelMapper.typeMap(FinancialTransactionDto.class, FinancialTransaction.class)
+        modelMapper.emptyTypeMap(FinancialTransactionDto.class, FinancialTransaction.class)
                 .addMappings(mapper -> {
                     mapper.skip(FinancialTransaction::setSupplier);
                     mapper.skip(FinancialTransaction::setBankAccount);
                     mapper.skip(FinancialTransaction::setExpense);
-                });
+                })
+                .implicitMappings();
 
         modelMapper.typeMap(FinancialTransaction.class, FinancialTransactionDto.class)
                 .addMappings(mapper -> mapper.skip(FinancialTransactionDto::setSyncProductionState));
