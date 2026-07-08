@@ -18,10 +18,12 @@ public class AppSettingsLoggingRefresher {
         String levelValue = StringUtils.hasText(rawLevel) ? rawLevel.trim() : fallback;
         try {
             LogLevel level = LogLevel.valueOf(levelValue.toUpperCase());
-            LoggingSystem.get(ClassLoader.getSystemClassLoader()).setLogLevel(loggerName, level);
+            LoggingSystem.get(getClass().getClassLoader()).setLogLevel(loggerName, level);
             OOSMLogger.info(this.getClass(), "Applied log level {}={}", loggerName, level);
         } catch (IllegalArgumentException ex) {
             OOSMLogger.warn(this.getClass(), "Ignored invalid log level for {}: {}", loggerName, levelValue);
+        } catch (IllegalStateException ex) {
+            OOSMLogger.warn(this.getClass(), "Logging system not ready; skipped log level for {}: {}", loggerName, levelValue);
         }
     }
 }
