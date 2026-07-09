@@ -35,7 +35,10 @@ services:
         value: "false"
       - key: FORMAT_SQL
         value: "false"
+      # Lazy init keeps context refresh under Render's ~5 min port-scan timeout on 512MiB free tier.
       - key: SPRING_MAIN_LAZY_INITIALIZATION
+        value: "true"
+      - key: SPRINGDOC_ENABLED
         value: "false"
       - key: SPRING_JMX_ENABLED
         value: "false"
