@@ -92,6 +92,7 @@ esac
 echo "Database: ${PGHOST:-from DB_URL}:${PGPORT:-5432}/${PGDATABASE:-?} user=${DB_USER}"
 
 listen_port="${PORT:-${SERVER_PORT:-8084}}"
-echo "Starting oosm-monolith on 0.0.0.0:${listen_port} (PORT=${PORT:-unset}, SERVER_PORT=${SERVER_PORT:-unset})"
+export SERVER_PORT="$listen_port"
+echo "Starting oosm-monolith on 0.0.0.0:${listen_port} (PORT=${PORT:-unset}, SERVER_PORT=${SERVER_PORT})"
 
-exec java ${JAVA_OPTS:-} -jar /app/oosm-monolith.jar
+exec java ${JAVA_OPTS:-} -Dserver.port="${listen_port}" -jar /app/oosm-monolith.jar

@@ -1,6 +1,6 @@
 server:
   address: 0.0.0.0
-  port: ${PORT:${SERVER_PORT:8084}}
+  port: ${PORT:8084}
   forward-headers-strategy: framework
   max-http-request-header-size: 32KB
   tomcat:
@@ -67,7 +67,7 @@ spring:
 
   sql:
     init:
-      mode: always
+      mode: ${SPRING_SQL_INIT_MODE:always}
       schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql,classpath:db/app-settings-schema.sql,classpath:db/tenant-enabled-module-schema.sql
 
   data:
@@ -108,7 +108,7 @@ otp:
 app:
   debug:
     search-on-startup: ${SEARCH_DEBUG_ON_STARTUP:false}
-  internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:${SERVER_PORT:8084}}}
+  internal-base-url: ${INTERNAL_BASE_URL:http://127.0.0.1:${PORT:8084}}
   security:
     jwt:
       secret: ${JWT_SECRET:X7kP9mN2vQ8rT4wY6zA1bC3dE5fG8hJ9}

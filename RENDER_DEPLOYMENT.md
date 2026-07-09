@@ -10,8 +10,19 @@ Branch: pfe-v2-final
 Blueprint: render.yaml
 Runtime: Docker
 Region: Frankfurt
-Health check: /actuator/health/liveness
+Health check: /actuator/health
 ```
+
+## Port binding (critical)
+
+Render injects `PORT` (typically `10000`). The app **must** listen on `0.0.0.0:$PORT`.
+
+- `docker/entrypoint.sh` exports `SERVER_PORT` from `PORT` and passes `-Dserver.port`.
+- `application.yml` uses `server.port: ${PORT:8084}` (local default `8084` only when `PORT` is unset).
+- **Do not set `SERVER_PORT` in the Render dashboard.** If it is set to `8084`, remove it and redeploy.
+- **Do not set `PORT` manually** — Render supplies it.
+
+A failed deploy that mentions `:8084` in the health-check URL usually means a stale `SERVER_PORT=8084` dashboard variable or an old image; the live service must bind to Render's `PORT`.
 
 ## Database Values
 
@@ -89,28 +100,52 @@ Do not define `JWK_SET_URI`; the application derives it from
 
 ## Deployment
 
-1. Commit and push the backend changes to `main`.
-2. In Render, select **New > Blueprint**.
+1. Commit and push the backend changes to `pfe-v2-final`.
+2. In Render, select **New > Blueprint** (or sync an existing Blueprint).
 3. Select `x-dev-grp/oosm`.
 4. Keep the Blueprint path as `render.yaml`.
 5. Enter every value requested by Render.
-6. Create the Blueprint.
-7. Open `oosm-api` and monitor the deploy logs.
-8. Wait for the service health check to pass.
+6. Create or sync the Blueprint.
+7. Open `oosm-api` and trigger **Manual Deploy** if `autoDeployTrigger` is off.
+8. Monitor deploy logs until the health check passes (first boot can take 4–5 minutes on the free tier).
 
 The first startup creates the OAuth registered-client table, updates the
 Hibernate business schema, registers the OAuth client, and creates the bootstrap
 administrator.
 
+### Manual dashboard checklist before redeploy
+
+1. **Environment → remove `SERVER_PORT`** if present (Render uses `PORT` only).
+2. **Environment → `JAVA_TOOL_OPTIONS`** — use the values from `render.yaml`; remove stale New Relic-era overrides (`-Xmx192m`, etc.).
+3. **Settings → Health Check Path** — must be `/actuator/health` (Blueprint sync updates this from `render.yaml`).
+4. **Manual Deploy** → Deploy latest commit.
+
+## Startup tuning (512 MiB free tier)
+
+Render's deploy probe allows roughly five minutes for the container to bind
+`$PORT` and return HTTP 200 on the health-check path. On 512 MiB, cold starts
+take about four to six minutes.
+
+`render.yaml` already sets:
+
+| Variable | Purpose |
+|----------|---------|
+| `SPRING_MAIN_LAZY_INITIALIZATION=true` | Opens Tomcat sooner; `RenderActuatorWarmup` pre-warms `/actuator/health` |
+| `SPRING_SQL_INIT_MODE=never` | Skips re-running classpath SQL scripts on every redeploy |
+| `SPRINGDOC_ENABLED=false` | Disables OpenAPI generation at startup |
+| `JPA_REPOSITORY_BOOTSTRAP_MODE=lazy` | Defers JPA repository metadata |
+
+After the **first** successful deploy on a fresh database, keep `SPRING_SQL_INIT_MODE=never`.
+Run `scripts/Run-RailwayDatabaseScripts.ps1` locally for one-time seeds instead.
+
 ## Validation
 
 ```text
-https://<backend-host>/actuator/health/liveness
+https://<backend-host>/actuator/health
 https://<backend-host>/oauth2/jwks
 ```
 
-The liveness endpoint must return `UP`. The JWK endpoint must return a JSON key
-set.
+`/actuator/health` must return `{"status":"UP",...}`. The JWK endpoint must return a JSON key set.
 
 ## Database Bootstrap
 
@@ -152,3 +187,11 @@ Render free instances are capped at 512 MiB. JVM tuning is set via
 If you override `JAVA_TOOL_OPTIONS` in the Render dashboard, remove any stale
 compact-profile values from the New Relic era (e.g. `-Xmx192m`,
 `-XX:MaxMetaspaceSize=96m`). Redeploy after changing env vars.
+
+## Troubleshooting deploy timeout
+
+| Symptom | Likely cause | Fix |
+|---------|--------------|-----|
+| Health check URL shows `:8084` | `SERVER_PORT=8084` in dashboard | Remove `SERVER_PORT`, redeploy |
+| `No open ports detected` then timeout | Startup > ~5 min (eager init, SQL init, OpenAPI) | Keep lazy init + `SPRING_SQL_INIT_MODE=never` + `SPRINGDOC_ENABLED=false` |
+| `Timed out` on `/actuator/health/liveness` | Wrong path or first-request lazy-init delay | Use `/actuator/health`; ensure latest image with `RenderActuatorWarmup` |

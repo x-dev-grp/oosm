@@ -32,9 +32,9 @@ ENV JAVA_OPTS=""
 
 USER oosm
 
-EXPOSE 8084
+EXPOSE 10000
 
 HEALTHCHECK --interval=15s --timeout=5s --start-period=300s --retries=10 \
-    CMD sh -c 'curl --fail --silent "http://127.0.0.1:${PORT:-8084}/actuator/health/liveness" > /dev/null || exit 1'
+    CMD sh -c 'curl --fail --silent "http://127.0.0.1:${PORT:-10000}/actuator/health" > /dev/null || exit 1'
 
 ENTRYPOINT ["/app/entrypoint.sh"]
