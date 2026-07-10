@@ -42,6 +42,12 @@ configure_from_url() {
     export PGDATABASE="${dbpath:-railway}"
   fi
   export DB_URL="jdbc:postgresql://${PGHOST}:${PGPORT}/${PGDATABASE}"
+  # Keep SSL for Render public hosts (configure_from_url strips ?query).
+  case "${PGHOST}" in
+    *.render.com|dpg-*)
+      export DB_URL="${DB_URL}?sslmode=require"
+      ;;
+  esac
 }
 
 parse_jdbc_url() {
@@ -71,11 +77,30 @@ elif [ -n "${DB_URL:-}" ]; then
     jdbc:postgresql://*)
       parse_jdbc_url "$DB_URL"
       ;;
+    *)
+      echo "ERROR: DB_URL must start with jdbc:postgresql:// (got: ${DB_URL%%:*}:...)" >&2
+      exit 1
+      ;;
   esac
 fi
 
 export DB_USER="${DB_USER:-${PGUSER:-postgres}}"
 export DB_PASS="${DB_PASS:-${PGPASSWORD:-}}"
+
+# Fail fast — Spring defaults to localhost:5432 when DB_URL is missing.
+if [ -z "${DB_URL:-}" ]; then
+  echo "ERROR: DB_URL (or DATABASE_URL) is not set. Paste oosm/.env.railway.render-db on the backend service." >&2
+  echo "ERROR: Do not rely on localhost — there is no Postgres inside this container." >&2
+  exit 1
+fi
+
+case "${DB_URL}" in
+  *localhost*|*127.0.0.1*)
+    echo "ERROR: DB_URL points at localhost. For Railway + Render DB use the external host:" >&2
+    echo "ERROR: jdbc:postgresql://dpg-….frankfurt-postgres.render.com:5432/oosm_fawv?sslmode=require" >&2
+    exit 1
+    ;;
+esac
 
 # PGHOST must be hostname only — credentials belong in DB_USER / DB_PASS.
 case "${PGHOST:-}" in
@@ -90,6 +115,7 @@ case "${PGHOST:-}" in
 esac
 
 echo "Database: ${PGHOST:-from DB_URL}:${PGPORT:-5432}/${PGDATABASE:-?} user=${DB_USER}"
+echo "JDBC URL host: $(echo "$DB_URL" | sed -E 's#jdbc:postgresql://([^:/?]+).*#\1#')"
 
 listen_port="${PORT:-${SERVER_PORT:-8084}}"
 export SERVER_PORT="$listen_port"

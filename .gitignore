@@ -18,6 +18,8 @@ logs/
 .env
 .env.*
 !.env.render.example
+!.env.railway.example
+!.env.railway.render-db.example
 
 ### Local JWT signing keys ###
 app/src/main/resources/keys/*.pk8

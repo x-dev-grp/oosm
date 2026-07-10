@@ -2,6 +2,8 @@
 
 Deploy the **backend**, **frontend**, and **PostgreSQL** to [Railway](https://railway.com) for integration/testing. Production VPS flow remains in [deploy/vps/README.md](deploy/vps/README.md).
 
+**Hybrid (Railway app + Render Postgres only):** see [RAILWAY_RENDER_DB.md](RAILWAY_RENDER_DB.md). Do not add a Railway Postgres plugin or run `scripts/railway-link-postgres.sh` for that setup.
+
 ## Architecture on Railway
 
 ```text
@@ -146,6 +148,7 @@ npm start
 
 ## Related docs
 
+- **Railway app + Render DB (no Railway Postgres):** [RAILWAY_RENDER_DB.md](RAILWAY_RENDER_DB.md)
 - **Clean reset / fix dpg- errors:** [RAILWAY_RESET.md](RAILWAY_RESET.md)
 - Frontend: `../osm-ms-fe/RAILWAY_DEPLOYMENT.md`
 - Database scripts: [RAILWAY_DATABASE_BOOTSTRAP.md](RAILWAY_DATABASE_BOOTSTRAP.md)
