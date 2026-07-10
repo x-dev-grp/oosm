@@ -108,9 +108,9 @@ class CustomTokenGrantAuthenticationProvider implements AuthenticationProvider {
                 }
             }
 
-            // Authenticate user with username and password
+            // Authenticate with the resolved account username (login may use email or phone).
             Authentication userAuth = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(tokenAuth.getUsername(), tokenAuth.getPassword())
+                    new UsernamePasswordAuthenticationToken(user.getUsername(), tokenAuth.getPassword())
             );
 
             OOSMLogger.logSecurityEvent(this.getClass(), "AUTH_USER_AUTHENTICATED",

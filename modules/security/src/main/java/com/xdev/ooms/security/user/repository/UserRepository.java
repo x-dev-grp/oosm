@@ -20,6 +20,30 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
 
     Optional<OOSMUser> findByUsernameAndIsDeletedFalse(String username);
 
+    @Query("""
+            SELECT u FROM OOSMUser u
+            WHERE COALESCE(u.isDeleted, FALSE) = FALSE
+              AND (
+                  u.username = :input
+                  OR LOWER(u.email) = LOWER(:input)
+                  OR u.phoneNumber = :input
+              )
+            """)
+    Optional<OOSMUser> findActiveByLoginIdentifier(@Param("input") String input);
+
+    @Query("""
+            SELECT DISTINCT u FROM OOSMUser u
+            JOIN FETCH u.role r
+            LEFT JOIN FETCH r.permissions
+            WHERE COALESCE(u.isDeleted, FALSE) = FALSE
+              AND (
+                  u.username = :input
+                  OR LOWER(u.email) = LOWER(:input)
+                  OR u.phoneNumber = :input
+              )
+            """)
+    Optional<OOSMUser> findActiveByLoginIdentifierWithRolePermissions(@Param("input") String input);
+
     @Query("SELECT u FROM OOSMUser u WHERE (u.phoneNumber = :input OR LOWER(u.email) = LOWER(:input)) AND COALESCE(u.isDeleted, FALSE) = FALSE")
     Optional<OOSMUser> findByPhoneOrEmailIgnoreCase(@Param("input") String input);
 

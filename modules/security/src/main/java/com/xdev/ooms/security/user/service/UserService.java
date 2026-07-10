@@ -183,28 +183,30 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
 
 
     @Override
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String loginIdentifier) throws UsernameNotFoundException {
         long startTime = System.currentTimeMillis();
-        OOSMLogger.logMethodEntry(this.getClass(), "loadUserByUsername", "Loading user details for username: " + username);
+        OOSMLogger.logMethodEntry(this.getClass(), "loadUserByUsername",
+                "Loading user details for login identifier: " + loginIdentifier);
 
         try {
-            UserDetails userDetails = userRepository.findByUsernameAndIsDeletedFalse(username)
-                    .orElseThrow(() -> new UsernameNotFoundException(username));
+            UserDetails userDetails = findActiveUserByLoginIdentifier(loginIdentifier)
+                    .orElseThrow(() -> new UsernameNotFoundException(loginIdentifier));
 
-            OOSMLogger.logMethodExit(this.getClass(), "loadUserByUsername", "User details loaded successfully for: " + username);
+            OOSMLogger.logMethodExit(this.getClass(), "loadUserByUsername",
+                    "User details loaded successfully for: " + userDetails.getUsername());
             OOSMLogger.logPerformance(this.getClass(), "loadUserByUsername", startTime, System.currentTimeMillis());
             OOSMLogger.logSecurityEvent(this.getClass(), "USER_DETAILS_LOADED",
-                    "User details loaded successfully for username: " + username);
+                    "User details loaded successfully for login identifier: " + loginIdentifier);
 
             return userDetails;
 
         } catch (UsernameNotFoundException e) {
             OOSMLogger.logSecurityEvent(this.getClass(), "USER_NOT_FOUND",
-                    "User not found during authentication: " + username);
+                    "User not found during authentication: " + loginIdentifier);
             throw e;
         } catch (Exception e) {
             OOSMLogger.logException(this.getClass(),
-                    "Unexpected error loading user details for username: " + username, e);
+                    "Unexpected error loading user details for login identifier: " + loginIdentifier, e);
             throw e;
         }
     }
@@ -360,36 +362,47 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
         }
     }
 
-    public OOSMUser getByUsername(String username) {
+    public OOSMUser getByUsername(String loginIdentifier) {
         long startTime = System.currentTimeMillis();
-        OOSMLogger.logMethodEntry(this.getClass(), "getByUsername", "Getting user by username: " + username);
+        OOSMLogger.logMethodEntry(this.getClass(), "getByUsername", "Getting user by login identifier: " + loginIdentifier);
 
         try {
-            OOSMUser user = userRepository.findByUsernameAndIsDeletedFalse(username).orElse(null);
+            OOSMUser user = findActiveUserByLoginIdentifier(loginIdentifier).orElse(null);
 
             if (user != null) {
-                OOSMLogger.logMethodExit(this.getClass(), "getByUsername", "User found: " + username);
+                OOSMLogger.logMethodExit(this.getClass(), "getByUsername", "User found: " + user.getUsername());
                 OOSMLogger.logPerformance(this.getClass(), "getByUsername", startTime, System.currentTimeMillis());
             } else {
-                OOSMLogger.logMethodExit(this.getClass(), "getByUsername", "User not found: " + username);
+                OOSMLogger.logMethodExit(this.getClass(), "getByUsername", "User not found: " + loginIdentifier);
                 OOSMLogger.logPerformance(this.getClass(), "getByUsername", startTime, System.currentTimeMillis());
                 OOSMLogger.logSecurityEvent(this.getClass(), "USER_NOT_FOUND_BY_USERNAME",
-                        "User not found by username: " + username);
+                        "User not found by login identifier: " + loginIdentifier);
             }
 
             return user;
 
         } catch (Exception e) {
             OOSMLogger.logException(this.getClass(),
-                    "Error getting user by username: " + username, e);
+                    "Error getting user by login identifier: " + loginIdentifier, e);
             throw e;
         }
     }
 
-    public OOSMUser getByUsernameWithFreshPermissions(String username) {
-        return userRepository.findByUsernameWithRolePermissions(username)
-                .or(() -> userRepository.findByUsernameAndIsDeletedFalse(username))
+    public OOSMUser getByUsernameWithFreshPermissions(String loginIdentifier) {
+        if (loginIdentifier == null || loginIdentifier.isBlank()) {
+            return null;
+        }
+        String trimmed = loginIdentifier.trim();
+        return userRepository.findActiveByLoginIdentifierWithRolePermissions(trimmed)
+                .or(() -> findActiveUserByLoginIdentifier(trimmed))
                 .orElse(null);
+    }
+
+    private Optional<OOSMUser> findActiveUserByLoginIdentifier(String loginIdentifier) {
+        if (loginIdentifier == null || loginIdentifier.isBlank()) {
+            return Optional.empty();
+        }
+        return userRepository.findActiveByLoginIdentifier(loginIdentifier.trim());
     }
 
     public void sendWelcomeCredentials(OOSMUserOUTDTO userDTO, String rawPassword) {
