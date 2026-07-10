@@ -6,6 +6,8 @@ import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsActor;
 import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestResponse;
+import com.xdev.ooms.sharedkernel.settings.dto.NotificationTestRequest;
+import com.xdev.ooms.sharedkernel.settings.dto.NotificationTestResponse;
 import com.xdev.ooms.sharedkernel.settings.dto.RotateSecretRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.UpdateSettingRequest;
 import com.xdev.ooms.sharedkernel.settings.service.AppSettingsService;
@@ -208,6 +210,47 @@ public class AdminSettingsController {
         } catch (IllegalArgumentException ex) {
             OOSMLogger.warn(this.getClass(), "Admin mail test validation failed: recipient={} user={} error={}",
                     recipient, actor.getUsername(), ex.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
+    }
+
+    @PostMapping("/notifications/test")
+    public ResponseEntity<?> notificationTest(
+            @RequestBody NotificationTestRequest request,
+            Authentication authentication,
+            HttpServletRequest httpRequest
+    ) {
+        if (!isOosmAdmin(authentication)) {
+            logForbidden("notification test");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        AdminSettingsActor actor = buildActor(authentication, httpRequest);
+        String playerId = request != null && request.getPlayerId() != null ? request.getPlayerId().trim() : "";
+        OOSMLogger.info(this.getClass(),
+                "Admin notification test requested: playerIdPresent={} user={} ip={}",
+                !playerId.isEmpty(), actor.getUsername(), actor.getIpAddress());
+        try {
+            String userKey = rateLimitKey(authentication);
+            rateLimiter.checkMailTest(userKey);
+            NotificationTestResponse response = appSettingsService.sendNotificationTest(request, actor);
+            rateLimiter.recordMailTest(userKey, response.isSuccess());
+            if (response.isSuccess()) {
+                OOSMLogger.info(this.getClass(),
+                        "Admin notification test succeeded: user={}",
+                        actor.getUsername());
+                return ResponseEntity.ok(response);
+            }
+            OOSMLogger.warn(this.getClass(),
+                    "Admin notification test failed: user={} error={}",
+                    actor.getUsername(), response.getError());
+            return ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(response);
+        } catch (AdminSettingsRateLimiter.RateLimitExceededException ex) {
+            OOSMLogger.warn(this.getClass(), "Admin notification test rate limited: user={}",
+                    actor.getUsername());
+            return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS).body(ex.getMessage());
+        } catch (IllegalArgumentException ex) {
+            OOSMLogger.warn(this.getClass(), "Admin notification test validation failed: user={} error={}",
+                    actor.getUsername(), ex.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
         }
     }

@@ -4,6 +4,8 @@ import com.xdev.ooms.sharedkernel.mail.config.MailProvider;
 import com.xdev.ooms.sharedkernel.mail.exception.MailDeliveryException;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
+import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
+import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
 import com.xdev.ooms.sharedkernel.settings.definition.AppSettingDefinition;
 import com.xdev.ooms.sharedkernel.settings.definition.AppSettingDefinitionRegistry;
 import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingAuditDto;
@@ -15,6 +17,8 @@ import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingsStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.FeatureStatusDto;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.MailTestResponse;
+import com.xdev.ooms.sharedkernel.settings.dto.NotificationTestRequest;
+import com.xdev.ooms.sharedkernel.settings.dto.NotificationTestResponse;
 import com.xdev.ooms.sharedkernel.settings.dto.RotateSecretRequest;
 import com.xdev.ooms.sharedkernel.settings.dto.UpdateSettingRequest;
 import com.xdev.ooms.sharedkernel.settings.entity.AppSetting;
@@ -61,6 +65,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
     private final AppSettingValidator validator;
     private final ConfigurableEnvironment environment;
     private final MailService mailService;
+    private final OneSignalServiceImpl oneSignalService;
     private final AppSettingsLoggingRefresher loggingRefresher;
 
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -75,6 +80,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
             AppSettingValidator validator,
             ConfigurableEnvironment environment,
             @Lazy MailService mailService,
+            @Lazy OneSignalServiceImpl oneSignalService,
             AppSettingsLoggingRefresher loggingRefresher
     ) {
         this.definitionRegistry = definitionRegistry;
@@ -85,6 +91,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
         this.validator = validator;
         this.environment = environment;
         this.mailService = mailService;
+        this.oneSignalService = oneSignalService;
         this.loggingRefresher = loggingRefresher;
     }
 
@@ -370,6 +377,77 @@ public class AppSettingsServiceImpl implements AppSettingsService {
             writeAudit("MAIL_TEST", "TEST_MAIL", null, recipient, actor, "Mail test", false, ex.getMessage());
             return response;
         }
+    }
+
+    @Override
+    public NotificationTestResponse sendNotificationTest(NotificationTestRequest request, AdminSettingsActor actor) {
+        NotificationTestResponse response = new NotificationTestResponse();
+        response.setProvider("ONESIGNAL");
+
+        String playerId = request != null && request.getPlayerId() != null ? request.getPlayerId().trim() : "";
+        String title = request != null && StringUtils.hasText(request.getTitle())
+                ? request.getTitle().trim()
+                : "OOSM notification test";
+        String message = request != null && StringUtils.hasText(request.getMessage())
+                ? request.getMessage().trim()
+                : "This is a test push notification from OOSM administration settings.";
+
+        OOSMLogger.info(this.getClass(),
+                "Notification test starting: playerId={} user={}",
+                maskPlayerId(playerId), actor.getUsername());
+
+        try {
+            if (!StringUtils.hasText(playerId)) {
+                throw new IllegalArgumentException("OneSignal player ID is required");
+            }
+
+            FeatureStatusDto notificationsStatus = buildNotificationsFeatureStatus();
+            if (!notificationsStatus.isConfigured()) {
+                String missing = notificationsStatus.getMissingKeys() != null && !notificationsStatus.getMissingKeys().isEmpty()
+                        ? String.join(", ", notificationsStatus.getMissingKeys())
+                        : "unknown";
+                throw new IllegalStateException(
+                        "OneSignal is not configured. Save the required notification fields. Missing: " + missing);
+            }
+
+            NotificationRequest notificationRequest = new NotificationRequest(
+                    List.of(playerId),
+                    title,
+                    message,
+                    Map.of("source", "admin-settings-test")
+            );
+            String result = oneSignalService.sendNotification(notificationRequest);
+            response.setResult(result);
+
+            boolean success = "SUCCESS".equals(result);
+            response.setSuccess(success);
+            if (!success) {
+                response.setError(result);
+            }
+
+            OOSMLogger.info(this.getClass(),
+                    "Notification test finished: success={} result={} user={}",
+                    success, result, actor.getUsername());
+            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskPlayerId(playerId),
+                    actor, "Notification test", success, success ? null : result);
+            return response;
+        } catch (RuntimeException ex) {
+            response.setSuccess(false);
+            response.setError(ex.getMessage());
+            OOSMLogger.warn(this.getClass(),
+                    "Notification test failed: playerId={} user={} error={}",
+                    maskPlayerId(playerId), actor.getUsername(), ex.getMessage());
+            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskPlayerId(playerId),
+                    actor, "Notification test", false, ex.getMessage());
+            return response;
+        }
+    }
+
+    private static String maskPlayerId(String playerId) {
+        if (!StringUtils.hasText(playerId) || playerId.length() < 8) {
+            return "***";
+        }
+        return playerId.substring(0, 4) + "..." + playerId.substring(playerId.length() - 4);
     }
 
     private static String safeMailTestError(Throwable ex) {
