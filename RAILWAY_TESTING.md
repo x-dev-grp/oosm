@@ -2,7 +2,7 @@
 
 Deploy the **backend**, **frontend**, and **PostgreSQL** to [Railway](https://railway.com) for integration/testing. Production VPS flow remains in [deploy/vps/README.md](deploy/vps/README.md).
 
-**Hybrid (Railway app + Render Postgres only):** see [RAILWAY_RENDER_DB.md](RAILWAY_RENDER_DB.md). Do not add a Railway Postgres plugin or run `scripts/railway-link-postgres.sh` for that setup.
+**Hybrid (Railway backend only + Render frontend + Render Postgres):** see [RAILWAY_RENDER_DB.md](RAILWAY_RENDER_DB.md). Do not add a Railway Postgres plugin or run `scripts/railway-link-postgres.sh` for that setup.
 
 ## Architecture on Railway
 
