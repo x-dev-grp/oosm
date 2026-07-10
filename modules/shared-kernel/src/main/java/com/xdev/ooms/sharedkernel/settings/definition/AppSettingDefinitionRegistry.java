@@ -80,7 +80,7 @@ public class AppSettingDefinitionRegistry {
                 "Write-only OneSignal REST API key.", "ONESIGNAL_API_KEY", null));
         register(setting(SettingCategory.NOTIFICATIONS, "ONESIGNAL_ENDPOINT", "OneSignal endpoint",
                 "OneSignal notifications API endpoint.",
-                SettingValueType.URL, false, false, "https://onesignal.com/api/v1/notifications",
+                SettingValueType.URL, false, false, "https://api.onesignal.com/notifications",
                 "ONESIGNAL_ENDPOINT", null, null));
     }
 

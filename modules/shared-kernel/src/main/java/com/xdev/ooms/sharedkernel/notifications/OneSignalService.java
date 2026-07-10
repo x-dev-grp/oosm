@@ -13,6 +13,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -20,13 +21,15 @@ import java.util.Optional;
 public class OneSignalService implements OneSignalServiceImpl {
 
     public static final String AUTHORIZATION = "Authorization";
-    public static final String BASIC = "Basic ";
+    public static final String KEY_PREFIX = "Key ";
     public static final String APP_ID = "app_id";
-    public static final String INCLUDE_PLAYER_IDS = "include_player_ids";
+    public static final String INCLUDE_SUBSCRIPTION_IDS = "include_subscription_ids";
+    public static final String TARGET_CHANNEL = "target_channel";
     public static final String EN = "en";
     public static final String CONTENTS = "contents";
     public static final String HEADINGS = "headings";
     public static final String DATA = "data";
+    public static final String DEFAULT_ENDPOINT = "https://api.onesignal.com/notifications";
 
     private final RestTemplate restTemplate = new RestTemplate();
     private final AppSettingsService appSettingsService;
@@ -38,21 +41,30 @@ public class OneSignalService implements OneSignalServiceImpl {
     public String sendNotification(NotificationRequest notificationRequest) {
         String appId = appSettingsService.getString("ONESIGNAL_APP_ID", "");
         Optional<String> apiKey = appSettingsService.getSecret("ONESIGNAL_API_KEY");
-        String endpoint = appSettingsService.getString(
-                "ONESIGNAL_ENDPOINT", "https://onesignal.com/api/v1/notifications");
+        String endpoint = appSettingsService.getString("ONESIGNAL_ENDPOINT", DEFAULT_ENDPOINT);
+        if (!StringUtils.hasText(endpoint) || endpoint.contains("onesignal.com/api/v1/")) {
+            endpoint = DEFAULT_ENDPOINT;
+        }
 
         if (!StringUtils.hasText(appId) || apiKey.isEmpty()) {
             OOSMLogger.warn(OneSignalService.class, "OneSignal is not configured (missing app ID or API key)");
             return "ONESIGNAL_NOT_CONFIGURED";
         }
 
+        List<String> subscriptionIds = notificationRequest.getUserIds();
+        if (subscriptionIds == null || subscriptionIds.isEmpty()) {
+            return "ONESIGNAL_ERROR: no subscription ids";
+        }
+
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set(AUTHORIZATION, BASIC + apiKey.get());
+        // Modern App API keys (os_v2_app_*) require "Key", not "Basic".
+        headers.set(AUTHORIZATION, KEY_PREFIX + apiKey.get().trim());
 
         Map<String, Object> body = new HashMap<>();
         body.put(APP_ID, appId);
-        body.put(INCLUDE_PLAYER_IDS, notificationRequest.getUserIds());
+        body.put(INCLUDE_SUBSCRIPTION_IDS, subscriptionIds);
+        body.put(TARGET_CHANNEL, "push");
 
         Map<String, String> contents = new HashMap<>();
         contents.put(EN, notificationRequest.getMessage());
@@ -77,7 +89,7 @@ public class OneSignalService implements OneSignalServiceImpl {
             OOSMLogger.debug(OneSignalService.class, "OneSignal response received: {}", responseBody);
 
             if (responseBody != null && responseBody.contains("\"recipients\":0")) {
-                return "ONESIGNAL_WARNING: 0 recipients (Player ID is invalid or unsubscribed) - " + responseBody;
+                return "ONESIGNAL_WARNING: 0 recipients (subscription ID invalid or unsubscribed) - " + responseBody;
             }
             if (responseBody != null && responseBody.contains("\"errors\"")) {
                 return "ONESIGNAL_ERROR_IN_200: " + responseBody;
