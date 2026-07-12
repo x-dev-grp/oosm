@@ -43,6 +43,13 @@ public class UserController extends BaseControllerImpl<OOSMUser, OOSMUserDTO, OO
         this.userSessionService = userSessionService;
     }
 
+    @PostMapping("/auth/logout")
+    public ResponseEntity<Void> logout() {
+        // Idempotent public endpoint: clients may call this while clearing a dead session.
+        // Revocation of refresh tokens is optional and best-effort elsewhere.
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/auth/resetPassword")
     public ResponseEntity<?> resetPassword(@RequestParam String identifier) {
         long startTime = System.currentTimeMillis();

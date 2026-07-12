@@ -140,7 +140,9 @@ public class AuthServerConfig {
                             .requestMatchers(
                                     "/oauth2/**",
                                     "/jwks",
-                                    "/.well-known/**"
+                                    "/.well-known/**",
+                                    "/api/security/user/auth/**",
+                                    "/api/security/user/me/refresh-session"
                             ).permitAll()
                             .anyRequest().authenticated()
                     )
@@ -194,7 +196,9 @@ public class AuthServerConfig {
         DefaultBearerTokenResolver defaultResolver = new DefaultBearerTokenResolver();
         return request -> {
             String path = request.getRequestURI();
-            if (path != null && (path.startsWith("/api/public/") || path.startsWith("/actuator/health"))) {
+            if (path != null && (path.startsWith("/api/public/")
+                    || path.startsWith("/actuator/health")
+                    || path.startsWith("/api/security/user/auth/"))) {
                 return null;
             }
             return defaultResolver.resolve(request);
