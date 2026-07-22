@@ -1,9 +1,0 @@
-<component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="oosm" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
-    <module name="osm-monolith-app" />
-    <option name="SPRING_BOOT_MAIN_CLASS" value="com.xdev.ooms.OsmMonolithApplication" />
-    <method v="2">
-      <option name="Make" enabled="true" />
-    </method>
-  </configuration>
-</component>
