@@ -409,6 +409,20 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
         dispatchConfirmationAsync(userDTO, rawPassword);
     }
 
+    public void sendAdminPasswordReset(OOSMUserOUTDTO userDTO, String rawPassword) {
+        if (userDTO == null) {
+            return;
+        }
+        CompletableFuture.runAsync(() -> {
+            try {
+                sendAdminPasswordResetEmail(userDTO, rawPassword);
+            } catch (Exception e) {
+                OOSMLogger.logException(this.getClass(),
+                        "Async admin password reset email failed for user: " + userDTO.getUsername(), e);
+            }
+        });
+    }
+
     private void dispatchConfirmationAsync(OOSMUserOUTDTO userDTO, String rawPassword) {
         if (userDTO == null) {
             return;
@@ -421,6 +435,49 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
                         "Async confirmation failed for user: " + userDTO.getUsername(), e);
             }
         });
+    }
+
+    private void sendAdminPasswordResetEmail(OOSMUserOUTDTO userDTO, String rawPassword) throws Exception {
+        long startTime = System.currentTimeMillis();
+        String username = userDTO.getUsername();
+        OOSMLogger.logMethodEntry(this.getClass(), "sendAdminPasswordResetEmail",
+                "Sending admin password reset for user: " + username + ", Method: " + userDTO.getConfirmationMethod());
+
+        try {
+            switch (userDTO.getConfirmationMethod()) {
+                case EMAIL -> {
+                    MailRequest mailRequest = mailComposer.composeAdminPasswordReset(
+                            userDTO.getEmail(),
+                            userDTO.getUsername(),
+                            rawPassword,
+                            resolveBranding(userDTO.getTenantId())
+                    );
+                    mailService.sendEmail(mailRequest);
+
+                    OOSMLogger.logSecurityEvent(this.getClass(), "ADMIN_PASSWORD_RESET_EMAIL_SENT",
+                            "Admin password reset email sent to: " + userDTO.getEmail());
+                }
+                case PHONE -> {
+                    //TODO send sms message
+                    OOSMLogger.logSecurityEvent(this.getClass(), "ADMIN_PASSWORD_RESET_SMS_PENDING",
+                            "Admin password reset SMS pending for phone: " + userDTO.getPhoneNumber());
+                }
+                default -> {
+                    OOSMLogger.logSecurityEvent(this.getClass(), "UNSUPPORTED_CONFIRMATION_METHOD",
+                            "Unsupported confirmation method: " + userDTO.getConfirmationMethod());
+                    throw new IllegalArgumentException("Unsupported confirmation method");
+                }
+            }
+
+            OOSMLogger.logMethodExit(this.getClass(), "sendAdminPasswordResetEmail",
+                    "Admin password reset sent successfully for user: " + username);
+            OOSMLogger.logPerformance(this.getClass(), "sendAdminPasswordResetEmail", startTime, System.currentTimeMillis());
+
+        } catch (Exception e) {
+            OOSMLogger.logException(this.getClass(),
+                    "Error sending admin password reset for user: " + username, e);
+            throw e;
+        }
     }
 
     private EmailBranding resolveBranding(UUID tenantId) {

@@ -57,7 +57,6 @@ public class AdminUserService {
         }
 
         String rawPassword = userService.generateSecureCode(8);
-        OOSMLogger.logMethodEntry(this.getClass(), "TemporaryPassword=", rawPassword);
         user.setPassword(passwordEncoder.encode(rawPassword));
         user.setNewUser(true);
 
@@ -70,7 +69,7 @@ public class AdminUserService {
             );
         }
 
-        userService.sendWelcomeCredentials(userDTO, rawPassword);
+        userService.sendAdminPasswordReset(userDTO, rawPassword);
         OOSMUser savedUser = userRepository.save(user);
 
         OOSMLogger.logSecurityEvent(this.getClass(), "ADMIN_TEMP_PASSWORD_ISSUED",
