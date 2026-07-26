@@ -14,6 +14,8 @@ public class PayrollPeriodDto extends BaseDto<PayrollPeriod> {
     private LocalDate periodStart;
     private LocalDate periodEnd;
     private PayrollPeriodStatus status;
+    private Boolean financePosted;
+    private String financeReference;
     private List<PayslipDto> payslips;
 
     public Integer getYear() {
@@ -54,6 +56,22 @@ public class PayrollPeriodDto extends BaseDto<PayrollPeriod> {
 
     public void setStatus(PayrollPeriodStatus status) {
         this.status = status;
+    }
+
+    public Boolean getFinancePosted() {
+        return financePosted;
+    }
+
+    public void setFinancePosted(Boolean financePosted) {
+        this.financePosted = financePosted;
+    }
+
+    public String getFinanceReference() {
+        return financeReference;
+    }
+
+    public void setFinanceReference(String financeReference) {
+        this.financeReference = financeReference;
     }
 
     public List<PayslipDto> getPayslips() {

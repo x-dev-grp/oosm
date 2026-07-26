@@ -1,6 +1,7 @@
 package com.xdev.ooms.hr.employee.service;
 
 import com.xdev.ooms.hr.common.HrBusinessLinkageService;
+import com.xdev.ooms.hr.common.HrRelationResolver;
 import com.xdev.ooms.hr.common.enums.EmployeeStatus;
 import com.xdev.ooms.hr.contract.dto.EmploymentContractDto;
 import com.xdev.ooms.hr.contract.entity.EmploymentContract;
@@ -41,6 +42,7 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
     private final LeaveRequestRepository leaveRequestRepository;
     private final PayslipRepository payslipRepository;
     private final HrBusinessLinkageService hrBusinessLinkage;
+    private final HrRelationResolver hrRelationResolver;
 
     public EmployeeService(
             BaseRepository<Employee> repository,
@@ -49,7 +51,8 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
             PointageRepository pointageRepository,
             LeaveRequestRepository leaveRequestRepository,
             PayslipRepository payslipRepository,
-            HrBusinessLinkageService hrBusinessLinkage
+            HrBusinessLinkageService hrBusinessLinkage,
+            HrRelationResolver hrRelationResolver
     ) {
         super(repository, modelMapper);
         this.contractRepository = contractRepository;
@@ -57,6 +60,14 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
         this.leaveRequestRepository = leaveRequestRepository;
         this.payslipRepository = payslipRepository;
         this.hrBusinessLinkage = hrBusinessLinkage;
+        this.hrRelationResolver = hrRelationResolver;
+    }
+
+    @Override
+    public void resolveEntityRelations(Employee entity) {
+        entity.setGrade(hrRelationResolver.resolveGrade(entity.getGrade()));
+        entity.setEmployeeCategory(hrRelationResolver.resolveEmployeeCategory(entity.getEmployeeCategory()));
+        entity.setDepartmentRef(hrRelationResolver.resolveDepartment(entity.getDepartmentRef()));
     }
 
     @Override
@@ -64,6 +75,7 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
     public EmployeeDto save(EmployeeDto request) {
         stripChildCollections(request);
         Employee entity = modelMapper.map(request, entityClass);
+        resolveEntityRelations(entity);
         hrBusinessLinkage.validateAndEnrichEmployee(entity, null);
         AuditHelper.applyAuditOnCreate(entity);
         Employee saved = repository.save(entity);
@@ -83,6 +95,7 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
         }
         AuditHelper.applyAuditOnCreate(existing);
         modelMapper.map(request, existing);
+        resolveEntityRelations(existing);
         hrBusinessLinkage.validateAndEnrichEmployee(existing, existing.getId());
         Employee updated = repository.save(existing);
         return modelMapper.map(updated, outDTOClass);
@@ -118,7 +131,8 @@ public class EmployeeService extends BaseServiceImpl<Employee, EmployeeDto, Empl
         if (!isActive(employee)) {
             return actions;
         }
-        if (employee.getStatus() != EmployeeStatus.TERMINATED) {
+        if (employee.getStatus() != EmployeeStatus.TERMINATED
+                && employee.getStatus() != EmployeeStatus.RETIRED) {
             actions.add(Action.UPDATE);
             actions.add(Action.DELETE);
         }

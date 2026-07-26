@@ -6,15 +6,19 @@ import com.xdev.ooms.hr.common.HrRelationResolver;
 import com.xdev.ooms.hr.common.enums.LeaveStatus;
 import com.xdev.ooms.hr.leave.dto.LeaveRequestDto;
 import com.xdev.ooms.hr.leave.entity.LeaveRequest;
+import com.xdev.ooms.hr.notification.HrNotificationService;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.lang.reflect.Method;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -27,16 +31,19 @@ public class LeaveRequestService extends BaseServiceImpl<LeaveRequest, LeaveRequ
 
     private final HrRelationResolver hrRelationResolver;
     private final HrBusinessLinkageService hrBusinessLinkage;
+    private final HrNotificationService hrNotificationService;
 
     public LeaveRequestService(
             BaseRepository<LeaveRequest> repository,
             ModelMapper modelMapper,
             HrRelationResolver hrRelationResolver,
-            HrBusinessLinkageService hrBusinessLinkage
+            HrBusinessLinkageService hrBusinessLinkage,
+            HrNotificationService hrNotificationService
     ) {
         super(repository, modelMapper);
         this.hrRelationResolver = hrRelationResolver;
         this.hrBusinessLinkage = hrBusinessLinkage;
+        this.hrNotificationService = hrNotificationService;
     }
 
     @Override
@@ -82,6 +89,7 @@ public class LeaveRequestService extends BaseServiceImpl<LeaveRequest, LeaveRequ
         leave.setStatus(LeaveStatus.APPROVED);
         AuditHelper.applyAuditOnCreate(leave);
         LeaveRequest saved = repository.save(leave);
+        hrNotificationService.notifyLeaveApproved(saved, currentUserId(), currentDisplayName());
         return modelMapper.map(saved, outDTOClass);
     }
 
@@ -115,5 +123,33 @@ public class LeaveRequestService extends BaseServiceImpl<LeaveRequest, LeaveRequ
             actions.add(Action.GEN_PDF);
         }
         return actions;
+    }
+
+    private UUID currentUserId() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getPrincipal() == null) {
+            return null;
+        }
+        try {
+            Method getId = authentication.getPrincipal().getClass().getMethod("getId");
+            Object id = getId.invoke(authentication.getPrincipal());
+            if (id instanceof UUID uuid) {
+                return uuid;
+            }
+            if (id != null) {
+                return UUID.fromString(id.toString());
+            }
+        } catch (Exception ignored) {
+            return null;
+        }
+        return null;
+    }
+
+    private String currentDisplayName() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
+            return null;
+        }
+        return authentication.getName();
     }
 }

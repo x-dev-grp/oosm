@@ -3,6 +3,7 @@ package com.xdev.ooms.production.qualitycontrol.service;
 
 import com.xdev.ooms.production.genealogy.entity.TraceabilityLot;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
+import com.xdev.ooms.production.parameter.service.BooleanParameterReader;
 import com.xdev.ooms.production.qualitycontrol.defaults.TunisiaOilGradeUtil;
 import com.xdev.ooms.production.qualitycontrol.dto.QualityControlResultDto;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlResultRepository;
@@ -48,6 +49,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     private final ModelMapper modelMapper;
     private final UnifiedDeliveryService unifiedDeliveryService;
     private final NotificationPort notificationPort;
+    private final BooleanParameterReader booleanParameterReader;
       private static final Set<String> allowedSet = Set.of(
               TunisiaOilGradeUtil.EXTRA_VIERGE,
               TunisiaOilGradeUtil.VIERGE,
@@ -55,7 +57,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
               "Vierge Extra", "Extra", "EXTRA_VIRGIN", "VIRGIN", "LAMPANTE"
       );
 
-    public QualityControlResultService(BaseRepository<QualityControlResult> repository, ModelMapper modelMapper, QualityControlResultRepository repository1, QualityControlRuleRepository ruleRepository, DeliveryRepository deliveryRepo, ModelMapper modelMapper1, UnifiedDeliveryService unifiedDeliveryService, DeliveryRepository deliveryRepository, TraceabilityLotRepository traceabilityLotRepository, NotificationPort notificationPort) {
+    public QualityControlResultService(BaseRepository<QualityControlResult> repository, ModelMapper modelMapper, QualityControlResultRepository repository1, QualityControlRuleRepository ruleRepository, DeliveryRepository deliveryRepo, ModelMapper modelMapper1, UnifiedDeliveryService unifiedDeliveryService, DeliveryRepository deliveryRepository, TraceabilityLotRepository traceabilityLotRepository, NotificationPort notificationPort, BooleanParameterReader booleanParameterReader) {
         super(repository, modelMapper);
         this.repository = repository1;
         this.ruleRepository = ruleRepository;
@@ -65,6 +67,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         this.deliveryRepository = deliveryRepository;
         this.traceabilityLotRepository = traceabilityLotRepository;
         this.notificationPort = notificationPort;
+        this.booleanParameterReader = booleanParameterReader;
      }
 
     @Override
@@ -147,6 +150,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
         deliveryRepo.save(delivery);
         publishQcCompletedNotification(delivery);
+        publishQcFailedNotificationIfNeeded(delivery, saved);
 
         // 8) Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
@@ -195,6 +199,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         newOIlRec.setStatus(OliveLotStatus.OIL_CONTROLLED);
         deliveryRepo.save(newOIlRec);
         publishQcCompletedNotification(newOIlRec);
+        publishQcFailedNotificationIfNeeded(newOIlRec, saved);
 
         // Map back to DTOs
         List<QualityControlResultDto> resultDtos = saved.stream().map(e -> modelMapper.map(e, QualityControlResultDto.class)).toList();
@@ -410,6 +415,48 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         } catch (Exception ex) {
             log.warn("Failed to publish QC completed notification: {}", ex.getMessage());
         }
+    }
+
+    private void publishQcFailedNotificationIfNeeded(UnifiedDelivery delivery, List<QualityControlResult> results) {
+        if (delivery == null || delivery.getId() == null || results == null || results.isEmpty()) {
+            return;
+        }
+        if (!booleanParameterReader.isEnabled("NOTIFY_ON_QC_FAIL", true)) {
+            return;
+        }
+        boolean failed = results.stream().anyMatch(this::isFailedQcValue);
+        if (!failed) {
+            return;
+        }
+        try {
+            Map<String, String> fields = new HashMap<>();
+            fields.put(
+                    "deliveryType",
+                    delivery.getDeliveryType() != null ? delivery.getDeliveryType().name() : "");
+            fields.put("status", delivery.getStatus() != null ? delivery.getStatus().name() : "");
+            fields.put("outcome", "NON_CONFORME");
+            notificationPort.publish(new NotificationEvent(
+                    "UNIFIEDDELIVERY_QC_FAILED",
+                    delivery.getId(),
+                    delivery.getLotNumber() != null ? delivery.getLotNumber() : delivery.getGlobalLotNumber(),
+                    fields,
+                    null,
+                    null));
+        } catch (Exception ex) {
+            log.warn("Failed to publish QC failed notification: {}", ex.getMessage());
+        }
+    }
+
+    private boolean isFailedQcValue(QualityControlResult result) {
+        if (result == null || result.getMeasuredValue() == null) {
+            return false;
+        }
+        String value = result.getMeasuredValue().trim().toLowerCase(Locale.ROOT);
+        return value.contains("non conforme")
+                || value.equals("nonconforme")
+                || value.equals("fail")
+                || value.equals("failed")
+                || value.equals("ko");
     }
 
 //    @Transactional(readOnly = true)

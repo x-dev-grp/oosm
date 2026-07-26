@@ -44,6 +44,17 @@ public class ParameterController extends BaseControllerImpl<Parameter, Parameter
         return ResponseEntity.ok(response);
     }
 
+    /**
+     * Seeds all catalog default parameters for the current tenant (missing only; never overwrites).
+     */
+    @PostMapping("/seed-defaults")
+    public ResponseEntity<ParameterService.ParameterSeedResult> seedDefaults(
+            @RequestHeader(value = X_TENANT_ID, required = false) UUID tenantId
+    ) {
+        UUID resolvedTenantId = tenantId != null ? tenantId : TenantContext.getCurrentTenant();
+        return ResponseEntity.ok(parameterService.seedDefaultsForTenant(resolvedTenantId));
+    }
+
     @Override
     protected String getResourceName() {
         return "Parameter".toUpperCase();

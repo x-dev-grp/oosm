@@ -61,6 +61,36 @@
       "priority": "NORMAL",
       "pushEnabled": true
     },
+    "UNIFIEDDELIVERY_QC_FAILED": {
+      "module": "PRODUCTION",
+      "entity": "QUALITYCONTROLRESULT",
+      "recipientAction": "READ",
+      "title": "Quality control failed",
+      "recapTemplate": "{actor} recorded a failed QC for reception {entityLabel} ({deliveryType}, {outcome}).",
+      "routeTemplate": "/reception/reception-details/{entityId}",
+      "priority": "HIGH",
+      "pushEnabled": true
+    },
+    "STOCK_LOW_ALERT": {
+      "module": "INVENTORY",
+      "entity": "ARTICLESEC",
+      "recipientAction": "READ",
+      "title": "Low stock alert",
+      "recapTemplate": "Low stock detected: {entityLabel} ({alertCount} article(s) under threshold).",
+      "routeTemplate": "/stock/dashboard",
+      "priority": "HIGH",
+      "pushEnabled": true
+    },
+    "CAMPAIGN_END_APPROACHING": {
+      "module": "PRODUCTION",
+      "entity": "COMPANYPROFILE",
+      "recipientAction": "READ",
+      "title": "Campaign ending soon",
+      "recapTemplate": "Campaign {entityLabel} ends on {campaignEndAt}.",
+      "routeTemplate": "/settings/general-config?tab=production",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
     "UNIFIEDDELIVERY_CRUSHING_COMPLETED": {
       "module": "RECEPTION",
       "entity": "UNIFIEDDELIVERY",
@@ -68,6 +98,16 @@
       "title": "Crushing completed",
       "recapTemplate": "{actor} completed crushing for lot {entityLabel} (oil: {oilQuantity} kg, yield: {rendement}%).",
       "routeTemplate": "/reception/reception-details/{entityId}",
+      "priority": "NORMAL",
+      "pushEnabled": true
+    },
+    "LEAVE_REQUEST_APPROVED": {
+      "module": "HR",
+      "entity": "LEAVEREQUEST",
+      "recipientAction": "READ",
+      "title": "Leave request approved",
+      "recapTemplate": "{actor} approved leave for {entityLabel} ({leaveType}, {startDate} → {endDate}).",
+      "routeTemplate": "/hr/leave-requests/{entityId}",
       "priority": "NORMAL",
       "pushEnabled": true
     }

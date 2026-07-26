@@ -78,6 +78,36 @@ public class CompanyProfile extends BaseEntity implements Serializable {
     @Column(length = 50)
     private String logoContentType;
 
+    @Column(name = "creation_date")
+    private java.time.LocalDate creationDate;
+
+    @Column(name = "invoice_footer_note", columnDefinition = "TEXT")
+    private String invoiceFooterNote;
+
+    @Column(name = "invoice_legal_mentions", columnDefinition = "TEXT")
+    private String invoiceLegalMentions;
+
+    @Column(name = "preferred_theme_color", length = 40)
+    private String preferredThemeColor;
+
+    @Column(name = "default_language", length = 10)
+    private String defaultLanguage;
+
+    @Column(name = "timezone", length = 60)
+    private String timezone;
+
+    @Column(name = "pwa_short_name", length = 40)
+    private String pwaShortName;
+
+    @Column(name = "invoice_bank_name", length = 120)
+    private String invoiceBankName;
+
+    @Column(name = "invoice_bank_iban", length = 64)
+    private String invoiceBankIban;
+
+    @Column(name = "invoice_bank_swift", length = 32)
+    private String invoiceBankSwift;
+
 
     public String getLogoData() {
         return logoData;
@@ -246,6 +276,86 @@ public class CompanyProfile extends BaseEntity implements Serializable {
 
     public void setCampaignEndDay(Integer campaignEndDay) {
         this.campaignEndDay = campaignEndDay;
+    }
+
+    public java.time.LocalDate getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(java.time.LocalDate creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public String getInvoiceFooterNote() {
+        return invoiceFooterNote;
+    }
+
+    public void setInvoiceFooterNote(String invoiceFooterNote) {
+        this.invoiceFooterNote = invoiceFooterNote;
+    }
+
+    public String getInvoiceLegalMentions() {
+        return invoiceLegalMentions;
+    }
+
+    public void setInvoiceLegalMentions(String invoiceLegalMentions) {
+        this.invoiceLegalMentions = invoiceLegalMentions;
+    }
+
+    public String getPreferredThemeColor() {
+        return preferredThemeColor;
+    }
+
+    public void setPreferredThemeColor(String preferredThemeColor) {
+        this.preferredThemeColor = preferredThemeColor;
+    }
+
+    public String getDefaultLanguage() {
+        return defaultLanguage;
+    }
+
+    public void setDefaultLanguage(String defaultLanguage) {
+        this.defaultLanguage = defaultLanguage;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public String getPwaShortName() {
+        return pwaShortName;
+    }
+
+    public void setPwaShortName(String pwaShortName) {
+        this.pwaShortName = pwaShortName;
+    }
+
+    public String getInvoiceBankName() {
+        return invoiceBankName;
+    }
+
+    public void setInvoiceBankName(String invoiceBankName) {
+        this.invoiceBankName = invoiceBankName;
+    }
+
+    public String getInvoiceBankIban() {
+        return invoiceBankIban;
+    }
+
+    public void setInvoiceBankIban(String invoiceBankIban) {
+        this.invoiceBankIban = invoiceBankIban;
+    }
+
+    public String getInvoiceBankSwift() {
+        return invoiceBankSwift;
+    }
+
+    public void setInvoiceBankSwift(String invoiceBankSwift) {
+        this.invoiceBankSwift = invoiceBankSwift;
     }
 
 

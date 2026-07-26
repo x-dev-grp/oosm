@@ -37,4 +37,33 @@ public interface PayslipRepository extends BaseRepository<Payslip> {
             WHERE p.id = :id AND p.isDeleted = false
             """)
     Optional<Payslip> findWithDetailsByIdAndIsDeletedFalse(@Param("id") UUID id);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.netSalary), 0) FROM Payslip p
+            WHERE p.isDeleted = false
+              AND p.payrollPeriod.id = :periodId
+            """)
+    Double sumNetByPeriod(@Param("periodId") UUID periodId);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.grossSalary), 0) FROM Payslip p
+            WHERE p.isDeleted = false
+              AND p.payrollPeriod.id = :periodId
+            """)
+    Double sumGrossByPeriod(@Param("periodId") UUID periodId);
+
+    @Query("""
+            SELECT COALESCE(SUM(p.employerCost), 0) FROM Payslip p
+            WHERE p.isDeleted = false
+              AND p.payrollPeriod.id = :periodId
+            """)
+    Double sumEmployerCostByPeriod(@Param("periodId") UUID periodId);
+
+    @Query("""
+            SELECT p FROM Payslip p
+            WHERE p.isDeleted = false
+              AND p.payrollPeriod.id = :periodId
+              AND (p.netSalary IS NULL OR p.netSalary < 0 OR p.grossSalary IS NULL OR p.grossSalary <= 0)
+            """)
+    List<Payslip> findAnomaliesByPeriod(@Param("periodId") UUID periodId);
 }

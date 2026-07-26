@@ -42,4 +42,24 @@ public interface EmploymentContractRepository extends BaseRepository<EmploymentC
             @Param("periodStart") LocalDate periodStart,
             @Param("periodEnd") LocalDate periodEnd
     );
+
+    @Query("""
+            SELECT COUNT(c) FROM EmploymentContract c
+            WHERE c.isDeleted = false
+              AND c.status = com.xdev.ooms.hr.common.enums.ContractStatus.ACTIVE
+              AND c.endDate IS NOT NULL
+              AND c.endDate >= :from
+              AND c.endDate <= :to
+            """)
+    long countExpiringBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @Query("""
+            SELECT c FROM EmploymentContract c
+            WHERE c.isDeleted = false
+              AND c.status = com.xdev.ooms.hr.common.enums.ContractStatus.ACTIVE
+              AND c.endDate IS NOT NULL
+              AND c.endDate >= :from
+              AND c.endDate <= :to
+            """)
+    List<EmploymentContract> findExpiringBetween(@Param("from") LocalDate from, @Param("to") LocalDate to);
 }

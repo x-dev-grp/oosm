@@ -30,6 +30,16 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private Integer campaignEndMonth;
     private Integer campaignEndDay;
     private List<String> enabledModules;
+    private java.time.LocalDate creationDate;
+    private String invoiceFooterNote;
+    private String invoiceLegalMentions;
+    private String preferredThemeColor;
+    private String defaultLanguage;
+    private String timezone;
+    private String pwaShortName;
+    private String invoiceBankName;
+    private String invoiceBankIban;
+    private String invoiceBankSwift;
 
     public String getLegalName() {
         return legalName;
@@ -206,5 +216,85 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
 
     public void setEnabledModules(List<String> enabledModules) {
         this.enabledModules = enabledModules;
+    }
+
+    public java.time.LocalDate getCreationDate() {
+        return creationDate;
+    }
+
+    public void setCreationDate(java.time.LocalDate creationDate) {
+        this.creationDate = creationDate;
+    }
+
+    public String getInvoiceFooterNote() {
+        return invoiceFooterNote;
+    }
+
+    public void setInvoiceFooterNote(String invoiceFooterNote) {
+        this.invoiceFooterNote = invoiceFooterNote;
+    }
+
+    public String getInvoiceLegalMentions() {
+        return invoiceLegalMentions;
+    }
+
+    public void setInvoiceLegalMentions(String invoiceLegalMentions) {
+        this.invoiceLegalMentions = invoiceLegalMentions;
+    }
+
+    public String getPreferredThemeColor() {
+        return preferredThemeColor;
+    }
+
+    public void setPreferredThemeColor(String preferredThemeColor) {
+        this.preferredThemeColor = preferredThemeColor;
+    }
+
+    public String getDefaultLanguage() {
+        return defaultLanguage;
+    }
+
+    public void setDefaultLanguage(String defaultLanguage) {
+        this.defaultLanguage = defaultLanguage;
+    }
+
+    public String getTimezone() {
+        return timezone;
+    }
+
+    public void setTimezone(String timezone) {
+        this.timezone = timezone;
+    }
+
+    public String getPwaShortName() {
+        return pwaShortName;
+    }
+
+    public void setPwaShortName(String pwaShortName) {
+        this.pwaShortName = pwaShortName;
+    }
+
+    public String getInvoiceBankName() {
+        return invoiceBankName;
+    }
+
+    public void setInvoiceBankName(String invoiceBankName) {
+        this.invoiceBankName = invoiceBankName;
+    }
+
+    public String getInvoiceBankIban() {
+        return invoiceBankIban;
+    }
+
+    public void setInvoiceBankIban(String invoiceBankIban) {
+        this.invoiceBankIban = invoiceBankIban;
+    }
+
+    public String getInvoiceBankSwift() {
+        return invoiceBankSwift;
+    }
+
+    public void setInvoiceBankSwift(String invoiceBankSwift) {
+        this.invoiceBankSwift = invoiceBankSwift;
     }
 }

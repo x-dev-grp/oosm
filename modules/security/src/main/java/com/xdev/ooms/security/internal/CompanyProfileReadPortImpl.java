@@ -45,7 +45,12 @@ public class CompanyProfileReadPortImpl implements CompanyProfileReadPort {
                 profile.getLogoData(),
                 profile.getLogoContentType(),
                 nullToEmpty(profile.getCnssNumber()),
-                nullToEmpty(profile.getRegistrationNumber()));
+                nullToEmpty(profile.getRegistrationNumber()),
+                nullToEmpty(profile.getInvoiceFooterNote()),
+                nullToEmpty(profile.getInvoiceLegalMentions()),
+                nullToEmpty(profile.getInvoiceBankName()),
+                nullToEmpty(profile.getInvoiceBankIban()),
+                nullToEmpty(profile.getInvoiceBankSwift()));
     }
 
     private String buildAddress(CompanyProfile profile) {
@@ -64,6 +69,13 @@ public class CompanyProfileReadPortImpl implements CompanyProfileReadPort {
                 sb.append(' ');
             }
             sb.append(postal);
+        }
+        String governorate = nullToEmpty(profile.getGovernorate());
+        if (!governorate.isBlank()) {
+            if (!sb.isEmpty()) {
+                sb.append(", ");
+            }
+            sb.append(governorate);
         }
         return sb.toString().trim();
     }

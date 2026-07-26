@@ -24,4 +24,15 @@ public interface PayrollPeriodRepository extends BaseRepository<PayrollPeriod> {
             @Param("month") Integer month,
             @Param("excludeId") UUID excludeId
     );
+
+    @Query("""
+            SELECT p FROM PayrollPeriod p
+            WHERE p.isDeleted = false
+              AND p.year = :year
+              AND p.month = :month
+            """)
+    java.util.Optional<PayrollPeriod> findByYearAndMonthAndIsDeletedFalse(
+            @Param("year") Integer year,
+            @Param("month") Integer month
+    );
 }

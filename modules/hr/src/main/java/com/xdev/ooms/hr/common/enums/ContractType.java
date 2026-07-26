@@ -4,5 +4,8 @@ public enum ContractType {
     CDI,
     CDD,
     INTERNSHIP,
-    TEMPORARY
+    TEMPORARY,
+    SEASONAL,
+    PART_TIME,
+    OTHER_LEGAL_TYPE
 }

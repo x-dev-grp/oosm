@@ -1,37 +1,37 @@
 package com.xdev.ooms.documents.form.mapper;
 
-import com.xdev.ooms.production.parameter.entity.Parameter;
-import com.xdev.ooms.production.parameter.service.ParameterService;
+import com.xdev.ooms.production.parameter.service.SeasonPricingParameterReader;
 import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
 import com.xdev.ooms.documents.form.FormPdfLabels;
 import com.xdev.ooms.documents.form.dto.FormPdfConfigDto;
 import com.xdev.ooms.documents.form.dto.FormPdfFieldDto;
 import com.xdev.ooms.documents.form.dto.FormPdfFooterDto;
-import com.xdev.ooms.sharedkernel.config.TenantContext;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.UUID;
 
 @Component
 public class ProductionPdfConfigMapper {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-    private static final String PRIX_TRITURATION_KG = "PRIX_TRITURATION_KG";
-    private static final double DEFAULT_MILLING_PRICE = 0.170d;
 
-    private final ParameterService parameterService;
+    private final SeasonPricingParameterReader seasonPricingParameterReader;
 
-    public ProductionPdfConfigMapper(ParameterService parameterService) {
-        this.parameterService = parameterService;
+    public ProductionPdfConfigMapper(SeasonPricingParameterReader seasonPricingParameterReader) {
+        this.seasonPricingParameterReader = seasonPricingParameterReader;
     }
 
     public FormPdfConfigDto map(UnifiedDelivery delivery) {
-        double prixUnitaire = resolveMillingPrice();
+        LocalDate pricingDate = delivery.getTrtDate() != null
+                ? delivery.getTrtDate().toLocalDate()
+                : (delivery.getDeliveryDate() != null ? delivery.getDeliveryDate().toLocalDate() : LocalDate.now());
+        String varietyName = nameOf(delivery.getOliveVariety(), null);
+        double prixUnitaire = seasonPricingParameterReader.resolvePricePerKg(pricingDate, varietyName);
 
         double qteHuile = delivery.getOilQuantity() == null ? 0d : delivery.getOilQuantity();
         double qteOlive = delivery.getPoidsNet() == null ? 0d : delivery.getPoidsNet();
@@ -47,6 +47,7 @@ public class ProductionPdfConfigMapper {
         config.setRevision("00");
         config.setDate("01/12/2024");
         config.setNumber(deliveryNumberSuffix(delivery));
+        config.setQrPayload(firstNonBlank(delivery.getLotNumber(), delivery.getDeliveryNumber(), delivery.getId() != null ? delivery.getId().toString() : null));
 
         List<FormPdfFieldDto> generalInfo = new ArrayList<>();
         generalInfo.add(field(FormPdfLabels.LOT_NUMBER,
@@ -65,6 +66,8 @@ public class ProductionPdfConfigMapper {
         fields.add(field(FormPdfLabels.OIL_QUANTITY, String.format(Locale.FRENCH, "%s kg", trimNumber(qteHuile))));
         fields.add(field(FormPdfLabels.YIELD, String.format(Locale.FRENCH, "%.3f %%", rendement)));
         fields.add(field(FormPdfLabels.STORAGE_UNIT, storageUnit + " "));
+        fields.add(field(FormPdfLabels.MILLING_PRICE,
+                String.format(Locale.FRENCH, "%s TND/kg", trimNumber(prixUnitaire))));
         config.setFields(fields);
 
         config.setFooterInfo(List.of(
@@ -76,23 +79,6 @@ public class ProductionPdfConfigMapper {
         String lot = safe(delivery.getLotNumber());
         config.setFileName("BonProduction_" + (lot.isBlank() ? "LOT" : lot));
         return config;
-    }
-
-    private double resolveMillingPrice() {
-        UUID tenantId = TenantContext.getCurrentTenant();
-        if (tenantId == null) {
-            return DEFAULT_MILLING_PRICE;
-        }
-        try {
-            Parameter parameter = parameterService.getByCode(PRIX_TRITURATION_KG, tenantId);
-            if (parameter != null && parameter.getValue() != null && !parameter.getValue().isBlank()) {
-                double parsed = Double.parseDouble(parameter.getValue().replace(',', '.'));
-                return parsed > 0 ? parsed : DEFAULT_MILLING_PRICE;
-            }
-        } catch (Exception ignored) {
-            // fall back to frontend default
-        }
-        return DEFAULT_MILLING_PRICE;
     }
 
     private FormPdfFieldDto field(String label, String value) {

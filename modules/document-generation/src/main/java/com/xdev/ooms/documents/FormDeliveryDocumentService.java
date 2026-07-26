@@ -52,6 +52,12 @@ public class FormDeliveryDocumentService {
             case PRODUCTION -> productionPdfConfigMapper.map(delivery);
             default -> throw new IllegalArgumentException("Not a form document type: " + type);
         };
+        if (config.getQrPayload() == null || config.getQrPayload().isBlank()) {
+            String payload = delivery.getLotNumber() != null && !delivery.getLotNumber().isBlank()
+                    ? delivery.getLotNumber()
+                    : (delivery.getDeliveryNumber() != null ? delivery.getDeliveryNumber() : delivery.getId().toString());
+            config.setQrPayload(payload);
+        }
 
         FormPdfDocument document = formPdfGeneratorService.generate(config);
         return GeneratedDocument.fromForm(document.fileName(), document.content());

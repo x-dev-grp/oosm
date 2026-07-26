@@ -30,6 +30,13 @@ public class PayrollPeriod extends BaseEntity implements Serializable {
     @Enumerated(EnumType.STRING)
     private PayrollPeriodStatus status;
 
+    /** True when this period has been posted to finance (idempotency). */
+    private Boolean financePosted = Boolean.FALSE;
+
+    /** Invoice / finance reference returned by PayrollAccountingPort. */
+    @Column(length = 128)
+    private String financeReference;
+
     public Integer getYear() {
         return year;
     }
@@ -68,5 +75,21 @@ public class PayrollPeriod extends BaseEntity implements Serializable {
 
     public void setStatus(PayrollPeriodStatus status) {
         this.status = status;
+    }
+
+    public Boolean getFinancePosted() {
+        return financePosted;
+    }
+
+    public void setFinancePosted(Boolean financePosted) {
+        this.financePosted = financePosted;
+    }
+
+    public String getFinanceReference() {
+        return financeReference;
+    }
+
+    public void setFinanceReference(String financeReference) {
+        this.financeReference = financeReference;
     }
 }

@@ -313,6 +313,16 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         company.setCampaignStartDay(dto.getCampaignStartDay());
         company.setCampaignEndMonth(dto.getCampaignEndMonth());
         company.setCampaignEndDay(dto.getCampaignEndDay());
+        company.setCreationDate(dto.getCreationDate());
+        company.setInvoiceFooterNote(dto.getInvoiceFooterNote());
+        company.setInvoiceLegalMentions(dto.getInvoiceLegalMentions());
+        company.setPreferredThemeColor(dto.getPreferredThemeColor());
+        company.setDefaultLanguage(dto.getDefaultLanguage());
+        company.setTimezone(dto.getTimezone());
+        company.setPwaShortName(dto.getPwaShortName());
+        company.setInvoiceBankName(dto.getInvoiceBankName());
+        company.setInvoiceBankIban(dto.getInvoiceBankIban());
+        company.setInvoiceBankSwift(dto.getInvoiceBankSwift());
 
         if (dto.getLogoData() != null) {
             String logoData = dto.getLogoData().trim();

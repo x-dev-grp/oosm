@@ -1,14 +1,22 @@
 package com.xdev.ooms.hr.employee.entity;
 
 import com.xdev.ooms.hr.common.enums.EmployeeStatus;
+import com.xdev.ooms.hr.common.enums.Gender;
+import com.xdev.ooms.hr.common.enums.MaritalStatus;
 import com.xdev.ooms.hr.common.enums.PaymentMode;
 import com.xdev.ooms.hr.common.enums.SalaryType;
 import com.xdev.ooms.hr.common.enums.WorkRegime;
+import com.xdev.ooms.hr.organization.entity.Department;
+import com.xdev.ooms.hr.organization.entity.EmployeeCategory;
+import com.xdev.ooms.hr.organization.entity.Grade;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 import java.io.Serializable;
@@ -24,6 +32,8 @@ public class Employee extends BaseEntity implements Serializable {
     @Column(nullable = false)
     private String lastName;
 
+    private String employeeNumber;
+
     @Column(length = 32)
     private String cin;
 
@@ -36,9 +46,33 @@ public class Employee extends BaseEntity implements Serializable {
 
     private LocalDate birthDate;
     private LocalDate hireDate;
+    private LocalDate terminationDate;
+
+    @Enumerated(EnumType.STRING)
+    private Gender gender;
+
+    @Enumerated(EnumType.STRING)
+    private MaritalStatus maritalStatus;
+
+    private Integer numberOfChildren;
+
+    private String taxIdentifier;
+    private String rib;
 
     private String jobTitle;
     private String department;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "grade_id")
+    private Grade grade;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "employee_category_id")
+    private EmployeeCategory employeeCategory;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_ref_id")
+    private Department departmentRef;
 
     @Enumerated(EnumType.STRING)
     private EmployeeStatus status;
@@ -68,6 +102,14 @@ public class Employee extends BaseEntity implements Serializable {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getEmployeeNumber() {
+        return employeeNumber;
+    }
+
+    public void setEmployeeNumber(String employeeNumber) {
+        this.employeeNumber = employeeNumber;
     }
 
     public String getCin() {
@@ -126,6 +168,54 @@ public class Employee extends BaseEntity implements Serializable {
         this.hireDate = hireDate;
     }
 
+    public LocalDate getTerminationDate() {
+        return terminationDate;
+    }
+
+    public void setTerminationDate(LocalDate terminationDate) {
+        this.terminationDate = terminationDate;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public MaritalStatus getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(MaritalStatus maritalStatus) {
+        this.maritalStatus = maritalStatus;
+    }
+
+    public Integer getNumberOfChildren() {
+        return numberOfChildren;
+    }
+
+    public void setNumberOfChildren(Integer numberOfChildren) {
+        this.numberOfChildren = numberOfChildren;
+    }
+
+    public String getTaxIdentifier() {
+        return taxIdentifier;
+    }
+
+    public void setTaxIdentifier(String taxIdentifier) {
+        this.taxIdentifier = taxIdentifier;
+    }
+
+    public String getRib() {
+        return rib;
+    }
+
+    public void setRib(String rib) {
+        this.rib = rib;
+    }
+
     public String getJobTitle() {
         return jobTitle;
     }
@@ -140,6 +230,30 @@ public class Employee extends BaseEntity implements Serializable {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public Grade getGrade() {
+        return grade;
+    }
+
+    public void setGrade(Grade grade) {
+        this.grade = grade;
+    }
+
+    public EmployeeCategory getEmployeeCategory() {
+        return employeeCategory;
+    }
+
+    public void setEmployeeCategory(EmployeeCategory employeeCategory) {
+        this.employeeCategory = employeeCategory;
+    }
+
+    public Department getDepartmentRef() {
+        return departmentRef;
+    }
+
+    public void setDepartmentRef(Department departmentRef) {
+        this.departmentRef = departmentRef;
     }
 
     public EmployeeStatus getStatus() {

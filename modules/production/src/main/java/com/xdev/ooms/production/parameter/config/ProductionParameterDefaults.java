@@ -9,6 +9,11 @@ public final class ProductionParameterDefaults {
 
     public static final String PRODUCTION_CATEGORY = "PRODUCTION";
     public static final String FINANCE_CATEGORY = "FINANCE";
+    public static final String HR_CATEGORY = "HR";
+    public static final String RECEPTION_CATEGORY = "RECEPTION";
+    public static final String LOCALE_CATEGORY = "LOCALE";
+    public static final String PRINT_CATEGORY = "PRINT";
+    public static final String NOTIFICATIONS_CATEGORY = "NOTIFICATIONS";
 
     private static final List<ProductionParameterDefault> DEFAULTS = List.of(
             new ProductionParameterDefault(
@@ -26,6 +31,20 @@ public final class ProductionParameterDefaults {
                     "Daily BASE oil unit price reference (current and history JSON)"
             ),
             new ProductionParameterDefault(
+                    "DEFAULT_OLIVE_VARIETY",
+                    PRODUCTION_CATEGORY,
+                    ParameterType.STRING,
+                    "",
+                    "Default olive variety code/name for new receptions"
+            ),
+            new ProductionParameterDefault(
+                    "DEFAULT_PRODUCTION_METHOD",
+                    PRODUCTION_CATEGORY,
+                    ParameterType.STRING,
+                    "",
+                    "Default production method for new receptions"
+            ),
+            new ProductionParameterDefault(
                     "PRIX_TRITURATION_KG",
                     FINANCE_CATEGORY,
                     ParameterType.DOUBLE,
@@ -38,6 +57,118 @@ public final class ProductionParameterDefaults {
                     ParameterType.BOOLEAN,
                     "true",
                     "Auto-calculate purchase VAT from TTC prices on buy invoices"
+            ),
+            new ProductionParameterDefault(
+                    "SEASON_PRICING_RULES",
+                    FINANCE_CATEGORY,
+                    ParameterType.STRING,
+                    "[]",
+                    "JSON array of season trituration pricing tiers: [{from,to,variety,pricePerKg}]"
+            ),
+            new ProductionParameterDefault(
+                    "CNSS_EMPLOYEE_RATE",
+                    HR_CATEGORY,
+                    ParameterType.DOUBLE,
+                    "9.18",
+                    "Employee CNSS contribution rate (%)"
+            ),
+            new ProductionParameterDefault(
+                    "CNSS_EMPLOYER_RATE",
+                    HR_CATEGORY,
+                    ParameterType.DOUBLE,
+                    "16.57",
+                    "Employer CNSS contribution rate (%)"
+            ),
+            new ProductionParameterDefault(
+                    "OVERTIME_MULTIPLIER",
+                    HR_CATEGORY,
+                    ParameterType.DOUBLE,
+                    "1.25",
+                    "Overtime pay multiplier vs base hourly rate"
+            ),
+            new ProductionParameterDefault(
+                    "RECEPTION_OPEN_TIME",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "07:00",
+                    "Reception desk opening time (HH:mm)"
+            ),
+            new ProductionParameterDefault(
+                    "RECEPTION_CLOSE_TIME",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "18:00",
+                    "Reception desk closing time (HH:mm)"
+            ),
+            new ProductionParameterDefault(
+                    "MAX_DAILY_TONNAGE_KG",
+                    RECEPTION_CATEGORY,
+                    ParameterType.DOUBLE,
+                    "0",
+                    "Optional daily reception tonnage warning threshold (kg). 0 = disabled"
+            ),
+            new ProductionParameterDefault(
+                    "DEFAULT_LANGUAGE",
+                    LOCALE_CATEGORY,
+                    ParameterType.STRING,
+                    "fr",
+                    "Tenant default UI language (fr|en|ar)"
+            ),
+            new ProductionParameterDefault(
+                    "DEFAULT_CURRENCY",
+                    LOCALE_CATEGORY,
+                    ParameterType.STRING,
+                    "TND",
+                    "Tenant default currency code"
+            ),
+            new ProductionParameterDefault(
+                    "TIMEZONE",
+                    LOCALE_CATEGORY,
+                    ParameterType.STRING,
+                    "Africa/Tunis",
+                    "Tenant timezone for reports and campaign clocks"
+            ),
+            new ProductionParameterDefault(
+                    "PRINT_PAPER_SIZE",
+                    PRINT_CATEGORY,
+                    ParameterType.STRING,
+                    "A4",
+                    "Default print paper size (A4|TICKET)"
+            ),
+            new ProductionParameterDefault(
+                    "PRINT_SHOW_QR",
+                    PRINT_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Show QR code on delivery/invoice prints by default"
+            ),
+            new ProductionParameterDefault(
+                    "PRINT_COPIES",
+                    PRINT_CATEGORY,
+                    ParameterType.INTEGER,
+                    "1",
+                    "Default number of print copies"
+            ),
+            new ProductionParameterDefault(
+                    "NOTIFY_ON_QC_FAIL",
+                    NOTIFICATIONS_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Notify mill staff when a QC check fails"
+            ),
+            new ProductionParameterDefault(
+                    "NOTIFY_ON_LOW_STOCK",
+                    NOTIFICATIONS_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Notify mill staff on low stock alerts"
+            ),
+            new ProductionParameterDefault(
+                    "NOTIFY_ON_CAMPAIGN_END",
+                    NOTIFICATIONS_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Notify mill staff when campaign end date approaches"
             )
     );
 

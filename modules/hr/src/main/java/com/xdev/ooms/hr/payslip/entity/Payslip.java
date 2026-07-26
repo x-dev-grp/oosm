@@ -28,6 +28,14 @@ public class Payslip extends BaseEntity implements Serializable {
     private Double irpp;
     private Double css;
     private Double netSalary;
+    private Double taxableSalary;
+    private Double cnssBase;
+    private Double employerCost;
+    private Double otherDeductions;
+    @Column(columnDefinition = "TEXT")
+    private String calculationSnapshot;
+    @Column(columnDefinition = "TEXT")
+    private String calculationBreakdown;
     private Boolean paid;
     private LocalDate paymentDate;
     @Enumerated(EnumType.STRING)
@@ -48,7 +56,8 @@ public class Payslip extends BaseEntity implements Serializable {
     public void setEmployee(Employee employee) {
         this.employee = employee;
     }
-   public Double getGrossSalary() {
+
+    public Double getGrossSalary() {
         return grossSalary;
     }
 
@@ -110,6 +119,54 @@ public class Payslip extends BaseEntity implements Serializable {
 
     public void setNetSalary(Double netSalary) {
         this.netSalary = netSalary;
+    }
+
+    public Double getTaxableSalary() {
+        return taxableSalary;
+    }
+
+    public void setTaxableSalary(Double taxableSalary) {
+        this.taxableSalary = taxableSalary;
+    }
+
+    public Double getCnssBase() {
+        return cnssBase;
+    }
+
+    public void setCnssBase(Double cnssBase) {
+        this.cnssBase = cnssBase;
+    }
+
+    public Double getEmployerCost() {
+        return employerCost;
+    }
+
+    public void setEmployerCost(Double employerCost) {
+        this.employerCost = employerCost;
+    }
+
+    public Double getOtherDeductions() {
+        return otherDeductions;
+    }
+
+    public void setOtherDeductions(Double otherDeductions) {
+        this.otherDeductions = otherDeductions;
+    }
+
+    public String getCalculationSnapshot() {
+        return calculationSnapshot;
+    }
+
+    public void setCalculationSnapshot(String calculationSnapshot) {
+        this.calculationSnapshot = calculationSnapshot;
+    }
+
+    public String getCalculationBreakdown() {
+        return calculationBreakdown;
+    }
+
+    public void setCalculationBreakdown(String calculationBreakdown) {
+        this.calculationBreakdown = calculationBreakdown;
     }
 
     public Boolean getPaid() {

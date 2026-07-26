@@ -1,12 +1,17 @@
 package com.xdev.ooms.hr.employee.dto;
 
 import com.xdev.ooms.hr.common.enums.EmployeeStatus;
+import com.xdev.ooms.hr.common.enums.Gender;
+import com.xdev.ooms.hr.common.enums.MaritalStatus;
 import com.xdev.ooms.hr.common.enums.PaymentMode;
 import com.xdev.ooms.hr.common.enums.SalaryType;
 import com.xdev.ooms.hr.common.enums.WorkRegime;
 import com.xdev.ooms.hr.contract.dto.EmploymentContractDto;
 import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.hr.leave.dto.LeaveRequestDto;
+import com.xdev.ooms.hr.organization.dto.DepartmentDto;
+import com.xdev.ooms.hr.organization.dto.EmployeeCategoryDto;
+import com.xdev.ooms.hr.organization.dto.GradeDto;
 import com.xdev.ooms.hr.payslip.dto.PayslipDto;
 import com.xdev.ooms.hr.pointage.dto.PointageDto;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
@@ -17,6 +22,7 @@ import java.util.List;
 public class EmployeeDto extends BaseDto<Employee> {
     private String firstName;
     private String lastName;
+    private String employeeNumber;
     private String cin;
     private String cnssMatricule;
     private String email;
@@ -24,8 +30,17 @@ public class EmployeeDto extends BaseDto<Employee> {
     private String address;
     private LocalDate birthDate;
     private LocalDate hireDate;
+    private LocalDate terminationDate;
+    private Gender gender;
+    private MaritalStatus maritalStatus;
+    private Integer numberOfChildren;
+    private String taxIdentifier;
+    private String rib;
     private String jobTitle;
     private String department;
+    private GradeDto grade;
+    private EmployeeCategoryDto employeeCategory;
+    private DepartmentDto departmentRef;
     private EmployeeStatus status;
     private SalaryType salaryType;
     private PaymentMode paymentMode;
@@ -51,6 +66,14 @@ public class EmployeeDto extends BaseDto<Employee> {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getEmployeeNumber() {
+        return employeeNumber;
+    }
+
+    public void setEmployeeNumber(String employeeNumber) {
+        this.employeeNumber = employeeNumber;
     }
 
     public String getCin() {
@@ -109,6 +132,54 @@ public class EmployeeDto extends BaseDto<Employee> {
         this.hireDate = hireDate;
     }
 
+    public LocalDate getTerminationDate() {
+        return terminationDate;
+    }
+
+    public void setTerminationDate(LocalDate terminationDate) {
+        this.terminationDate = terminationDate;
+    }
+
+    public Gender getGender() {
+        return gender;
+    }
+
+    public void setGender(Gender gender) {
+        this.gender = gender;
+    }
+
+    public MaritalStatus getMaritalStatus() {
+        return maritalStatus;
+    }
+
+    public void setMaritalStatus(MaritalStatus maritalStatus) {
+        this.maritalStatus = maritalStatus;
+    }
+
+    public Integer getNumberOfChildren() {
+        return numberOfChildren;
+    }
+
+    public void setNumberOfChildren(Integer numberOfChildren) {
+        this.numberOfChildren = numberOfChildren;
+    }
+
+    public String getTaxIdentifier() {
+        return taxIdentifier;
+    }
+
+    public void setTaxIdentifier(String taxIdentifier) {
+        this.taxIdentifier = taxIdentifier;
+    }
+
+    public String getRib() {
+        return rib;
+    }
+
+    public void setRib(String rib) {
+        this.rib = rib;
+    }
+
     public String getJobTitle() {
         return jobTitle;
     }
@@ -123,6 +194,30 @@ public class EmployeeDto extends BaseDto<Employee> {
 
     public void setDepartment(String department) {
         this.department = department;
+    }
+
+    public GradeDto getGrade() {
+        return grade;
+    }
+
+    public void setGrade(GradeDto grade) {
+        this.grade = grade;
+    }
+
+    public EmployeeCategoryDto getEmployeeCategory() {
+        return employeeCategory;
+    }
+
+    public void setEmployeeCategory(EmployeeCategoryDto employeeCategory) {
+        this.employeeCategory = employeeCategory;
+    }
+
+    public DepartmentDto getDepartmentRef() {
+        return departmentRef;
+    }
+
+    public void setDepartmentRef(DepartmentDto departmentRef) {
+        this.departmentRef = departmentRef;
     }
 
     public EmployeeStatus getStatus() {
