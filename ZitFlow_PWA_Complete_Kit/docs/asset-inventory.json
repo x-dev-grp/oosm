@@ -1,0 +1,125 @@
+{
+  "application": {
+    "name": "ZitFlow",
+    "theme_color": "#3D4F2F",
+    "background_color": "#F7F6F2",
+    "deployment_base_path": "/osm/"
+  },
+  "source": "logo_design_with_olive_and_gold_accents.png",
+  "mark_detection_cut_y": 838,
+  "standard_icon_sizes": [
+    48,
+    72,
+    96,
+    128,
+    144,
+    152,
+    192,
+    256,
+    384,
+    512,
+    1024
+  ],
+  "maskable_icon_sizes": [
+    192,
+    512,
+    1024
+  ],
+  "monochrome_icon_sizes": [
+    192,
+    512,
+    1024
+  ],
+  "apple_touch_icon_sizes": [
+    120,
+    152,
+    167,
+    180
+  ],
+  "apple_startup_devices": [
+    {
+      "name": "iphone-se",
+      "portrait": "640x1136",
+      "landscape": "1136x640",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "iphone-8",
+      "portrait": "750x1334",
+      "landscape": "1334x750",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "iphone-11",
+      "portrait": "828x1792",
+      "landscape": "1792x828",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "iphone-x-xs",
+      "portrait": "1125x2436",
+      "landscape": "2436x1125",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-12-13-14",
+      "portrait": "1170x2532",
+      "landscape": "2532x1170",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-14-pro",
+      "portrait": "1179x2556",
+      "landscape": "2556x1179",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-8-plus",
+      "portrait": "1242x2208",
+      "landscape": "2208x1242",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-xs-max-11-pro-max",
+      "portrait": "1242x2688",
+      "landscape": "2688x1242",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-12-13-pro-max",
+      "portrait": "1284x2778",
+      "landscape": "2778x1284",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "iphone-14-15-pro-max",
+      "portrait": "1290x2796",
+      "landscape": "2796x1290",
+      "pixel_ratio": 3
+    },
+    {
+      "name": "ipad-mini-air",
+      "portrait": "1536x2048",
+      "landscape": "2048x1536",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "ipad-pro-10-5",
+      "portrait": "1668x2224",
+      "landscape": "2224x1668",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "ipad-pro-11",
+      "portrait": "1668x2388",
+      "landscape": "2388x1668",
+      "pixel_ratio": 2
+    },
+    {
+      "name": "ipad-pro-12-9",
+      "portrait": "2048x2732",
+      "landscape": "2732x2048",
+      "pixel_ratio": 2
+    }
+  ]
+}

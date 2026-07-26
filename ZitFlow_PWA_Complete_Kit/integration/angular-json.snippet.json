@@ -1,0 +1,13 @@
+{
+  "projects": {
+    "<your-angular-project>": {
+      "architect": {
+        "build": {
+          "options": {
+            "serviceWorker": "ngsw-config.json"
+          }
+        }
+      }
+    }
+  }
+}
