@@ -42,7 +42,7 @@ public class DynamicMailSettings {
     }
 
     public String getFromName() {
-        return appSettingsService.getString("MAIL_FROM_NAME", "OOSM");
+        return appSettingsService.getString("MAIL_FROM_NAME", "ZitFlow");
     }
 
     public String getFormattedFrom() {

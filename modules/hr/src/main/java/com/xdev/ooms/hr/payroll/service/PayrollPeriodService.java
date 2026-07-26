@@ -7,6 +7,7 @@ import com.xdev.ooms.hr.contract.repository.EmploymentContractRepository;
 import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.hr.employee.repository.EmployeeRepository;
 import com.xdev.ooms.hr.employee.dto.EmployeeDto;
+import com.xdev.ooms.hr.integration.finance.PayrollFinanceIntegrationService;
 import com.xdev.ooms.hr.payroll.dto.PayrollPeriodDto;
 import com.xdev.ooms.hr.payroll.entity.PayrollPeriod;
 import com.xdev.ooms.hr.payslip.dto.PayslipDto;
@@ -42,6 +43,7 @@ public class PayrollPeriodService extends BaseServiceImpl<PayrollPeriod, Payroll
     private final PayslipRepository payslipRepository;
     private final EmploymentContractRepository contractRepository;
     private final EmployeeRepository employeeRepository;
+    private final PayrollFinanceIntegrationService payrollFinanceIntegrationService;
 
     public PayrollPeriodService(
             BaseRepository<PayrollPeriod> repository,
@@ -49,13 +51,15 @@ public class PayrollPeriodService extends BaseServiceImpl<PayrollPeriod, Payroll
             HrBusinessLinkageService hrBusinessLinkage,
             PayslipRepository payslipRepository,
             EmploymentContractRepository contractRepository,
-            EmployeeRepository employeeRepository
+            EmployeeRepository employeeRepository,
+            PayrollFinanceIntegrationService payrollFinanceIntegrationService
     ) {
         super(repository, modelMapper);
         this.hrBusinessLinkage = hrBusinessLinkage;
         this.payslipRepository = payslipRepository;
         this.contractRepository = contractRepository;
         this.employeeRepository = employeeRepository;
+        this.payrollFinanceIntegrationService = payrollFinanceIntegrationService;
     }
 
     @Override
@@ -148,6 +152,9 @@ public class PayrollPeriodService extends BaseServiceImpl<PayrollPeriod, Payroll
         period.setStatus(targetStatus);
         AuditHelper.applyAuditOnCreate(period);
         repository.save(period);
+        if (targetStatus == PayrollPeriodStatus.VALIDATED) {
+            payrollFinanceIntegrationService.onPayrollValidated(period);
+        }
         return findById(periodId);
     }
 

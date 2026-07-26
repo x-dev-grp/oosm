@@ -2,6 +2,8 @@ package com.xdev.ooms.hr.pointage.service;
 
 import com.xdev.ooms.hr.common.HrBusinessLinkageService;
 import com.xdev.ooms.hr.common.HrRelationResolver;
+import com.xdev.ooms.hr.common.enums.AttendanceSource;
+import com.xdev.ooms.hr.pointage.component.AttendanceAnomalyDetector;
 import com.xdev.ooms.hr.pointage.dto.PointageDto;
 import com.xdev.ooms.hr.pointage.entity.Pointage;
 import com.xdev.ooms.sharedkernel.models.Action;
@@ -23,16 +25,19 @@ public class PointageService extends BaseServiceImpl<Pointage, PointageDto, Poin
 
     private final HrRelationResolver hrRelationResolver;
     private final HrBusinessLinkageService hrBusinessLinkage;
+    private final AttendanceAnomalyDetector attendanceAnomalyDetector;
 
     public PointageService(
             BaseRepository<Pointage> repository,
             ModelMapper modelMapper,
             HrRelationResolver hrRelationResolver,
-            HrBusinessLinkageService hrBusinessLinkage
+            HrBusinessLinkageService hrBusinessLinkage,
+            AttendanceAnomalyDetector attendanceAnomalyDetector
     ) {
         super(repository, modelMapper);
         this.hrRelationResolver = hrRelationResolver;
         this.hrBusinessLinkage = hrBusinessLinkage;
+        this.attendanceAnomalyDetector = attendanceAnomalyDetector;
     }
 
     @Override
@@ -45,7 +50,11 @@ public class PointageService extends BaseServiceImpl<Pointage, PointageDto, Poin
     public PointageDto save(PointageDto request) {
         Pointage entity = modelMapper.map(request, entityClass);
         resolveEntityRelations(entity);
+        if (entity.getSource() == null) {
+            entity.setSource(AttendanceSource.MANUAL);
+        }
         hrBusinessLinkage.validateAndEnrichPointage(entity, null);
+        applyAnomalies(entity);
         AuditHelper.applyAuditOnCreate(entity);
         Pointage saved = repository.save(entity);
         return modelMapper.map(saved, outDTOClass);
@@ -65,8 +74,13 @@ public class PointageService extends BaseServiceImpl<Pointage, PointageDto, Poin
         modelMapper.map(request, existing);
         resolveEntityRelations(existing);
         hrBusinessLinkage.validateAndEnrichPointage(existing, existing.getId());
+        applyAnomalies(existing);
         Pointage updated = repository.save(existing);
         return modelMapper.map(updated, outDTOClass);
+    }
+
+    private void applyAnomalies(Pointage entity) {
+        entity.setAnomalyCodes(attendanceAnomalyDetector.detectAsCsv(entity));
     }
 
     @Override

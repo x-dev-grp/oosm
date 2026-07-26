@@ -41,4 +41,21 @@ public interface LeaveRequestRepository extends BaseRepository<LeaveRequest> {
               AND :date BETWEEN l.startDate AND l.endDate
             """)
     boolean hasApprovedLeaveOn(@Param("employeeId") UUID employeeId, @Param("date") LocalDate date);
+
+    long countByStatusAndIsDeletedFalse(com.xdev.ooms.hr.common.enums.LeaveStatus status);
+
+    @Query("""
+            SELECT COUNT(DISTINCT l.employee.id) FROM LeaveRequest l
+            WHERE l.isDeleted = false
+              AND l.status = com.xdev.ooms.hr.common.enums.LeaveStatus.APPROVED
+              AND :date BETWEEN l.startDate AND l.endDate
+            """)
+    long countEmployeesOnLeaveOn(@Param("date") LocalDate date);
+
+    @Query("""
+            SELECT l FROM LeaveRequest l
+            WHERE l.isDeleted = false
+              AND l.status = com.xdev.ooms.hr.common.enums.LeaveStatus.PENDING
+            """)
+    List<LeaveRequest> findPending();
 }

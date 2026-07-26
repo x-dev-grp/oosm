@@ -40,7 +40,7 @@ public class ExpensePortImpl implements ExpensePort {
         if (externalReference == null || externalReference.isBlank()) {
             return notes;
         }
-        String prefix = "MaintenanceWorkOrder:" + externalReference.trim();
+        String prefix = "ExternalRef:" + externalReference.trim();
         if (notes == null || notes.isBlank()) {
             return prefix;
         }

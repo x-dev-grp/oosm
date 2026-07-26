@@ -48,14 +48,32 @@ public class ParameterService extends BaseServiceImpl<Parameter, ParameterDto, P
 
     @Transactional
     public void ensureDefaultsForTenant(UUID tenantId) {
+        seedDefaultsForTenant(tenantId);
+    }
+
+    /**
+     * Creates any missing catalog defaults for the tenant. Existing values are left untouched.
+     */
+    @Transactional
+    public ParameterSeedResult seedDefaultsForTenant(UUID tenantId) {
         if (tenantId == null) {
-            return;
+            return new ParameterSeedResult(0, 0, ProductionParameterDefaults.all().size());
         }
 
+        int created = 0;
+        int alreadyPresent = 0;
         for (ProductionParameterDefault definition : ProductionParameterDefaults.all()) {
-            parameterRepo.findByTenantIdAndCode(tenantId, definition.code())
-                    .orElseGet(() -> createDefaultParameter(definition, tenantId));
+            if (parameterRepo.findByTenantIdAndCode(tenantId, definition.code()).isPresent()) {
+                alreadyPresent++;
+            } else {
+                createDefaultParameter(definition, tenantId);
+                created++;
+            }
         }
+        return new ParameterSeedResult(created, alreadyPresent, ProductionParameterDefaults.all().size());
+    }
+
+    public record ParameterSeedResult(int created, int alreadyPresent, int catalogSize) {
     }
 
     private Parameter createDefaultParameter(ProductionParameterDefault definition, UUID tenantId) {

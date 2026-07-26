@@ -12,26 +12,38 @@ import com.itextpdf.text.Phrase;
 import com.itextpdf.text.Rectangle;
 import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfContentByte;
+import com.itextpdf.text.pdf.PdfImportedPage;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfReader;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.EncodeHintType;
+import com.google.zxing.client.j2se.MatrixToImageWriter;
+import com.google.zxing.common.BitMatrix;
+import com.google.zxing.qrcode.QRCodeWriter;
 import com.xdev.ooms.documents.form.dto.FormPdfConfigDto;
 import com.xdev.ooms.documents.form.dto.FormPdfDocument;
 import com.xdev.ooms.documents.form.dto.FormPdfFieldDto;
 import com.xdev.ooms.documents.form.dto.FormPdfFooterDto;
 import com.xdev.ooms.documents.layout.PdfLogoPlacement;
+import com.xdev.ooms.production.parameter.service.PrintParameterReader;
 import com.xdev.ooms.sharedkernel.ports.CompanyProfileReadPort;
 import com.xdev.ooms.sharedkernel.ports.CompanyProfileSnapshot;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -40,8 +52,6 @@ import java.util.Optional;
 @Service
 public class FormPdfGeneratorService {
 
-    private static final float PAGE_H = PageSize.A4.getHeight();
-    private static final float PAGE_W = PageSize.A4.getWidth();
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.FRENCH);
 
     private static final Font TITLE_BOLD = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
@@ -54,14 +64,29 @@ public class FormPdfGeneratorService {
     private static final Font FOOTER_PLACEHOLDER = FontFactory.getFont(FontFactory.HELVETICA, 8, BaseColor.GRAY);
 
     private final CompanyProfileReadPort companyProfileReadPort;
+    private final PrintParameterReader printParameterReader;
 
-    public FormPdfGeneratorService(CompanyProfileReadPort companyProfileReadPort) {
+    public FormPdfGeneratorService(CompanyProfileReadPort companyProfileReadPort, PrintParameterReader printParameterReader) {
         this.companyProfileReadPort = companyProfileReadPort;
+        this.printParameterReader = printParameterReader;
     }
 
     public FormPdfDocument generate(FormPdfConfigDto config) {
+        try {
+            byte[] singlePage = renderSingle(config);
+            int copies = printParameterReader.copies();
+            byte[] content = copies <= 1 ? singlePage : duplicatePages(singlePage, copies);
+            String fileName = hasText(config.getFileName()) ? config.getFileName() : "document.pdf";
+            return new FormPdfDocument(fileName, content);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to generate form PDF", e);
+        }
+    }
+
+    private byte[] renderSingle(FormPdfConfigDto config) throws Exception {
         try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            Document document = new Document(PageSize.A4, 0, 0, 0, 0);
+            Rectangle pageSize = PageSize.A4;
+            Document document = new Document(pageSize, 0, 0, 0, 0);
             PdfWriter writer = PdfWriter.getInstance(document, out);
             document.open();
             PdfContentByte canvas = writer.getDirectContent();
@@ -71,19 +96,20 @@ public class FormPdfGeneratorService {
             float logoWidth = 30f;
             float logoHeight = 20f;
             float headerHeight = 20f;
-            float pageWidth = 210f;
+            // Ticket mode keeps A4 coordinate helpers but compresses the content band.
+            float pageWidthMm = "TICKET".equals(printParameterReader.paperSize()) ? 80f : 210f;
 
             drawLogoBox(canvas, marginLeft, currentY, logoWidth, logoHeight);
 
             float centerX = marginLeft + logoWidth;
-            float centerWidth = 100f;
+            float centerWidth = Math.min(100f, pageWidthMm - marginLeft * 2 - logoWidth - 40f);
             drawRect(canvas, centerX, currentY, centerWidth, headerHeight);
             drawCenteredText(canvas, FormPdfLabels.FORM, centerX, currentY + 7f, centerWidth, TITLE_BOLD);
             drawCenteredText(canvas, safe(config.getTitle()), centerX, currentY + 14f, centerWidth, TITLE_ITALIC);
 
             float rightX = centerX + centerWidth;
             float rowHeight = 5f;
-            float infoWidth = pageWidth - rightX - marginLeft;
+            float infoWidth = Math.max(30f, pageWidthMm - rightX - marginLeft);
             String documentDate = hasText(config.getDate()) ? config.getDate() : LocalDate.now().format(DATE_FMT);
 
             String[][] infoRows = {
@@ -102,7 +128,7 @@ public class FormPdfGeneratorService {
 
             if (hasText(config.getNumber())) {
                 drawCenteredText(canvas, FormPdfLabels.NUMBER_PLACEHOLDER + config.getNumber(),
-                        marginLeft, currentY, pageWidth - marginLeft * 2, BOLD_10);
+                        marginLeft, currentY, pageWidthMm - marginLeft * 2, BOLD_10);
                 currentY += 15f;
             }
 
@@ -121,15 +147,51 @@ public class FormPdfGeneratorService {
                 currentY += 10f;
             }
 
+            if (printParameterReader.showQr() && hasText(config.getQrPayload())) {
+                drawQr(canvas, config.getQrPayload(), pageWidthMm - marginLeft - 35f, currentY);
+            }
+
             if (config.getFooterInfo() != null && !config.getFooterInfo().isEmpty()) {
-                drawFooter(canvas, marginLeft, pageWidth, config.getFooterInfo());
+                drawFooter(canvas, marginLeft, pageWidthMm, config.getFooterInfo());
             }
 
             document.close();
-            String fileName = hasText(config.getFileName()) ? config.getFileName() : "document.pdf";
-            return new FormPdfDocument(fileName, out.toByteArray());
-        } catch (Exception e) {
-            throw new IllegalStateException("Failed to generate form PDF", e);
+            return out.toByteArray();
+        }
+    }
+
+    private byte[] duplicatePages(byte[] singlePagePdf, int copies) throws Exception {
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            PdfReader reader = new PdfReader(singlePagePdf);
+            Document document = new Document(reader.getPageSizeWithRotation(1));
+            PdfWriter writer = PdfWriter.getInstance(document, out);
+            document.open();
+            PdfContentByte canvas = writer.getDirectContent();
+            for (int i = 0; i < copies; i++) {
+                document.newPage();
+                PdfImportedPage page = writer.getImportedPage(reader, 1);
+                canvas.addTemplate(page, 0, 0);
+            }
+            document.close();
+            reader.close();
+            return out.toByteArray();
+        }
+    }
+
+    private void drawQr(PdfContentByte canvas, String payload, float xMm, float yMm) {
+        try {
+            Map<EncodeHintType, Object> hints = new HashMap<>();
+            hints.put(EncodeHintType.MARGIN, 1);
+            BitMatrix matrix = new QRCodeWriter().encode(payload, BarcodeFormat.QR_CODE, 180, 180, hints);
+            BufferedImage buffered = MatrixToImageWriter.toBufferedImage(matrix);
+            ByteArrayOutputStream png = new ByteArrayOutputStream();
+            ImageIO.write(buffered, "PNG", png);
+            Image image = Image.getInstance(png.toByteArray());
+            image.scaleAbsolute(mmToPt(30f), mmToPt(30f));
+            image.setAbsolutePosition(mmToPt(xMm), yTop(yMm + 30f));
+            canvas.addImage(image);
+        } catch (Exception ignored) {
+            // QR is optional decoration
         }
     }
 

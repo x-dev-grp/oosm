@@ -36,7 +36,7 @@ public class AppSettingDefinitionRegistry {
         register(setting(SettingCategory.MAIL, "MAIL_FROM_ADDRESS", "From address", "Sender email address.",
                 SettingValueType.EMAIL, true, false, null, "MAIL_FROM_ADDRESS", null, null));
         register(setting(SettingCategory.MAIL, "MAIL_FROM_NAME", "From name", "Display name for outbound emails.",
-                SettingValueType.STRING, false, false, "OOSM", "MAIL_FROM_NAME", null, null));
+                SettingValueType.STRING, false, false, "ZitFlow", "MAIL_FROM_NAME", null, null));
         register(setting(SettingCategory.MAIL, "MAIL_SUPPORT_EMAIL", "Support email", "Reply-to address for outbound emails.",
                 SettingValueType.EMAIL, false, false, null, "MAIL_SUPPORT_EMAIL", null, null));
         register(setting(SettingCategory.MAIL, "MAIL_DEBUG", "Mail debug", "Enable verbose mail logging.",

@@ -46,6 +46,7 @@ public final class FormPdfLabels {
     public static final String REGION = "Région";
     public static final String OLIVE_TYPE = "Type Olive";
     public static final String CRUSHING_DATE = "Date de Trituration";
+    public static final String MILLING_PRICE = "Prix trituration";
     public static final String OLIVE_QUANTITY = "Quantité Olive";
     public static final String YIELD = "Rendement";
     public static final String STORAGE_UNIT = "Unité de stockage";

@@ -13,6 +13,7 @@ public class FormPdfConfigDto {
     private List<FormPdfFieldDto> fields = new ArrayList<>();
     private List<FormPdfFooterDto> footerInfo = new ArrayList<>();
     private String fileName;
+    private String qrPayload;
 
     public String getTitle() {
         return title;
@@ -84,5 +85,13 @@ public class FormPdfConfigDto {
 
     public void setFileName(String fileName) {
         this.fileName = fileName;
+    }
+
+    public String getQrPayload() {
+        return qrPayload;
+    }
+
+    public void setQrPayload(String qrPayload) {
+        this.qrPayload = qrPayload;
     }
 }

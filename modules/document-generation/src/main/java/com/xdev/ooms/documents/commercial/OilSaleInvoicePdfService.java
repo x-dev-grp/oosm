@@ -1,12 +1,13 @@
 package com.xdev.ooms.documents.commercial;
 
+import com.xdev.ooms.documents.commercial.dto.BillBankInfoDto;
 import com.xdev.ooms.documents.commercial.dto.BillFooterContactDto;
 import com.xdev.ooms.documents.commercial.dto.BillGenerationRequest;
 import com.xdev.ooms.documents.commercial.dto.BillPartyDto;
+import com.xdev.ooms.production.parameter.service.LocaleParameterReader;
 import com.xdev.ooms.production.oilsale.entity.OilSale;
 import com.xdev.ooms.production.oilsale.repository.OilSaleRepository;
 import com.xdev.ooms.production.supplier.entity.Supplier;
-import com.xdev.ooms.sharedkernel.Enum.Currency;
 import com.xdev.ooms.sharedkernel.ports.CompanyProfileReadPort;
 import com.xdev.ooms.sharedkernel.ports.CompanyProfileSnapshot;
 import com.xdev.ooms.sharedkernel.ports.InvoiceNumberPort;
@@ -25,18 +26,21 @@ public class OilSaleInvoicePdfService {
     private final BillPdfGeneratorService billPdfGeneratorService;
     private final CompanyProfileReadPort companyProfileReadPort;
     private final InvoiceNumberPort invoiceNumberPort;
+    private final LocaleParameterReader localeParameterReader;
 
     public OilSaleInvoicePdfService(
             OilSaleRepository oilSaleRepository,
             OilSaleBillLineBuilder oilSaleBillLineBuilder,
             BillPdfGeneratorService billPdfGeneratorService,
             CompanyProfileReadPort companyProfileReadPort,
-            InvoiceNumberPort invoiceNumberPort) {
+            InvoiceNumberPort invoiceNumberPort,
+            LocaleParameterReader localeParameterReader) {
         this.oilSaleRepository = oilSaleRepository;
         this.oilSaleBillLineBuilder = oilSaleBillLineBuilder;
         this.billPdfGeneratorService = billPdfGeneratorService;
         this.companyProfileReadPort = companyProfileReadPort;
         this.invoiceNumberPort = invoiceNumberPort;
+        this.localeParameterReader = localeParameterReader;
     }
 
     @Transactional
@@ -60,7 +64,7 @@ public class OilSaleInvoicePdfService {
         request.setTitle("Facture commerciale");
         request.setInvoiceNumber(resolveInvoiceNumber(sale));
         request.setOperationDate(sale.getSaleDate() != null ? sale.getSaleDate() : LocalDateTime.now());
-        request.setCurrency(sale.getCurrency() != null ? sale.getCurrency().name() : Currency.TND.name());
+        request.setCurrency(sale.getCurrency() != null ? sale.getCurrency().name() : localeParameterReader.defaultCurrency());
         request.setConditions(oilSaleBillLineBuilder.containerSummary(sale.getId()).isBlank()
                 ? "Vente huile"
                 : "Vente huile et conteneurs");
@@ -74,8 +78,28 @@ public class OilSaleInvoicePdfService {
         request.setSourceType("OilSale");
         request.setSourceId(sale.getId());
         request.setVatMode(BillVatMode.NONE);
+        if (hasText(profile.invoiceLegalMentions())) {
+            request.setTaxLegalMention(profile.invoiceLegalMentions());
+        }
+        if (hasText(profile.invoiceBankName()) || hasText(profile.invoiceBankIban())) {
+            BillBankInfoDto bank = new BillBankInfoDto();
+            bank.setBankName(emptyToNull(profile.invoiceBankName()));
+            bank.setIban(emptyToNull(profile.invoiceBankIban()));
+            bank.setSwiftCode(emptyToNull(profile.invoiceBankSwift()));
+            request.setBankInfo(bank);
+        }
+        StringBuilder notes = new StringBuilder();
         if (sale.getDescription() != null && !sale.getDescription().isBlank()) {
-            request.setNotes(sale.getDescription().trim());
+            notes.append(sale.getDescription().trim());
+        }
+        if (hasText(profile.invoiceFooterNote())) {
+            if (!notes.isEmpty()) {
+                notes.append('\n');
+            }
+            notes.append(profile.invoiceFooterNote().trim());
+        }
+        if (!notes.isEmpty()) {
+            request.setNotes(notes.toString());
         }
         return request;
     }
@@ -120,7 +144,18 @@ public class OilSaleInvoicePdfService {
                 new BillFooterContactDto();
         footer.setCompanyName(profile.legalName());
         footer.setPhone(profile.phone());
+        if (hasText(profile.invoiceFooterNote())) {
+            footer.setName(profile.invoiceFooterNote());
+        }
         return footer;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
+    }
+
+    private String emptyToNull(String value) {
+        return hasText(value) ? value.trim() : null;
     }
 
     private String resolveInvoiceNumber(OilSale sale) {

@@ -12,5 +12,10 @@ public record CompanyProfileSnapshot(
         String logoBase64,
         String logoContentType,
         String cnssNumber,
-        String registrationNumber) {
+        String registrationNumber,
+        String invoiceFooterNote,
+        String invoiceLegalMentions,
+        String invoiceBankName,
+        String invoiceBankIban,
+        String invoiceBankSwift) {
 }

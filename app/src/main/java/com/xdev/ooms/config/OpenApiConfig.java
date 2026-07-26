@@ -24,10 +24,10 @@ public class OpenApiConfig {
     public OpenAPI oosmOpenApi() {
         return new OpenAPI()
                 .info(new Info()
-                        .title("OOSM API")
+                        .title("ZitFlow API")
                         .version(appVersion)
                         .description("""
-                                OOSM modular monolith REST API.
+                                ZitFlow modular monolith REST API.
                                 
                                 Authentication: obtain a JWT via POST /oauth2/token with grant_type=TOKEN,
                                 username, password, and OAuth client credentials, then use Authorize with

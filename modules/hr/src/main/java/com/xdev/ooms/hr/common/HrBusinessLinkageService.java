@@ -9,10 +9,16 @@ import com.xdev.ooms.hr.common.enums.PayrollPeriodStatus;
 import com.xdev.ooms.hr.common.enums.PayslipStatus;
 import com.xdev.ooms.hr.contract.entity.EmploymentContract;
 import com.xdev.ooms.hr.contract.repository.EmploymentContractRepository;
+import com.xdev.ooms.hr.contract.validation.ContractLegalValidator;
 import com.xdev.ooms.hr.employee.entity.Employee;
 import com.xdev.ooms.hr.employee.repository.EmployeeRepository;
 import com.xdev.ooms.hr.leave.entity.LeaveRequest;
 import com.xdev.ooms.hr.leave.repository.LeaveRequestRepository;
+import com.xdev.ooms.hr.legal.enums.WeeklyRegimeType;
+import com.xdev.ooms.hr.payroll.engine.PayrollContextBuilder;
+import com.xdev.ooms.hr.payroll.engine.PayrollEngine;
+import com.xdev.ooms.hr.payroll.engine.PayrollInputs;
+import com.xdev.ooms.hr.payroll.engine.PayrollResult;
 import com.xdev.ooms.hr.payroll.entity.PayrollPeriod;
 import com.xdev.ooms.hr.payroll.repository.PayrollPeriodRepository;
 import com.xdev.ooms.hr.payslip.entity.Payslip;
@@ -20,9 +26,12 @@ import com.xdev.ooms.hr.payslip.repository.PayslipRepository;
 import com.xdev.ooms.hr.pointage.entity.Pointage;
 import com.xdev.ooms.hr.pointage.repository.PointageRepository;
 import com.xdev.ooms.hr.poste.entity.Poste;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
@@ -33,12 +42,6 @@ import java.util.UUID;
 
 @Component
 public class HrBusinessLinkageService {
-
-    private static final EnumSet<ContractType> FIXED_TERM_TYPES = EnumSet.of(
-            ContractType.CDD,
-            ContractType.TEMPORARY,
-            ContractType.INTERNSHIP
-    );
 
     private static final EnumSet<PayrollPeriodStatus> LOCKED_PAYROLL_STATUSES = EnumSet.of(
             PayrollPeriodStatus.PAID,
@@ -51,6 +54,10 @@ public class HrBusinessLinkageService {
     private final LeaveRequestRepository leaveRequestRepository;
     private final PayslipRepository payslipRepository;
     private final PayrollPeriodRepository payrollPeriodRepository;
+    private final ContractLegalValidator contractLegalValidator;
+    private final PayrollEngine payrollEngine;
+    private final PayrollContextBuilder payrollContextBuilder;
+    private final ObjectMapper objectMapper;
 
     public HrBusinessLinkageService(
             EmploymentContractRepository contractRepository,
@@ -58,7 +65,11 @@ public class HrBusinessLinkageService {
             PointageRepository pointageRepository,
             LeaveRequestRepository leaveRequestRepository,
             PayslipRepository payslipRepository,
-            PayrollPeriodRepository payrollPeriodRepository
+            PayrollPeriodRepository payrollPeriodRepository,
+            ContractLegalValidator contractLegalValidator,
+            PayrollEngine payrollEngine,
+            PayrollContextBuilder payrollContextBuilder,
+            ObjectMapper objectMapper
     ) {
         this.contractRepository = contractRepository;
         this.employeeRepository = employeeRepository;
@@ -66,6 +77,10 @@ public class HrBusinessLinkageService {
         this.leaveRequestRepository = leaveRequestRepository;
         this.payslipRepository = payslipRepository;
         this.payrollPeriodRepository = payrollPeriodRepository;
+        this.contractLegalValidator = contractLegalValidator;
+        this.payrollEngine = payrollEngine;
+        this.payrollContextBuilder = payrollContextBuilder;
+        this.objectMapper = objectMapper;
     }
 
     public void validateAndEnrichEmployee(Employee employee, UUID excludeId) {
@@ -86,6 +101,15 @@ public class HrBusinessLinkageService {
         }
         if (employee.getEmail() != null) {
             employee.setEmail(employee.getEmail().trim());
+        }
+
+        if (excludeId == null
+                && (employee.getEmployeeNumber() == null || employee.getEmployeeNumber().isBlank())) {
+            String suffix = String.valueOf(System.currentTimeMillis());
+            if (suffix.length() > 8) {
+                suffix = suffix.substring(suffix.length() - 8);
+            }
+            employee.setEmployeeNumber("EMP-" + suffix);
         }
 
         if (employee.getStatus() == null) {
@@ -134,13 +158,15 @@ public class HrBusinessLinkageService {
         if (contract.getStartDate() == null) {
             throw new IllegalArgumentException("Contract start date is required");
         }
-        if (contract.getEndDate() != null && contract.getEndDate().isBefore(contract.getStartDate())) {
-            throw new IllegalArgumentException("Contract end date cannot be before start date");
-        }
         if (contract.getContractType() == ContractType.CDI) {
             contract.setEndDate(null);
-        } else if (FIXED_TERM_TYPES.contains(contract.getContractType()) && contract.getEndDate() == null) {
-            throw new IllegalArgumentException("End date is required for contract type " + contract.getContractType());
+        }
+
+        syncSalaryFields(contract);
+
+        List<String> legalViolations = contractLegalValidator.validate(contract);
+        if (!legalViolations.isEmpty()) {
+            throw new IllegalArgumentException(String.join(", ", legalViolations));
         }
 
         Employee employee = contract.getEmployee();
@@ -162,6 +188,15 @@ public class HrBusinessLinkageService {
                     contractRepository.save(other);
                 }
             }
+        }
+    }
+
+    private void syncSalaryFields(EmploymentContract contract) {
+        if (contract.getBaseSalary() == null && contract.getSalary() != null) {
+            contract.setBaseSalary(BigDecimal.valueOf(contract.getSalary()));
+        }
+        if (contract.getSalary() == null && contract.getBaseSalary() != null) {
+            contract.setSalary(contract.getBaseSalary().doubleValue());
         }
     }
 
@@ -342,11 +377,12 @@ public class HrBusinessLinkageService {
     }
 
     private void prefillPayslipFromContract(Payslip payslip, EmploymentContract contract) {
-        if (contract.getSalary() == null) {
+        Double salary = resolveContractSalaryAsDouble(contract);
+        if (salary == null) {
             return;
         }
         if (payslip.getBaseSalary() == null) {
-            payslip.setBaseSalary(contract.getSalary());
+            payslip.setBaseSalary(salary);
         }
         if (payslip.getGrossSalary() == null) {
             double bonuses = payslip.getBonuses() != null ? payslip.getBonuses() : 0d;
@@ -354,30 +390,53 @@ public class HrBusinessLinkageService {
         }
     }
 
+    private Double resolveContractSalaryAsDouble(EmploymentContract contract) {
+        if (contract.getBaseSalary() != null) {
+            return contract.getBaseSalary().doubleValue();
+        }
+        return contract.getSalary();
+    }
+
     private void enrichPayslipAmounts(Payslip payslip) {
-        double base = safe(payslip.getBaseSalary());
-        double bonuses = safe(payslip.getBonuses());
-        if (payslip.getGrossSalary() == null) {
-            payslip.setGrossSalary(base + bonuses);
-        }
-        double gross = safe(payslip.getGrossSalary());
+        PayrollInputs inputs = payrollContextBuilder.fromPayslip(payslip);
+        BigDecimal base = payslip.getBaseSalary() != null
+                ? BigDecimal.valueOf(payslip.getBaseSalary())
+                : BigDecimal.ZERO;
 
-        if (payslip.getCnssEmployee() == null) {
-            payslip.setCnssEmployee(HrPayrollCalculator.cnssEmployee(gross));
-        }
-        if (payslip.getCnssEmployer() == null) {
-            payslip.setCnssEmployer(HrPayrollCalculator.cnssEmployer(gross));
-        }
-        if (payslip.getCss() == null) {
-            payslip.setCss(HrPayrollCalculator.css(gross));
-        }
-        if (payslip.getIrpp() == null) {
-            double taxable = gross - safe(payslip.getCnssEmployee());
-            payslip.setIrpp(HrPayrollCalculator.irpp(taxable));
-        }
+        LocalDate asOf = payrollContextBuilder.resolveAsOf(payslip.getPayrollPeriod());
+        WeeklyRegimeType regime = payrollContextBuilder.resolveWeeklyRegime(
+                payslip.getEmployee(),
+                WeeklyRegimeType.HOURS_48
+        );
 
-        double deductions = safe(payslip.getCnssEmployee()) + safe(payslip.getIrpp()) + safe(payslip.getCss());
-        payslip.setNetSalary(HrPayrollCalculator.round2(gross - deductions));
+        PayrollResult result = payrollEngine.calculate(base, inputs, asOf, regime);
+
+        payslip.setBaseSalary(toDouble(result.getBaseSalary()));
+        payslip.setGrossSalary(toDouble(result.getGrossSalary()));
+        payslip.setBonuses(toDouble(inputs.getBonuses()));
+        payslip.setCnssEmployee(toDouble(result.getEmployeeCnss()));
+        payslip.setCnssEmployer(toDouble(result.getEmployerCnss()));
+        payslip.setCss(toDouble(result.getCss()));
+        payslip.setIrpp(toDouble(result.getIncomeTax()));
+        payslip.setNetSalary(toDouble(result.getNetSalary()));
+        payslip.setTaxableSalary(toDouble(result.getTaxableSalary()));
+        payslip.setCnssBase(toDouble(result.getCnssBase()));
+        payslip.setEmployerCost(toDouble(result.getEmployerCost()));
+        payslip.setOtherDeductions(toDouble(result.getOtherDeductions()));
+        payslip.setCalculationSnapshot(result.getLegalSnapshotJson());
+        payslip.setCalculationBreakdown(toBreakdownJson(result));
+    }
+
+    private String toBreakdownJson(PayrollResult result) {
+        try {
+            return objectMapper.writeValueAsString(result.getBreakdown());
+        } catch (JsonProcessingException e) {
+            return null;
+        }
+    }
+
+    private static Double toDouble(BigDecimal value) {
+        return value != null ? value.doubleValue() : null;
     }
 
     private void enrichWorkedHours(Pointage pointage) {
@@ -391,10 +450,6 @@ public class HrBusinessLinkageService {
         int breakMinutes = pointage.getBreakMinutes() != null ? pointage.getBreakMinutes() : 0;
         long workedMinutes = Math.max(0, totalMinutes - breakMinutes);
         pointage.setWorkedHours(round2(workedMinutes / 60.0));
-    }
-
-    private static double safe(Double value) {
-        return value != null ? value : 0d;
     }
 
     private static double round2(double value) {

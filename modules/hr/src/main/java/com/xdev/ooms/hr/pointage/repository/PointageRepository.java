@@ -27,4 +27,30 @@ public interface PointageRepository extends BaseRepository<Pointage> {
             @Param("workDate") LocalDate workDate,
             @Param("excludeId") UUID excludeId
     );
+
+    @Query("""
+            SELECT COUNT(DISTINCT p.employee.id) FROM Pointage p
+            WHERE p.isDeleted = false
+              AND p.workDate = :workDate
+              AND p.checkIn IS NOT NULL
+            """)
+    long countPresentOn(@Param("workDate") LocalDate workDate);
+
+    @Query("""
+            SELECT COUNT(p) FROM Pointage p
+            WHERE p.isDeleted = false
+              AND p.workDate = :workDate
+              AND p.anomalyCodes IS NOT NULL
+              AND p.anomalyCodes <> ''
+            """)
+    long countAnomaliesOn(@Param("workDate") LocalDate workDate);
+
+    @Query("""
+            SELECT COUNT(p) FROM Pointage p
+            WHERE p.isDeleted = false
+              AND p.anomalyCodes IS NOT NULL
+              AND p.anomalyCodes <> ''
+              AND p.workDate >= :from
+            """)
+    long countRecentAnomalies(@Param("from") LocalDate from);
 }

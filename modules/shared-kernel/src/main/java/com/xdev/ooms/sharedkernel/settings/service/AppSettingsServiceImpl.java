@@ -348,9 +348,9 @@ public class AppSettingsServiceImpl implements AppSettingsService {
 
             MailRequest mailRequest = new MailRequest();
             mailRequest.setTo(recipient);
-            mailRequest.setSubject("OOSM mail test");
-            mailRequest.setBody("This is a test email sent from OOSM administration settings.");
-            mailRequest.setHtmlBody("<p>This is a test email sent from <strong>OOSM</strong> administration settings.</p>");
+            mailRequest.setSubject("ZitFlow mail test");
+            mailRequest.setBody("This is a test email sent from ZitFlow administration settings.");
+            mailRequest.setHtmlBody("<p>This is a test email sent from <strong>ZitFlow</strong> administration settings.</p>");
 
             mailService.sendEmail(mailRequest);
 
@@ -387,10 +387,10 @@ public class AppSettingsServiceImpl implements AppSettingsService {
         String playerId = request != null && request.getPlayerId() != null ? request.getPlayerId().trim() : "";
         String title = request != null && StringUtils.hasText(request.getTitle())
                 ? request.getTitle().trim()
-                : "OOSM notification test";
+                : "ZitFlow notification test";
         String message = request != null && StringUtils.hasText(request.getMessage())
                 ? request.getMessage().trim()
-                : "This is a test push notification from OOSM administration settings.";
+                : "This is a test push notification from ZitFlow administration settings.";
 
         OOSMLogger.info(this.getClass(),
                 "Notification test starting: playerId={} user={}",
