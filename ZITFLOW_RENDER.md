@@ -19,13 +19,14 @@ Browser → zitflow.xdev.pro (Render: zitflow-web)
 | [`render.zitflow.yaml`](render.zitflow.yaml) | `oosm` | **Postgres only** |
 | [`render.yaml`](render.yaml) | `oosm` | Legacy Render API — **do not use** for ZitFlow |
 
-Branch: **`deploy/zitflow-xdev-pro`**.
+Branch: **`pfe-v2-final`** (single production source).  
+`deploy/zitflow-xdev-pro` is kept as an alias tip identical to `pfe-v2-final` — do not develop on it separately.
 
 ## Apply on Render
 
 1. Open [Render Dashboard](https://dashboard.render.com) → **New** → **Blueprint**.
 2. Connect **`x-dev-grp/osm-ms-fe`** (or `oosm` for DB-only).
-3. Branch: `deploy/zitflow-xdev-pro`.
+3. Branch: `pfe-v2-final`.
 4. Blueprint path: `render.zitflow.yaml` (if the UI asks; otherwise rename temporarily or paste).
 5. Review plan/region (**frankfurt**), then apply.
 6. Wait until **zitflow-postgres** is Available and **zitflow-web** has a `.onrender.com` URL.
