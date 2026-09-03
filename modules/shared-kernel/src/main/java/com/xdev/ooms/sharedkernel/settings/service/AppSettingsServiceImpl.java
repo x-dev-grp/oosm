@@ -4,8 +4,9 @@ import com.xdev.ooms.sharedkernel.mail.config.MailProvider;
 import com.xdev.ooms.sharedkernel.mail.exception.MailDeliveryException;
 import com.xdev.ooms.sharedkernel.mail.models.MailRequest;
 import com.xdev.ooms.sharedkernel.mail.services.MailService;
+import com.xdev.ooms.sharedkernel.notifications.FcmPushService;
+import com.xdev.ooms.sharedkernel.notifications.PushNotificationSender;
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
-import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
 import com.xdev.ooms.sharedkernel.settings.definition.AppSettingDefinition;
 import com.xdev.ooms.sharedkernel.settings.definition.AppSettingDefinitionRegistry;
 import com.xdev.ooms.sharedkernel.settings.dto.AdminSettingAuditDto;
@@ -65,7 +66,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
     private final AppSettingValidator validator;
     private final ConfigurableEnvironment environment;
     private final MailService mailService;
-    private final OneSignalServiceImpl oneSignalService;
+    private final PushNotificationSender pushNotificationSender;
     private final AppSettingsLoggingRefresher loggingRefresher;
 
     private final ConcurrentHashMap<String, CacheEntry> cache = new ConcurrentHashMap<>();
@@ -80,7 +81,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
             AppSettingValidator validator,
             ConfigurableEnvironment environment,
             @Lazy MailService mailService,
-            @Lazy OneSignalServiceImpl oneSignalService,
+            @Lazy PushNotificationSender pushNotificationSender,
             AppSettingsLoggingRefresher loggingRefresher
     ) {
         this.definitionRegistry = definitionRegistry;
@@ -91,7 +92,7 @@ public class AppSettingsServiceImpl implements AppSettingsService {
         this.validator = validator;
         this.environment = environment;
         this.mailService = mailService;
-        this.oneSignalService = oneSignalService;
+        this.pushNotificationSender = pushNotificationSender;
         this.loggingRefresher = loggingRefresher;
     }
 
@@ -382,9 +383,9 @@ public class AppSettingsServiceImpl implements AppSettingsService {
     @Override
     public NotificationTestResponse sendNotificationTest(NotificationTestRequest request, AdminSettingsActor actor) {
         NotificationTestResponse response = new NotificationTestResponse();
-        response.setProvider("ONESIGNAL");
+        response.setProvider("FCM");
 
-        String playerId = request != null && request.getPlayerId() != null ? request.getPlayerId().trim() : "";
+        String deviceToken = request != null ? request.resolveDeviceToken() : "";
         String title = request != null && StringUtils.hasText(request.getTitle())
                 ? request.getTitle().trim()
                 : "ZitFlow notification test";
@@ -393,12 +394,12 @@ public class AppSettingsServiceImpl implements AppSettingsService {
                 : "This is a test push notification from ZitFlow administration settings.";
 
         OOSMLogger.info(this.getClass(),
-                "Notification test starting: playerId={} user={}",
-                maskPlayerId(playerId), actor.getUsername());
+                "Notification test starting: token={} user={}",
+                maskDeviceToken(deviceToken), actor.getUsername());
 
         try {
-            if (!StringUtils.hasText(playerId)) {
-                throw new IllegalArgumentException("OneSignal player ID is required");
+            if (!StringUtils.hasText(deviceToken)) {
+                throw new IllegalArgumentException("FCM device token is required");
             }
 
             FeatureStatusDto notificationsStatus = buildNotificationsFeatureStatus();
@@ -407,16 +408,16 @@ public class AppSettingsServiceImpl implements AppSettingsService {
                         ? String.join(", ", notificationsStatus.getMissingKeys())
                         : "unknown";
                 throw new IllegalStateException(
-                        "OneSignal is not configured. Save the required notification fields. Missing: " + missing);
+                        "FCM is not configured. Save the required notification fields. Missing: " + missing);
             }
 
             NotificationRequest notificationRequest = new NotificationRequest(
-                    List.of(playerId),
+                    List.of(deviceToken),
                     title,
                     message,
                     Map.of("source", "admin-settings-test")
             );
-            String result = oneSignalService.sendNotification(notificationRequest);
+            String result = pushNotificationSender.sendNotification(notificationRequest);
             response.setResult(result);
 
             boolean success = "SUCCESS".equals(result);
@@ -428,26 +429,26 @@ public class AppSettingsServiceImpl implements AppSettingsService {
             OOSMLogger.info(this.getClass(),
                     "Notification test finished: success={} result={} user={}",
                     success, result, actor.getUsername());
-            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskPlayerId(playerId),
+            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskDeviceToken(deviceToken),
                     actor, "Notification test", success, success ? null : result);
             return response;
         } catch (RuntimeException ex) {
             response.setSuccess(false);
             response.setError(ex.getMessage());
             OOSMLogger.warn(this.getClass(),
-                    "Notification test failed: playerId={} user={} error={}",
-                    maskPlayerId(playerId), actor.getUsername(), ex.getMessage());
-            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskPlayerId(playerId),
+                    "Notification test failed: token={} user={} error={}",
+                    maskDeviceToken(deviceToken), actor.getUsername(), ex.getMessage());
+            writeAudit("NOTIFICATION_TEST", "TEST_NOTIFICATION", null, maskDeviceToken(deviceToken),
                     actor, "Notification test", false, ex.getMessage());
             return response;
         }
     }
 
-    private static String maskPlayerId(String playerId) {
-        if (!StringUtils.hasText(playerId) || playerId.length() < 8) {
+    private static String maskDeviceToken(String token) {
+        if (!StringUtils.hasText(token) || token.length() < 8) {
             return "***";
         }
-        return playerId.substring(0, 4) + "..." + playerId.substring(playerId.length() - 4);
+        return token.substring(0, 4) + "..." + token.substring(token.length() - 4);
     }
 
     private static String safeMailTestError(Throwable ex) {
@@ -662,19 +663,23 @@ public class AppSettingsServiceImpl implements AppSettingsService {
     }
 
     private FeatureStatusDto buildNotificationsFeatureStatus() {
-        boolean appIdConfigured = StringUtils.hasText(getString("ONESIGNAL_APP_ID", ""));
-        boolean apiKeyConfigured = getSecret("ONESIGNAL_API_KEY").isPresent();
+        boolean projectConfigured = StringUtils.hasText(getString(FcmPushService.FCM_PROJECT_ID, ""));
+        boolean emailConfigured = StringUtils.hasText(getString(FcmPushService.FCM_CLIENT_EMAIL, ""));
+        boolean keyConfigured = getSecret(FcmPushService.FCM_PRIVATE_KEY).isPresent();
         List<String> missing = new ArrayList<>();
-        if (!appIdConfigured) {
-            missing.add("ONESIGNAL_APP_ID");
+        if (!projectConfigured) {
+            missing.add(FcmPushService.FCM_PROJECT_ID);
         }
-        if (!apiKeyConfigured) {
-            missing.add("ONESIGNAL_API_KEY");
+        if (!emailConfigured) {
+            missing.add(FcmPushService.FCM_CLIENT_EMAIL);
+        }
+        if (!keyConfigured) {
+            missing.add(FcmPushService.FCM_PRIVATE_KEY);
         }
         FeatureStatusDto status = new FeatureStatusDto();
-        status.setProvider("ONESIGNAL");
-        status.setConfigured(appIdConfigured && apiKeyConfigured);
-        status.setEnabled(appIdConfigured && apiKeyConfigured);
+        status.setProvider("FCM");
+        status.setConfigured(projectConfigured && emailConfigured && keyConfigured);
+        status.setEnabled(projectConfigured && emailConfigured && keyConfigured);
         status.setMissingKeys(missing);
         return status;
     }

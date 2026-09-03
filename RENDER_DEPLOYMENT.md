@@ -87,12 +87,12 @@ MAIL_ENABLED=true
 `MAIL_FROM_ADDRESS` must use a domain verified in Resend.
 
 ```text
-ONESIGNAL_APP_ID=CHANGE_ME_ONESIGNAL_APP_ID
-ONESIGNAL_API_KEY=CHANGE_ME_ONESIGNAL_API_KEY
-ONESIGNAL_ENDPOINT=https://onesignal.com/api/v1/notifications
+FCM_PROJECT_ID=CHANGE_ME_FCM_PROJECT_ID
+FCM_CLIENT_EMAIL=CHANGE_ME_FCM_CLIENT_EMAIL
+FCM_PRIVATE_KEY=
 ```
 
-Mail and OneSignal credentials may remain empty when those features are unused.
+Mail and FCM credentials may remain empty when those features are unused. FCM private key is a service-account PEM (use `\n` for newlines in env vars, or set via Admin Settings).
 
 Render supplies `PORT` and `RENDER_EXTERNAL_URL`. Do not define them manually.
 Do not define `JWK_SET_URI`; the application derives it from

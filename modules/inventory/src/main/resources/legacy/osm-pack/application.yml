@@ -104,7 +104,7 @@ management:
         include:*
     health:
       show-details: always
-onesignal:
-  app-id: ${ONESIGNAL_APP_ID:}
-  api-key: ${ONESIGNAL_API_KEY:}
-  endpoint: "https://onesignal.com/api/v1/notifications"
+fcm:
+  project-id: ${FCM_PROJECT_ID:}
+  client-email: ${FCM_CLIENT_EMAIL:}
+  private-key: ${FCM_PRIVATE_KEY:}

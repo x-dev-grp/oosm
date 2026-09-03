@@ -1005,7 +1005,7 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
                     dto.setFirstName(user.getFirstName());
                     dto.setLastName(user.getLastName());
                     dto.setRoleName(user.getRole() != null ? user.getRole().getRoleName() : null);
-                    dto.setOneSignalPlayerId(user.getOneSignalPlayerId());
+                    dto.setFcmToken(user.getFcmToken());
 
                     String firstName = user.getFirstName() != null ? user.getFirstName().trim() : "";
                     String lastName = user.getLastName() != null ? user.getLastName().trim() : "";
@@ -1028,8 +1028,7 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
 
 
     @Transactional
-    public void updateOneSignalPlayerId(String userIdOrUsername, String playerId) {
-        // Chercher par UUID d'abord, puis par username en fallback
+    public void updateFcmToken(String userIdOrUsername, String fcmToken) {
         OOSMUser user = null;
         try {
             UUID uuid = UUID.fromString(userIdOrUsername);
@@ -1047,10 +1046,10 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
             throw new AccessDeniedException("You can only register devices for your own account");
         }
 
-        user.setOneSignalPlayerId(playerId);
+        user.setFcmToken(fcmToken);
         userRepository.save(user);
-        OOSMLogger.logSecurityEvent(this.getClass(), "PLAYER_ID_UPDATED",
-                "OneSignal Player ID updated for user: " + userIdOrUsername);
+        OOSMLogger.logSecurityEvent(this.getClass(), "FCM_TOKEN_UPDATED",
+                "FCM token updated for user: " + userIdOrUsername);
     }
 
     private boolean isCurrentUser(UUID userId) {

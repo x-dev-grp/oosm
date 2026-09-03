@@ -100,10 +100,10 @@ otp:
     attempts: 3
 
 # Infrastructure and bootstrap only.
-# Operational settings (mail, frontend URL, CORS, QR, OneSignal, log levels, etc.)
+# Operational settings (mail, frontend URL, CORS, QR, FCM, log levels, etc.)
 # are managed via Administration → Settings using flat env vars as optional bootstrap:
 # MAIL_*, SMTP_*, FRONTEND_ENTRY_POINT, APP_CORS_ALLOWED_ORIGIN_PATTERNS,
-# ONESIGNAL_*, QR_BASE_URL, LOG_LEVEL_WEB, LOG_LEVEL_REST,
+# FCM_*, QR_BASE_URL, LOG_LEVEL_WEB, LOG_LEVEL_REST,
 # SPRINGDOC_ENABLED, HEALTH_SHOW_DETAILS, SEARCH_DEBUG_ON_STARTUP
 app:
   debug:

@@ -55,10 +55,10 @@ spring:
             connectTimeout: ${FEIGN_CONNECT_TIMEOUT:10000}
             readTimeout: ${FEIGN_READ_TIMEOUT:60000}
             loggerLevel: ${FEIGN_LOGGER_LEVEL:basic}
-onesignal:
-  app-id: ${ONESIGNAL_APP_ID:}
-  api-key: ${ONESIGNAL_API_KEY:}
-  endpoint: "https://onesignal.com/api/v1/notifications"
+fcm:
+  project-id: ${FCM_PROJECT_ID:}
+  client-email: ${FCM_CLIENT_EMAIL:}
+  private-key: ${FCM_PRIVATE_KEY:}
 
 eureka:
   client:

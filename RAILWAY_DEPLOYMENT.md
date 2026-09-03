@@ -49,8 +49,9 @@ JWK_SET_URI=https://<backend-domain>/oauth2/jwks
 OAUTH2_CLIENT_SECRET=<oauth2-client-secret>
 RESEND_API_KEY=<resend-api-key>
 MAIL_FROM_ADDRESS=<verified-sender@your-domain.com>
-ONESIGNAL_APP_ID=<onesignal-app-id>
-ONESIGNAL_API_KEY=<onesignal-api-key>
+FCM_PROJECT_ID=<fcm-project-id>
+FCM_CLIENT_EMAIL=<fcm-service-account-email>
+FCM_PRIVATE_KEY=<fcm-service-account-private-key-pem>
 ```
 
 Railway injects `PORT`; `application.yml` now reads it automatically.

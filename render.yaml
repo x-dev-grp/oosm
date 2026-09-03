@@ -100,12 +100,12 @@ services:
         sync: false
       - key: MAIL_ENABLED
         value: "true"
-      - key: ONESIGNAL_APP_ID
+      - key: FCM_PROJECT_ID
         sync: false
-      - key: ONESIGNAL_API_KEY
+      - key: FCM_CLIENT_EMAIL
         sync: false
-      - key: ONESIGNAL_ENDPOINT
-        value: https://onesignal.com/api/v1/notifications
+      - key: FCM_PRIVATE_KEY
+        sync: false
       - key: QR_BASE_URL
         sync: false
       - key: SERVER_ERROR_INCLUDE_MESSAGE

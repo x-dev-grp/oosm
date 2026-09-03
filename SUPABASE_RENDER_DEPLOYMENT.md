@@ -27,8 +27,9 @@ APP_CORS_ALLOWED_ORIGIN_PATTERNS=https://*.onrender.com
 OAUTH2_CLIENT_SECRET=<oauth2-client-secret>
 RESEND_API_KEY=<resend-api-key>
 MAIL_FROM_ADDRESS=<verified-sender@your-domain.com>
-ONESIGNAL_APP_ID=<onesignal-app-id>
-ONESIGNAL_API_KEY=<onesignal-api-key>
+FCM_PROJECT_ID=<fcm-project-id>
+FCM_CLIENT_EMAIL=<fcm-service-account-email>
+FCM_PRIVATE_KEY=<fcm-service-account-private-key-pem>
 ```
 
 Do not use:

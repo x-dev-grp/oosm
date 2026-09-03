@@ -67,7 +67,7 @@ public class LegacyOsmUserMigrationRunner implements CommandLineRunner {
                 INSERT INTO oosmuser (
                     id, created_by, created_date, is_deleted, last_modified_by, last_modified_date,
                     qr_hex, qr_image_base64, tenant_id, confirmation_method, email, enabled, first_name,
-                    is_locked, is_new_user, last_name, one_signal_player_id, password, phone_number,
+                    is_locked, is_new_user, last_name, fcm_token, password, phone_number,
                     photo_content_type, photo_data, username, role_id
                 )
                 SELECT

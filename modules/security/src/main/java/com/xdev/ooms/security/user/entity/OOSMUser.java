@@ -35,8 +35,8 @@ public class OOSMUser extends BaseEntity implements UserDetails {
     private boolean isLocked;
     private ConfirmationMethod confirmationMethod;
     private boolean isNewUser;
-    @Column(name = "one_signal_player_id")   // nom de la colonne en BDD
-    private String oneSignalPlayerId;
+    @Column(name = "fcm_token")
+    private String fcmToken;
     @Column( nullable = false)
     private Boolean enabled = false;
 
@@ -155,12 +155,12 @@ public class OOSMUser extends BaseEntity implements UserDetails {
     public void setLastName(String lastName) {
         this.lastName = lastName;
     }
-    public String getOneSignalPlayerId() {
-        return oneSignalPlayerId;
+    public String getFcmToken() {
+        return fcmToken;
     }
 
-    public void setOneSignalPlayerId(String oneSignalPlayerId) {
-        this.oneSignalPlayerId = oneSignalPlayerId;
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;

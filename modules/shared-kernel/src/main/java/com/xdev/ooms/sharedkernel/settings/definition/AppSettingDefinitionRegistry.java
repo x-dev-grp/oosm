@@ -73,15 +73,14 @@ public class AppSettingDefinitionRegistry {
     }
 
     private void registerNotificationSettings() {
-        register(setting(SettingCategory.NOTIFICATIONS, "ONESIGNAL_APP_ID", "OneSignal app ID",
-                "OneSignal application identifier.",
-                SettingValueType.STRING, false, false, null, "ONESIGNAL_APP_ID", null, null));
-        register(secret(SettingCategory.NOTIFICATIONS, "ONESIGNAL_API_KEY", "OneSignal API key",
-                "Write-only OneSignal REST API key.", "ONESIGNAL_API_KEY", null));
-        register(setting(SettingCategory.NOTIFICATIONS, "ONESIGNAL_ENDPOINT", "OneSignal endpoint",
-                "OneSignal notifications API endpoint.",
-                SettingValueType.URL, false, false, "https://api.onesignal.com/notifications",
-                "ONESIGNAL_ENDPOINT", null, null));
+        register(setting(SettingCategory.NOTIFICATIONS, "FCM_PROJECT_ID", "FCM project ID",
+                "Firebase project ID used for FCM HTTP v1.",
+                SettingValueType.STRING, false, false, null, "FCM_PROJECT_ID", null, null));
+        register(setting(SettingCategory.NOTIFICATIONS, "FCM_CLIENT_EMAIL", "FCM client email",
+                "Service account client email used to mint FCM access tokens.",
+                SettingValueType.STRING, false, false, null, "FCM_CLIENT_EMAIL", null, null));
+        register(secret(SettingCategory.NOTIFICATIONS, "FCM_PRIVATE_KEY", "FCM private key",
+                "Write-only PEM private key for the Firebase service account.", "FCM_PRIVATE_KEY", null));
     }
 
     private void registerDiagnosticSettings() {

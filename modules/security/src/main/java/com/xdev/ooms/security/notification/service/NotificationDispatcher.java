@@ -12,8 +12,9 @@ import com.xdev.ooms.security.user.entity.OOSMUser;
 import com.xdev.ooms.security.user.repository.UserRepository;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.models.OOSMModule;
+import com.xdev.ooms.sharedkernel.notifications.PushNotificationSender;
+import com.xdev.ooms.sharedkernel.notifications.FcmPushService;
 import com.xdev.ooms.sharedkernel.notifications.dto.NotificationRequest;
-import com.xdev.ooms.sharedkernel.notifications.impl.OneSignalServiceImpl;
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.settings.service.AppSettingsService;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
@@ -37,7 +38,7 @@ public class NotificationDispatcher {
     private final UserRepository userRepository;
     private final UserNotificationRepository notificationRepository;
     private final NotificationMessageBuilder messageBuilder;
-    private final OneSignalServiceImpl oneSignalService;
+    private final PushNotificationSender pushNotificationSender;
     private final ObjectMapper objectMapper;
     private final AppSettingsService appSettingsService;
 
@@ -46,14 +47,14 @@ public class NotificationDispatcher {
             UserRepository userRepository,
             UserNotificationRepository notificationRepository,
             NotificationMessageBuilder messageBuilder,
-            OneSignalServiceImpl oneSignalService,
+            PushNotificationSender pushNotificationSender,
             ObjectMapper objectMapper,
             AppSettingsService appSettingsService) {
         this.rulesLoader = rulesLoader;
         this.userRepository = userRepository;
         this.notificationRepository = notificationRepository;
         this.messageBuilder = messageBuilder;
-        this.oneSignalService = oneSignalService;
+        this.pushNotificationSender = pushNotificationSender;
         this.objectMapper = objectMapper;
         this.appSettingsService = appSettingsService;
     }
@@ -120,8 +121,11 @@ public class NotificationDispatcher {
         String webRoute = messageBuilder.buildRoute(rule, event);
         Map<String, String> payload = buildPayload(event, webRoute);
 
-        List<String> playerIds = new ArrayList<>();
+        List<String> deviceTokens = new ArrayList<>();
         List<UserNotification> notificationsToSave = new ArrayList<>();
+        boolean fcmConfigured = appSettingsService.getSecret(FcmPushService.FCM_PRIVATE_KEY).isPresent()
+                && org.springframework.util.StringUtils.hasText(appSettingsService.getString(FcmPushService.FCM_PROJECT_ID, ""))
+                && org.springframework.util.StringUtils.hasText(appSettingsService.getString(FcmPushService.FCM_CLIENT_EMAIL, ""));
         for (OOSMUser user : recipients) {
             if (!recipientIds.contains(user.getId())) {
                 continue;
@@ -144,11 +148,10 @@ public class NotificationDispatcher {
             notificationsToSave.add(notification);
 
             if (rule.isPushEnabled()
-                    && appSettingsService.getSecret("ONESIGNAL_API_KEY").isPresent()
-                    && org.springframework.util.StringUtils.hasText(appSettingsService.getString("ONESIGNAL_APP_ID", ""))
-                    && user.getOneSignalPlayerId() != null
-                    && !user.getOneSignalPlayerId().isBlank()) {
-                playerIds.add(user.getOneSignalPlayerId());
+                    && fcmConfigured
+                    && user.getFcmToken() != null
+                    && !user.getFcmToken().isBlank()) {
+                deviceTokens.add(user.getFcmToken());
             }
         }
 
@@ -156,8 +159,8 @@ public class NotificationDispatcher {
             notificationRepository.saveAll(notificationsToSave);
         }
 
-        if (!playerIds.isEmpty()) {
-            sendPush(playerIds, title, recap, payload);
+        if (!deviceTokens.isEmpty()) {
+            sendPush(deviceTokens, title, recap, payload);
         }
     }
 
@@ -177,10 +180,10 @@ public class NotificationDispatcher {
         return payload;
     }
 
-    private void sendPush(List<String> playerIds, String title, String recap, Map<String, String> payload) {
+    private void sendPush(List<String> deviceTokens, String title, String recap, Map<String, String> payload) {
         try {
-            NotificationRequest request = new NotificationRequest(playerIds, title, recap, payload);
-            oneSignalService.sendNotification(request);
+            NotificationRequest request = new NotificationRequest(deviceTokens, title, recap, payload);
+            pushNotificationSender.sendNotification(request);
         } catch (Exception ex) {
             OOSMLogger.warn(NotificationDispatcher.class, "Push notification failed: {}", ex.getMessage());
         }

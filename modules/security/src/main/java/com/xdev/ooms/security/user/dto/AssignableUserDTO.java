@@ -9,7 +9,7 @@ public class AssignableUserDTO {
     private String lastName;
     private String displayName;
     private String roleName;
-    private String oneSignalPlayerId;
+    private String fcmToken;
 
     public UUID getId() {
         return id;
@@ -59,11 +59,11 @@ public class AssignableUserDTO {
         this.roleName = roleName;
     }
 
-    public String getOneSignalPlayerId() {
-        return oneSignalPlayerId;
+    public String getFcmToken() {
+        return fcmToken;
     }
 
-    public void setOneSignalPlayerId(String oneSignalPlayerId) {
-        this.oneSignalPlayerId = oneSignalPlayerId;
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }

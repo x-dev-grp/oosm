@@ -16,7 +16,7 @@ The UI must support operational settings such as mail, frontend URLs, notificati
 
 ```text
 Global application settings (single-tenant).
-Mail (Resend), notifications (OneSignal), QR, CORS, frontend URL, logging/diagnostics.
+Mail (Resend), notifications (FCM), QR, CORS, frontend URL, logging/diagnostics.
 Write-only secret rotation with AES-GCM encryption at rest.
 Audit log for all change attempts.
 Env fallback for backward compatibility with Render deployments.
@@ -162,7 +162,7 @@ Managed only through `POST /rotate-secret`. Never returned by API responses.
 
 ```text
 RESEND_API_KEY
-ONESIGNAL_API_KEY
+FCM_PRIVATE_KEY
 OAUTH2_CLIENT_SECRET
 THIRD_PARTY_WEBHOOK_SECRET
 FUTURE_API_KEYS
@@ -194,7 +194,7 @@ MAIL_DEBUG
 FRONTEND_ENTRY_POINT
 APP_CORS_ALLOWED_ORIGIN_PATTERNS
 QR_BASE_URL
-ONESIGNAL_ENDPOINT
+FCM_PROJECT_ID
 SEARCH_DEBUG_ON_STARTUP
 HEALTH_SHOW_DETAILS
 LOG_LEVEL_WEB
@@ -857,8 +857,8 @@ MAIL_FROM_ADDRESS
 MAIL_FROM_NAME
 MAIL_SUPPORT_EMAIL
 RESEND_API_KEY
-ONESIGNAL_API_KEY
-ONESIGNAL_ENDPOINT
+FCM_PRIVATE_KEY
+FCM_PROJECT_ID
 QR_BASE_URL
 MAIL_DEBUG
 SEARCH_DEBUG_ON_STARTUP
@@ -1017,7 +1017,7 @@ Audit shows actor, key, masked values, result, reason.
 Deliverables:
 
 ```text
-ONESIGNAL_ENDPOINT, ONESIGNAL_API_KEY
+FCM_PROJECT_ID, FCM_PRIVATE_KEY
 QR_BASE_URL
 Dynamic notification settings consumer
 Notification test endpoint (rate-limited)
@@ -1026,7 +1026,7 @@ Notification test endpoint (rate-limited)
 Acceptance:
 
 ```text
-OneSignal key is write-only and encrypted.
+FCM private key is write-only and encrypted.
 QR URL validation rejects invalid URLs.
 ```
 
@@ -1137,12 +1137,12 @@ QR_BASE_URL
   type=URL, category=QR, sensitive=false, reloadable=true, restartRequired=false
   requiredForFeature=false, permission=ADMIN_SETTINGS_UPDATE
 
-ONESIGNAL_ENDPOINT
+FCM_PROJECT_ID
   type=URL, category=NOTIFICATIONS, sensitive=false, reloadable=true, restartRequired=false
-  requiredForFeature=false, default=https://onesignal.com/api/v1/notifications
+  requiredForFeature=false, default=(FCM HTTP v1 via service account)
   permission=ADMIN_SETTINGS_UPDATE
 
-ONESIGNAL_API_KEY
+FCM_PRIVATE_KEY
   type=SECRET, category=NOTIFICATIONS, sensitive=true, reloadable=true, restartRequired=false
   requiredForFeature=true, permission=ADMIN_SETTINGS_SECRET_ROTATE
 

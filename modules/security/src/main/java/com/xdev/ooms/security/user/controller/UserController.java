@@ -237,13 +237,16 @@ public class UserController extends BaseControllerImpl<OOSMUser, OOSMUserDTO, OO
     @PostMapping("/register-device")
     public ResponseEntity<?> registerDevice(@RequestBody Map<String, String> body) {
         String userId = body.get("userId");
-        String playerId = body.get("playerId");
+        String token = body.get("token");
+        if (token == null || token.isBlank()) {
+            token = body.get("playerId"); // legacy alias
+        }
 
-        if (userId == null || playerId == null) {
-            return ResponseEntity.badRequest().body("userId and playerId are required");
+        if (userId == null || token == null || token.isBlank()) {
+            return ResponseEntity.badRequest().body("userId and token are required");
         }
         try {
-            userService.updateOneSignalPlayerId(userId, playerId);
+            userService.updateFcmToken(userId, token.trim());
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

@@ -24,6 +24,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -225,10 +226,10 @@ public class AdminSettingsController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         AdminSettingsActor actor = buildActor(authentication, httpRequest);
-        String playerId = request != null && request.getPlayerId() != null ? request.getPlayerId().trim() : "";
+        String deviceToken = request != null ? request.resolveDeviceToken() : "";
         OOSMLogger.info(this.getClass(),
-                "Admin notification test requested: playerIdPresent={} user={} ip={}",
-                !playerId.isEmpty(), actor.getUsername(), actor.getIpAddress());
+                "Admin notification test requested: tokenPresent={} user={} ip={}",
+                StringUtils.hasText(deviceToken), actor.getUsername(), actor.getIpAddress());
         try {
             String userKey = rateLimitKey(authentication);
             rateLimiter.checkMailTest(userKey);

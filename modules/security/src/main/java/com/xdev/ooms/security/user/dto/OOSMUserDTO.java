@@ -16,7 +16,7 @@ public class OOSMUserDTO extends BaseDto<OOSMUser> {
     private boolean isLocked;
     private ConfirmationMethod confirmationMethod;
     private boolean isNewUser;
-    private String oneSignalPlayerId;
+    private String fcmToken;
 
 
     public boolean isNewUser() {
@@ -99,11 +99,11 @@ public class OOSMUserDTO extends BaseDto<OOSMUser> {
         this.lastName = lastName;
     }
 
-    public String getOneSignalPlayerId() {
-        return oneSignalPlayerId;
+    public String getFcmToken() {
+        return fcmToken;
     }
 
-    public void setOneSignalPlayerId(String oneSignalPlayerId) {
-        this.oneSignalPlayerId = oneSignalPlayerId;
+    public void setFcmToken(String fcmToken) {
+        this.fcmToken = fcmToken;
     }
 }
