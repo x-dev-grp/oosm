@@ -40,6 +40,7 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
     private String invoiceBankName;
     private String invoiceBankIban;
     private String invoiceBankSwift;
+    private boolean active;
 
     public String getLegalName() {
         return legalName;
@@ -296,5 +297,13 @@ public class CompanyProfileDTO extends BaseDto<CompanyProfile> {
 
     public void setInvoiceBankSwift(String invoiceBankSwift) {
         this.invoiceBankSwift = invoiceBankSwift;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }

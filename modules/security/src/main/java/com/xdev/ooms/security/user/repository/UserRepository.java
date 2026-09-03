@@ -136,6 +136,28 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
     @Query("UPDATE OOSMUser u SET u.tenantId = NULL WHERE u.id = :id")
     void clearTenantId(@Param("id") UUID id);
 
+    List<OOSMUser> findByTenantId(UUID tenantId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE OOSMUser u
+            SET u.isLocked = TRUE, u.enabled = FALSE, u.isDeleted = TRUE
+            WHERE u.tenantId = :tenantId
+            """)
+    int deactivateUsersForTenant(@Param("tenantId") UUID tenantId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            UPDATE OOSMUser u
+            SET u.isLocked = FALSE, u.enabled = TRUE, u.isDeleted = FALSE
+            WHERE u.tenantId = :tenantId
+            """)
+    int reactivateUsersForTenant(@Param("tenantId") UUID tenantId);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM OOSMUser u WHERE u.tenantId = :tenantId")
+    int deleteByTenantId(@Param("tenantId") UUID tenantId);
+
     @Query("""
             SELECT u FROM OOSMUser u
             WHERE u.tenantId = :tenantId

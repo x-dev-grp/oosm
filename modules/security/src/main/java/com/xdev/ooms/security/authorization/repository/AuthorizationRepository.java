@@ -2,16 +2,22 @@ package com.xdev.ooms.security.authorization.repository;
 
 import com.xdev.ooms.security.authorization.entity.Authorization;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collection;
 import java.util.Optional;
 
 @Repository
 @Transactional
 public interface AuthorizationRepository extends JpaRepository<Authorization, String> {
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("DELETE FROM Authorization a WHERE a.principalName IN :principalNames")
+    void deleteByPrincipalNameIn(@Param("principalNames") Collection<String> principalNames);
     Optional<Authorization> findByState(String state);
 
     Optional<Authorization> findByAuthorizationCodeValue(String authorizationCode);

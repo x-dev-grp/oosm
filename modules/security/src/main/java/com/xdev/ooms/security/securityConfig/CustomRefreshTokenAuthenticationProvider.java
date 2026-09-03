@@ -155,7 +155,8 @@ class CustomRefreshTokenAuthenticationProvider implements AuthenticationProvider
             }
             if (!isPlatformAdmin(user)) {
                 CompanyProfile companyProfile =companyProfileRepository.findById(user.getTenantId()).orElse(null);
-                if ( companyProfile ==null || !companyProfile.isActive() ) {
+                if ( companyProfile ==null || !companyProfile.isActive()
+                        || Boolean.TRUE.equals(companyProfile.getDeleted()) ) {
                     throw new OAuth2AuthenticationException(OAuth2ErrorCodes.ACCESS_DENIED);
                 }
             }

@@ -117,8 +117,11 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         if (!SecurityUtils.isOosmAdmin()) {
             throw new AccessDeniedException("Only OOSM administrators can manage tenant modules");
         }
-        repository.findByIdAndIsDeletedFalse(tenantId)
+        CompanyProfile company = repository.findByIdAndIsDeletedFalse(tenantId)
                 .orElseThrow(() -> new EntityNotFoundException("Entity not found with this id " + tenantId));
+        if (!company.isActive()) {
+            throw new IllegalArgumentException("Cannot update modules for a deactivated company");
+        }
         tenantModuleService.setEnabledModules(tenantId, enabledModules);
         return findById(tenantId);
     }
@@ -128,6 +131,25 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
             dto.setEnabledModules(tenantModuleService.getEnabledModuleNames(dto.getId()));
         }
     }
+
+    private void enrichLifecycleFlags(CompanyProfileDTO dto, CompanyProfile entity) {
+        if (dto == null || entity == null) {
+            return;
+        }
+        dto.setActive(entity.isActive());
+        dto.setDeleted(Boolean.TRUE.equals(entity.getDeleted()));
+        enrichWithEnabledModules(dto);
+    }
+
+    @Transactional(readOnly = true)
+    public CompanyProfileDTO findByIdIncludingDeleted(UUID id) {
+        CompanyProfile entity = repository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with this id " + id));
+        CompanyProfileDTO dto = modelMapper.map(entity, outDTOClass);
+        enrichLifecycleFlags(dto, entity);
+        return dto;
+    }
+
     @Transactional(readOnly = true)
     @Override
     public CompanyProfileDTO findById(UUID id) {
@@ -135,13 +157,16 @@ public class CompanyProfileService extends BaseServiceImpl<CompanyProfile, Compa
         OOSMLogger.logMethodEntry(this.getClass(), "findById", id);
 
         try {
+            if (SecurityUtils.isOosmAdmin()) {
+                return findByIdIncludingDeleted(id);
+            }
             Optional<CompanyProfile> data = repository.findByIdAndIsDeletedFalse(id);
             if (data.isEmpty()) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
                 throw new EntityNotFoundException("Entity not found with this id " + id);
             } else {
                 CompanyProfileDTO result = modelMapper.map(data.get(), outDTOClass);
-                enrichWithEnabledModules(result);
+                enrichLifecycleFlags(result, data.get());
                 OOSMLogger.logMethodExit(this.getClass(), "findById", result);
                 OOSMLogger.logPerformance(this.getClass(), "findById", startTime, System.currentTimeMillis());
                 OOSMLogger.logDataAccess(this.getClass(), "READ", entityClass.getSimpleName());
