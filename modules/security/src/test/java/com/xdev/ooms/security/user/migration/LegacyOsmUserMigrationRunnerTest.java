@@ -35,7 +35,7 @@ class LegacyOsmUserMigrationRunnerTest {
 
         runner.run();
 
-        verify(jdbcTemplate, never()).update(contains("INSERT INTO oosmuser"));
+        verify(jdbcTemplate, never()).update(anyString());
     }
 
     @Test
@@ -44,9 +44,12 @@ class LegacyOsmUserMigrationRunnerTest {
                 .thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("information_schema.tables"), eq(Integer.class), eq("oosmuser")))
                 .thenReturn(0);
+        when(jdbcTemplate.update(contains("UPDATE osmuser")))
+                .thenReturn(1);
 
         runner.run();
 
+        verify(jdbcTemplate).update(contains("UPDATE osmuser"));
         verify(jdbcTemplate).execute("ALTER TABLE osmuser RENAME TO oosmuser");
         verify(jdbcTemplate, never()).update(contains("INSERT INTO oosmuser"));
     }
@@ -56,6 +59,8 @@ class LegacyOsmUserMigrationRunnerTest {
         when(jdbcTemplate.queryForObject(contains("information_schema.tables"), eq(Integer.class), eq("osmuser")))
                 .thenReturn(1);
         when(jdbcTemplate.queryForObject(contains("information_schema.tables"), eq(Integer.class), eq("oosmuser")))
+                .thenReturn(1);
+        when(jdbcTemplate.update(contains("UPDATE osmuser")))
                 .thenReturn(1);
         when(jdbcTemplate.update(contains("INSERT INTO oosmuser")))
                 .thenReturn(3);
@@ -67,8 +72,12 @@ class LegacyOsmUserMigrationRunnerTest {
         runner.run();
 
         ArgumentCaptor<String> sqlCaptor = ArgumentCaptor.forClass(String.class);
-        verify(jdbcTemplate).update(sqlCaptor.capture());
-        String insertSql = sqlCaptor.getValue();
+        verify(jdbcTemplate, times(2)).update(sqlCaptor.capture());
+        List<String> sqlCalls = sqlCaptor.getAllValues();
+        assertThat(sqlCalls.get(0)).contains("UPDATE osmuser");
+        String insertSql = sqlCalls.get(1);
+        assertThat(insertSql).contains("fcm_token");
+        assertThat(insertSql).contains("o.one_signal_player_id");
         assertThat(insertSql).contains("photo_content_type, photo_data, username, role_id");
         assertThat(insertSql).contains("FROM osmuser o");
         assertThat(insertSql).doesNotContain("SELECT o.*");
