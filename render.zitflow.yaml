@@ -1,7 +1,7 @@
 # ZitFlow — Render Blueprint (Postgres only)
 # Use when you want the DB without recreating the frontend, or apply DB first.
 # Apply in Render Dashboard → New → Blueprint → repo x-dev-grp/oosm
-# Branch: deploy/zitflow-xdev-pro · Blueprint path: render.zitflow.yaml
+# Branch: pfe-v2-final (single production source; deploy/zitflow-xdev-pro is an alias tip) · Blueprint path: render.zitflow.yaml
 #
 # Prefer osm-ms-fe/render.zitflow.yaml if you want FE + DB in one apply.
 # Backend remains on Railway — do not add an oosm-api web service here.
