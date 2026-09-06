@@ -24,9 +24,4 @@ public class WorkScheduleController extends BaseControllerImpl<WorkSchedule, Wor
     protected String getResourceName() {
         return "WORKSCHEDULE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

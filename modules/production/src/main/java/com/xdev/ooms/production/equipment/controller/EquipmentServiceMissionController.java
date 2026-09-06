@@ -51,13 +51,7 @@ public class EquipmentServiceMissionController
             return ExceptionHandler.handleSingleException(this.getClass(), "update", e);
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    @Override
+@Override
     protected String getResourceName() {
         return "EQUIPMENTSERVICEMISSION";
     }

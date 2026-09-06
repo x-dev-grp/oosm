@@ -232,13 +232,7 @@ public class StockSecController extends BaseControllerImpl<StockSec, StockSecDto
     protected String getResourceName() {
         return "StockSec";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    private Integer readInteger(Map<String, Object> payload, String key) {
+private Integer readInteger(Map<String, Object> payload, String key) {
         Object value = payload.get(key);
         if (value == null) {
             return null;

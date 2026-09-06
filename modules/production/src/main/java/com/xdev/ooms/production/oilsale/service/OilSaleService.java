@@ -37,7 +37,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -45,15 +44,14 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import static  com.xdev.ooms.sharedkernel.Enum.OperationType.OIL_CONTAINER_SALE;
-import static  com.xdev.ooms.sharedkernel.Enum.OperationType.OIL_SALE;
+import static  com.xdev.ooms.sharedkernel.Enum.OperationType.OIL_SALE_PAYMENT;
 
 /**
  * Minimal service that:
  * - validates/locks inventory
  * - persists OilSale + container lines
  * - adjusts inventory
- * - creates FinancialTransactionDto entries (revenue + optional payment)
+ * - creates settlement FinancialTransaction entries for cash received
  */
 @Service
 public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSaleDTO> {
@@ -115,7 +113,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     @Transactional
     public void processPayment(PaymentDTO paymentDTO) {
         if (paymentDTO.getIdOperation() == null) {
-            return;
+            throw new IllegalArgumentException("Payment operation id is required");
         }
         OilSale oilSale = oilSaleRepository.findByIdAndIsDeletedFalse(paymentDTO.getIdOperation()).orElse(null);
         if (oilSale == null) {
@@ -125,9 +123,18 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         BigDecimal unpaidAmount = oilSale.getUnpaidAmount() != null ? BigDecimal.valueOf(oilSale.getUnpaidAmount()) : BigDecimal.ZERO;
 
         double payment = paymentDTO.getAmount() != null ? paymentDTO.getAmount() : 0d;
+        if (payment <= 0) {
+            throw new IllegalArgumentException("Payment amount must be greater than 0");
+        }
+        if (unpaidAmount.signum() <= 0) {
+            throw new IllegalArgumentException("Oil sale is already fully paid: " + oilSale.getId());
+        }
+        if (payment > unpaidAmount.doubleValue()) {
+            payment = unpaidAmount.doubleValue();
+        }
 
-        oilSale.setPaid(payment > 0 && payment == unpaidAmount.doubleValue());
-        if (payment > 0 && payment == unpaidAmount.doubleValue()) {
+        oilSale.setPaid(payment > 0 && Math.abs(payment - unpaidAmount.doubleValue()) < 0.001);
+        if (oilSale.isPaid()) {
             oilSale.setStatus(SaleStatus.DELIVERED);
         }
         oilSale.setPaidAmount((paidAmount.add(BigDecimal.valueOf(payment))).doubleValue());
@@ -135,10 +142,10 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
 
         oilSaleRepository.save(oilSale);
         FinancialTransactionDto financialTransactionDto = new FinancialTransactionDto();
-        financialTransactionDto.setAmount(BigDecimal.valueOf(paymentDTO.getAmount()));
+        financialTransactionDto.setAmount(BigDecimal.valueOf(payment));
         financialTransactionDto.setTransactionType(TransactionType.OIL_SALE);
         financialTransactionDto.setApproved(true);
-        financialTransactionDto.setCurrency(paymentDTO.getCurrency());
+        financialTransactionDto.setCurrency(paymentDTO.getCurrency() != null ? paymentDTO.getCurrency() : Currency.TND);
         financialTransactionDto.setDirection(TransactionDirection.INBOUND);
         if (paymentDTO.getBankAccount() != null) {
             financialTransactionDto.setBankAccount(paymentDTO.getBankAccount());
@@ -151,11 +158,12 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         financialTransactionDto.setLotNumber(null);
         financialTransactionDto.setsupplier(paymentDTO.getSupplier() != null ? modelMapper.map(paymentDTO.getSupplier(), com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class) : null);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());
-        financialTransactionDto.setOperationType(OIL_SALE);
-        financialTransactionDto.setExternalTransactionId(oilSale.getId().toString());
+        financialTransactionDto.setOperationType(OIL_SALE_PAYMENT);
+        financialTransactionDto.setExternalTransactionId(saleExternalReference(oilSale));
         financialTransactionDto.setResourceName(ResourceName.OILSALE);
         financialTransactionDto.setInvoiceReference(oilSale.getInvoiceNumber());
         financialTransactionDto.setDescription(buildPaymentDescription(oilSale));
+        financialTransactionDto.setSyncProductionState(false);
         financialTransactionPort.record(financialTransactionDto);
 
     }
@@ -164,8 +172,12 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     public OilSaleDTO createWithContainers(OilSaleCreateRequest req) {
 
         // ---- 0) Basic validation
-        if (req.getQuantity() == null || req.getQuantity().signum() <= 0) {
-            throw new ValidationException("quantity must be > 0");
+        final boolean hasContainers = req.getContainerSales() != null && !req.getContainerSales().isEmpty();
+        if (req.getQuantity() == null || (req.getQuantity().signum() <= 0 && !hasContainers)) {
+            throw new ValidationException("quantity must be > 0 (or provide container lines)");
+        }
+        if (req.getQuantity() != null && req.getQuantity().signum() < 0) {
+            throw new ValidationException("quantity must be >= 0");
         }
         if (req.getUnitPrice() == null || req.getUnitPrice().signum() < 0) {
             throw new ValidationException("unitPrice must be >= 0");
@@ -186,15 +198,17 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
             throw new IllegalArgumentException("Storage unit not found: " + req.getStorageUnit());
         }
 
-        // ---- 2) Lock storage unit and check oil stock
-        BigDecimal suQty = BigDecimal.valueOf(su.getCurrentVolume());
-        if (suQty.compareTo(req.getQuantity()) < 0) {
-            throw new IllegalStateException("Insufficient oil in storage unit");
+        BigDecimal oilQty = req.getQuantity() != null ? req.getQuantity() : BigDecimal.ZERO;
+
+        // ---- 2) Lock storage unit and check oil stock (only when selling oil)
+        if (oilQty.signum() > 0) {
+            BigDecimal suQty = BigDecimal.valueOf(su.getCurrentVolume());
+            if (suQty.compareTo(oilQty) < 0) {
+                throw new IllegalStateException("Insufficient oil in storage unit");
+            }
         }
 
         // ---- 3) Branch on containers presence
-        final boolean hasContainers = req.getContainerSales() != null && !req.getContainerSales().isEmpty();
-
         BigDecimal containerTotal = BigDecimal.ZERO;
         if (hasContainers) {
             // Compute total for containers only when list is provided
@@ -206,7 +220,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         }
 
         // ---- 4) Oil totals
-        BigDecimal oilTotal = req.getUnitPrice().multiply(req.getQuantity());
+        BigDecimal oilTotal = req.getUnitPrice().multiply(oilQty);
         BigDecimal saleTotal = oilTotal.add(containerTotal);
 
         BigDecimal paid = (req.getPaidAmount() == null) ? BigDecimal.ZERO : BigDecimal.valueOf(req.getPaidAmount());
@@ -219,7 +233,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         OilSale sale = new OilSale();
         sale.setSupplier(supplier);
         sale.setStorageUnit(su.getId());
-        sale.setQuantity(BigDecimal.valueOf(req.getQuantity().doubleValue()));
+        sale.setQuantity(BigDecimal.valueOf(oilQty.doubleValue()));
         sale.setUnitPrice(BigDecimal.valueOf(req.getUnitPrice().doubleValue()));
         sale.setTotalAmount(BigDecimal.valueOf(saleTotal.doubleValue()));
         sale.setPaidAmount(paid.doubleValue());
@@ -236,12 +250,14 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         sale.setStatus(unpaid.signum() == 0 ? SaleStatus.CONFIRMED : SaleStatus.PENDING);
 
         sale = oilSaleRepository.save(sale);
-        OilTransactionDTO oiltTransactionDto = new OilTransactionDTO();
-        oiltTransactionDto.setUnitPrice(req.getUnitPrice().doubleValue());
-        oiltTransactionDto.setQuantityKg(req.getQuantity().doubleValue());
-        oiltTransactionDto.setTotalPrice(req.getQuantity().doubleValue() * req.getUnitPrice().doubleValue());
-        oiltTransactionDto.setOilSaleId(sale.getId());
-        oilTransactionService.createOilTransactionForSale(oiltTransactionDto);
+        if (oilQty.signum() > 0) {
+            OilTransactionDTO oiltTransactionDto = new OilTransactionDTO();
+            oiltTransactionDto.setUnitPrice(req.getUnitPrice().doubleValue());
+            oiltTransactionDto.setQuantityKg(oilQty.doubleValue());
+            oiltTransactionDto.setTotalPrice(oilQty.doubleValue() * req.getUnitPrice().doubleValue());
+            oiltTransactionDto.setOilSaleId(sale.getId());
+            oilTransactionService.createOilTransactionForSale(oiltTransactionDto);
+        }
         // ---- 6) Persist container lines (only if present)
         if (hasContainers) {
             for (OilContainerSale l : req.getContainerSales()) {
@@ -262,64 +278,46 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
 
         // Oil stock is deducted when the linked oil transaction is approved in storage (see createOilTransactionForSale).
 
-        // ---- 7) Financial transactions
-        // Revenue: OIL
-        if (oilTotal.signum() > 0) {
-            FinancialTransactionDto financialTransactionDto = getFinancialTransactionDto(req, oilTotal, supplier, sale);
-            financialTransactionPort.record(financialTransactionDto);
+        // ---- 7) Financial transactions (settlement-only: cash received, not full invoice revenue)
+        if (paid.signum() > 0) {
+            financialTransactionPort.record(buildSettlementTransaction(req, paid, supplier, sale));
         }
 
-        // Revenue: CONTAINERS (only if we had container lines)
-        if (hasContainers && containerTotal.signum() > 0) {
-            FinancialTransactionDto financialTransactionDto = getTransactionDto(req, containerTotal, supplier, sale);
-            financialTransactionPort.record(financialTransactionDto);
-        }
-
-
+        sale = ensureQrCodeIfSupported(sale);
         return findById(sale.getId());
     }
 
-    private FinancialTransactionDto getTransactionDto(OilSaleCreateRequest req, BigDecimal containerTotal, Supplier supplier, OilSale sale) {
-        FinancialTransactionDto financialTransactionDto = new FinancialTransactionDto();
-        financialTransactionDto.setTransactionType(TransactionType.OIL_CONTAINER_SALE);
-        return getFinancialTransactionDto(req, containerTotal, supplier, sale, financialTransactionDto, OIL_CONTAINER_SALE);
-    }
-
-    private FinancialTransactionDto getFinancialTransactionDto(OilSaleCreateRequest req, BigDecimal containerTotal, Supplier supplier, OilSale sale, FinancialTransactionDto financialTransactionDto, OperationType operationType) {
-        financialTransactionDto.setDirection(TransactionDirection.INBOUND);
-        financialTransactionDto.setAmount(containerTotal);
-        financialTransactionDto.setCurrency(req.getCurrency() != null ? req.getCurrency() : Currency.TND);
-        financialTransactionDto.setPaymentMethod(req.getPaymentMethod() != null ? req.getPaymentMethod() : PaymentMethod.CASH);
-        financialTransactionDto.setBankAccount(null);
-        financialTransactionDto.setCheckNumber(null);
-        financialTransactionDto.setLotNumber(null);
+    /**
+     * Ledger cash received at sale creation. Full oil/container totals stay on the OilSale document
+     * as unpaid until {@link #processPayment} records further settlements.
+     */
+    private FinancialTransactionDto buildSettlementTransaction(
+            OilSaleCreateRequest req,
+            BigDecimal paidAmount,
+            Supplier supplier,
+            OilSale sale) {
+        FinancialTransactionDto tx = new FinancialTransactionDto();
+        tx.setTransactionType(TransactionType.OIL_SALE);
+        tx.setDirection(TransactionDirection.INBOUND);
+        tx.setAmount(paidAmount);
+        tx.setCurrency(req.getCurrency() != null ? req.getCurrency() : Currency.TND);
+        tx.setPaymentMethod(req.getPaymentMethod() != null ? req.getPaymentMethod() : PaymentMethod.CASH);
+        tx.setBankAccount(null);
+        tx.setCheckNumber(null);
+        tx.setLotNumber(null);
         if (supplier != null) {
-            financialTransactionDto.setsupplier(modelMapper.map(supplier, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class));
+            tx.setsupplier(modelMapper.map(supplier, com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class));
         }
-        financialTransactionDto.setTransactionDate(LocalDateTime.now());
-        financialTransactionDto.setApproved(true);
-        financialTransactionDto.setApprovalDate(LocalDateTime.now());
-        financialTransactionDto.setOperationType(operationType);
-        financialTransactionDto.setExternalTransactionId(saleExternalReference(sale));
-        financialTransactionDto.setResourceName(ResourceName.OILSALE);
-        financialTransactionDto.setInvoiceReference(sale.getInvoiceNumber());
-        financialTransactionDto.setDescription(buildSaleTransactionDescription(sale, financialTransactionDto.getTransactionType()));
-        return financialTransactionDto;
-    }
-
-    private String buildSaleTransactionDescription(OilSale sale, TransactionType transactionType) {
-        String invoiceRef = sale.getInvoiceNumber() != null && !sale.getInvoiceNumber().isBlank()
-                ? sale.getInvoiceNumber().trim()
-                : sale.getId().toString();
-        if (transactionType == TransactionType.OIL_CONTAINER_SALE) {
-            String containers = loadContainerSaleLines(sale.getId()).stream()
-                    .filter(line -> line.getCount() != null && line.getCount() > 0)
-                    .map(line -> line.getCount() + " x " + (line.getContainerName() != null ? line.getContainerName() : "Conteneur"))
-                    .reduce((a, b) -> a + ", " + b)
-                    .orElse("Conteneurs");
-            return "Vente conteneurs (" + invoiceRef + ") - " + containers;
-        }
-        return "Vente huile (" + invoiceRef + ")";
+        tx.setTransactionDate(LocalDateTime.now());
+        tx.setApproved(true);
+        tx.setApprovalDate(LocalDateTime.now());
+        tx.setOperationType(OIL_SALE_PAYMENT);
+        tx.setExternalTransactionId(saleExternalReference(sale));
+        tx.setResourceName(ResourceName.OILSALE);
+        tx.setInvoiceReference(sale.getInvoiceNumber());
+        tx.setDescription(buildPaymentDescription(sale));
+        tx.setSyncProductionState(false);
+        return tx;
     }
 
     private String buildPaymentDescription(OilSale sale) {
@@ -339,46 +337,8 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         return invoiceNumberPort.nextInvoiceNumber();
     }
 
-    private FinancialTransactionDto buildReversalTransaction(
-            OilSale sale,
-            BigDecimal amount,
-            TransactionType transactionType,
-            OperationType operationType) {
-        FinancialTransactionDto reversal = new FinancialTransactionDto();
-        reversal.setTransactionType(transactionType);
-        reversal.setDirection(TransactionDirection.OUTBOUND);
-        reversal.setAmount(amount);
-        reversal.setCurrency(sale.getCurrency() != null ? sale.getCurrency() : Currency.TND);
-        reversal.setPaymentMethod(sale.getPaymentMethod() != null ? sale.getPaymentMethod() : PaymentMethod.CASH);
-        reversal.setTransactionDate(LocalDateTime.now());
-        reversal.setApproved(true);
-        reversal.setApprovalDate(LocalDateTime.now());
-        reversal.setOperationType(operationType);
-        reversal.setExternalTransactionId(saleExternalReference(sale));
-        reversal.setResourceName(ResourceName.OILSALE);
-        if (sale.getSupplier() != null) {
-            reversal.setsupplier(modelMapper.map(
-                    sale.getSupplier(),
-                    com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class));
-        }
-        return reversal;
-    }
-
     private String saleExternalReference(OilSale sale) {
         return sale.getId().toString();
-    }
-
-    private BigDecimal oilLineTotal(OilSale sale) {
-        if (sale.getQuantity() == null || sale.getUnitPrice() == null) {
-            return BigDecimal.ZERO;
-        }
-        return sale.getQuantity().multiply(sale.getUnitPrice()).setScale(2, RoundingMode.HALF_UP);
-    }
-
-    private FinancialTransactionDto getFinancialTransactionDto(OilSaleCreateRequest req, BigDecimal oilTotal, Supplier supplier, OilSale sale) {
-        FinancialTransactionDto financialTransactionDto = new FinancialTransactionDto();
-        financialTransactionDto.setTransactionType(TransactionType.OIL_SALE);
-        return getFinancialTransactionDto(req, oilTotal, supplier, sale, financialTransactionDto, OIL_SALE);
     }
 
     @Transactional
@@ -410,42 +370,17 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
             containerRepo.save(container);
         }
 
-        // 4. Reverse financial transactions (positive amounts + OUTBOUND direction)
-        BigDecimal oilTotal = oilLineTotal(sale);
-        if (oilTotal.compareTo(BigDecimal.ZERO) > 0) {
-            financialTransactionPort.record(buildReversalTransaction(
-                    sale, oilTotal, TransactionType.OIL_SALE, OIL_SALE));
-        }
+        // 4. Reverse all linked ledger rows (covers legacy full-invoice posts + settlements)
+        financialTransactionPort.reverseLinked(saleExternalReference(sale), ResourceName.OILSALE);
+        sale.setPaidAmount(0.0);
+        sale.setUnpaidAmount(sale.getTotalAmount() != null ? sale.getTotalAmount().doubleValue() : 0.0);
 
-        // Container sale transaction (if containers exist)
-        if (!containerSales.isEmpty()) {
-            BigDecimal containerTotal = containerSales.stream()
-                    .map(OilContainerSale::getLineTotal)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add);
-            if (containerTotal.compareTo(BigDecimal.ZERO) > 0) {
-                financialTransactionPort.record(buildReversalTransaction(
-                        sale, containerTotal, TransactionType.OIL_CONTAINER_SALE, OIL_CONTAINER_SALE));
-            }
-        }
-
-        // 5. Reverse payments (if any)
-        if (sale.getPaidAmount() != null && sale.getPaidAmount() > 0) {
-            financialTransactionPort.record(buildReversalTransaction(
-                    sale,
-                    BigDecimal.valueOf(sale.getPaidAmount()),
-                    TransactionType.OIL_SALE,
-                    OIL_SALE));
-
-            sale.setPaidAmount(0.0);
-            sale.setUnpaidAmount(sale.getTotalAmount().doubleValue());
-        }
-
-        // 7. Update sale status
+        // 5. Update sale status
         sale.setStatus(SaleStatus.CANCELLED);
-        sale.setDeleted(true); // Optional: soft-delete
+        sale.setDeleted(true);
         oilSaleRepository.save(sale);
 
-        // 8. Delete container sale lines (optional, depending on requirements)
+        // 6. Delete container sale lines
         lineRepo.deleteAll(containerSales);
     }
 
@@ -509,6 +444,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     public Set<Action> actionsMapping(OilSale oilSale) {
         Set<Action> actions = new HashSet<>();
         actions.add(Action.READ);
+        actions.add(Action.REGENERATE_QR);
         if (oilSale == null || Boolean.TRUE.equals(oilSale.getDeleted())) {
             return actions;
         }
@@ -545,5 +481,42 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     @Transactional(readOnly = true)
     public SearchResponse<OilSale, OilSaleDTO> search(SearchData searchData) {
         return super.search(searchData);
+    }
+
+    @Override
+    protected String getEntityType() {
+        return "OILSALE";
+    }
+
+    @Override
+    protected String getLabel(OilSale entity) {
+        if (entity == null) {
+            return "Oil sale";
+        }
+        if (entity.getInvoiceNumber() != null && !entity.getInvoiceNumber().isBlank()) {
+            return entity.getInvoiceNumber();
+        }
+        return entity.getId() != null ? "Oil sale " + entity.getId() : "Oil sale";
+    }
+
+    @Override
+    protected String getStatus(OilSale entity) {
+        if (entity == null || entity.getStatus() == null) {
+            return "UNKNOWN";
+        }
+        return entity.getStatus().name();
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/finance/oil-sales";
+    }
+
+    @Override
+    protected String getWebRoute(OilSale entity) {
+        if (entity == null || entity.getId() == null) {
+            return "/finance/oil-sales";
+        }
+        return "/finance/oil-sales/" + entity.getId() + "/view";
     }
 }

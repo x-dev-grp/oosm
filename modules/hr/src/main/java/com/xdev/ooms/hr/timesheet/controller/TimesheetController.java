@@ -46,9 +46,4 @@ public class TimesheetController extends BaseControllerImpl<Timesheet, Timesheet
             return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

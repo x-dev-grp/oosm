@@ -181,9 +181,14 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             oilTransaction.setStorageUnitDestination(dest);
         }
 
+        if (request.getReception() != null && request.getReception().getId() != null) {
+            UnifiedDelivery reception = deliveryRepository.findById(request.getReception().getId()).orElse(null);
+            oilTransaction.setReception(reception);
+        }
 
         oilTransaction.setTotalPrice();
         oilTransaction = oilTransactionRepository.save(oilTransaction);
+        oilTransaction = ensureQrCodeIfSupported(oilTransaction);
         StorageUnit storageUnitDestination = oilTransaction.getStorageUnitDestination();
         StorageUnit storageUnitSource = oilTransaction.getStorageUnitSource();
         validateNonNegativeVolumeBeforeSave(storageUnitSource, storageUnitDestination, oilTransaction.getQuantityKg());
@@ -230,6 +235,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
 
         oilTransaction.setTotalPrice();
         oilTransaction = oilTransactionRepository.save(oilTransaction);
+        oilTransaction = ensureQrCodeIfSupported(oilTransaction);
 
         OOSMLogger.logMethodExit(this.getClass(), "saveWithoutStockAdjustment", oilTransaction);
         OOSMLogger.logPerformance(this.getClass(), "saveWithoutStockAdjustment", startTime, System.currentTimeMillis());
@@ -457,6 +463,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", oilTransaction);
         Set<Action> actions = new HashSet<>();
         actions.add(Action.READ);
+        actions.add(Action.REGENERATE_QR);
         // Only allow update/delete/validate if transaction is pending
         switch (oilTransaction.getTransactionState()) {
             case PENDING -> {
@@ -536,7 +543,12 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             throw e;
         } catch (Exception e) {
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createSingleOilTransactionIn] Unexpected error during oil transaction creation: %s", e.getMessage(), e);
-            throw new RuntimeException("Failed to create oil transaction", e);
+            String detail = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+            Throwable cause = e.getCause();
+            if (cause != null && cause.getMessage() != null) {
+                detail = detail + " | cause: " + cause.getMessage();
+            }
+            throw new RuntimeException("Failed to create oil transaction: " + detail, e);
         }
 
         OOSMLogger.logMethodExit(this.getClass(), "createSingleOilTransactionIn", null);
@@ -667,5 +679,42 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
                     "Annulation refusee: volume negatif detecte sur la cuve destination (%s). Actuel=%.3f, a retirer=%.3f",
                     destination.getName(), destinationVolume, quantityKg));
         }
+    }
+
+    @Override
+    protected String getEntityType() {
+        return "OILTRANSACTION";
+    }
+
+    @Override
+    protected String getLabel(OilTransaction entity) {
+        if (entity == null) {
+            return "Oil transaction";
+        }
+        if (entity.getTransactionType() != null) {
+            return entity.getTransactionType().name() + (entity.getId() != null ? " " + entity.getId() : "");
+        }
+        return entity.getId() != null ? "Oil transaction " + entity.getId() : "Oil transaction";
+    }
+
+    @Override
+    protected String getStatus(OilTransaction entity) {
+        if (entity == null || entity.getTransactionState() == null) {
+            return "UNKNOWN";
+        }
+        return entity.getTransactionState().name();
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/oil-transactions";
+    }
+
+    @Override
+    protected String getWebRoute(OilTransaction entity) {
+        if (entity == null || entity.getId() == null) {
+            return "/oil-transactions";
+        }
+        return "/oil-transactions/" + entity.getId();
     }
 }

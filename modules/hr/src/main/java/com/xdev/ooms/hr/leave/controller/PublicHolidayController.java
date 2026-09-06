@@ -24,9 +24,4 @@ public class PublicHolidayController extends BaseControllerImpl<PublicHoliday, P
     protected String getResourceName() {
         return "PUBLICHOLIDAY";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

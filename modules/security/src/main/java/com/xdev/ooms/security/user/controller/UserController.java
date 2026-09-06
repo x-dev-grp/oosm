@@ -208,13 +208,7 @@ public class UserController extends BaseControllerImpl<OOSMUser, OOSMUserDTO, OO
     protected String getResourceName() {
         return "USER".toUpperCase();
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    @GetMapping("/role/{roleName}")
+@GetMapping("/role/{roleName}")
     public ResponseEntity<List<OOSMUserDTO>> getUsersByRole(@PathVariable String roleName) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getUsersByRole", "Fetching users for role: " + roleName);

@@ -24,10 +24,21 @@ public class PermissionCatalogLoader {
     }
 
     public PermissionCatalogSpec loadSpec() throws IOException {
-        ClassPathResource resource = new ClassPathResource(SPEC_RESOURCE);
-        try (InputStream in = resource.getInputStream()) {
+        try (InputStream in = openSpecStream()) {
             return objectMapper.readValue(in, PermissionCatalogSpec.class);
         }
+    }
+
+    /** Raw classpath bytes of the live permissions-spec.json (for admin download / preview). */
+    public byte[] readRawSpecBytes() throws IOException {
+        try (InputStream in = openSpecStream()) {
+            return in.readAllBytes();
+        }
+    }
+
+    private InputStream openSpecStream() throws IOException {
+        ClassPathResource resource = new ClassPathResource(SPEC_RESOURCE);
+        return resource.getInputStream();
     }
 
     public List<String> resolveActions(PermissionCatalogSpec spec, PermissionCatalogSpec.EntitySpec entitySpec) {

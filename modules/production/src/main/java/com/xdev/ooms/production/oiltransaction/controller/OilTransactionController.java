@@ -173,8 +173,4 @@ public class OilTransactionController extends BaseControllerImpl<OilTransaction,
         return dto;
     }
 
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

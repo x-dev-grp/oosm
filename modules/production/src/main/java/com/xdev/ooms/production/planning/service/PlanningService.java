@@ -8,6 +8,7 @@ import com.xdev.ooms.production.oiltransaction.dto.OilTransactionDTO;
 import com.xdev.ooms.production.oiltransaction.entity.OilTransaction;
 import com.xdev.ooms.production.oiltransaction.service.OilTransactionService;
 import com.xdev.ooms.production.maintenance.service.MillMachineAvailabilityService;
+import com.xdev.ooms.production.parameter.service.ReceptionLimitsParameterReader;
 import com.xdev.ooms.production.planning.dto.MillPlanDTO;
 import com.xdev.ooms.production.planning.dto.PlanItemDTO;
 import com.xdev.ooms.production.planning.dto.PlanningSaveRequest;
@@ -51,6 +52,8 @@ public class PlanningService {
     public static final String MILL_NOT_FOUND = "Mill not found: ";
     public static final String DELIVERY_NOT_FOUND = "Delivery not found: ";
     public static final String NO_DELIVERIES_FOUND_FOR_GLOBAL_LOT = "No deliveries found for global lot: ";
+    public static final String MILL_REQUIRED_TO_COMPLETE = "Mill machine is required to complete the lot";
+    public static final String MILL_PLANNING_DISABLED = "Mill planning board is disabled for this company. Assign a mill when completing the lot.";
     private static final Logger log = LoggerFactory.getLogger(PlanningService.class);
     private final MillMachineRepository millRepo;
     private final DeliveryRepository deliveryRepo;
@@ -59,6 +62,7 @@ public class PlanningService {
     private final OilTransactionService oilTransactionService;
     private final NotificationPort notificationPort;
     private final MillMachineAvailabilityService millMachineAvailabilityService;
+    private final ReceptionLimitsParameterReader receptionLimitsParameterReader;
 
     public PlanningService(
             MillMachineRepository millRepo,
@@ -67,7 +71,8 @@ public class PlanningService {
             UnifiedDeliveryService unifiedDeliveryService,
             OilTransactionService oilTransactionService,
             NotificationPort notificationPort,
-            MillMachineAvailabilityService millMachineAvailabilityService) {
+            MillMachineAvailabilityService millMachineAvailabilityService,
+            ReceptionLimitsParameterReader receptionLimitsParameterReader) {
         this.millRepo = millRepo;
         this.deliveryRepo = deliveryRepo;
         this.modelMapper = modelMapper;
@@ -75,6 +80,7 @@ public class PlanningService {
         this.oilTransactionService = oilTransactionService;
         this.notificationPort = notificationPort;
         this.millMachineAvailabilityService = millMachineAvailabilityService;
+        this.receptionLimitsParameterReader = receptionLimitsParameterReader;
     }
 
     @Transactional
@@ -82,6 +88,9 @@ public class PlanningService {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "savePlanning", req);
         try {
+            if (!receptionLimitsParameterReader.isMillPlanningEnabled()) {
+                throw new ValidationException(MILL_PLANNING_DISABLED);
+            }
             log.info("Saving planning at {}", new Date());
 
             validateRequest(req);
@@ -344,6 +353,9 @@ public class PlanningService {
     }
 
     private void updateMachinWorkTime(MillMachine millMachine, Integer trtDuration) {
+        if (millMachine == null || millMachine.getId() == null) {
+            throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
+        }
         MillMachine machin = millRepo.findById(millMachine.getId()).orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachine.getId()));
         if (machin != null) {
             long currentWorkTime = machin.getHoursOperated() != null ? machin.getHoursOperated() : 0;
@@ -353,7 +365,7 @@ public class PlanningService {
     }
 
     @Transactional
-    public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation) {
+    public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation, UUID millMachineId) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "markLotCompleted", lotNumber, oilQuantity, rendement);
         try {
@@ -363,6 +375,11 @@ public class PlanningService {
                 throw new EntityNotFoundException("Lot not found: " + lotNumber);
             }
             UnifiedDelivery lot = delivery.getFirst();
+
+            applyMillAssignment(lot, millMachineId);
+            if (lot.getMillMachine() == null) {
+                throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
+            }
 
             lot.setOilQuantity((oilQuantity).doubleValue());
             lot.setRendement(round(rendement, 3) );
@@ -420,6 +437,16 @@ public class PlanningService {
         }
     }
 
+    private void applyMillAssignment(UnifiedDelivery lot, UUID millMachineId) {
+        if (millMachineId == null) {
+            return;
+        }
+        MillMachine mill = millRepo.findById(millMachineId)
+                .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachineId));
+        millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
+        lot.setMillMachine(mill);
+    }
+
     @Transactional
 
     public void markGlobalLotCompleted(String globalLotNumber, Map<String, Object> body) {
@@ -429,6 +456,7 @@ public class PlanningService {
         int duree = (int) body.get("triturationDurationInMinutes");
         String trtDateIso = body.get("trtDate") instanceof String s ? s : null;
         String finalObservation = body.get("finalObservation") instanceof String s ? s : null;
+        UUID millMachineId = parseUuid(body.get("millMachineId"));
         // ✅ Convert raw List<LinkedHashMap> → List<ChildLotCompletionDto>
         List<ChildLotCompletionDto> childLots = new ObjectMapper().convertValue(body.get("childLots"), new TypeReference<>() {
                 }
@@ -441,13 +469,27 @@ public class PlanningService {
             if (existing.isEmpty()) {
                 throw new EntityNotFoundException("Global lot not found: " + globalLotNumber);
             }
+            if (millMachineId != null) {
+                MillMachine mill = millRepo.findById(millMachineId)
+                        .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachineId));
+                millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
+                existing.forEach(d -> d.setMillMachine(mill));
+                deliveryRepo.saveAll(existing);
+            }
             // delegate each child
-            childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree, trtDateIso, finalObservation));
+            childLots.forEach(dto -> markLotCompleted( dto.getLotNumber(),globalLotNumber, dto.getOilQuantity(), dto.getRendement(), dto.getUnpaidPrice(), false, duree, trtDateIso, finalObservation, millMachineId));
             log.info("Global lot {} completed with {} child lots", globalLotNumber, childLots.size());
             if (existing.getFirst().getOperationType() == OperationType.BASE || existing.getFirst().getOperationType() == OperationType.OLIVE_PURCHASE) {
                 createGlobalOilReception(globalLotNumber, oilQuantity, rendement);
             }
-            updateMachinWorkTime(existing.getFirst().getMillMachine(), duree);
+            MillMachine millForWorkTime = existing.getFirst().getMillMachine();
+            if (millForWorkTime == null && millMachineId != null) {
+                millForWorkTime = millRepo.findById(millMachineId).orElse(null);
+            }
+            if (millForWorkTime == null) {
+                throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
+            }
+            updateMachinWorkTime(millForWorkTime, duree);
 
         } catch (Exception e) {
             OOSMLogger.logException(this.getClass(), "markGlobalLotCompleted", e);
@@ -457,6 +499,20 @@ public class PlanningService {
             OOSMLogger.logPerformance(this.getClass(), "markGlobalLotCompleted", startTime, System.currentTimeMillis());
         }
 
+    }
+
+    private UUID parseUuid(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof UUID uuid) {
+            return uuid;
+        }
+        String text = String.valueOf(raw).trim();
+        if (text.isEmpty() || "null".equalsIgnoreCase(text)) {
+            return null;
+        }
+        return UUID.fromString(text);
     }
 
     private Double getDouble(Map<String, Object> body, String key) {

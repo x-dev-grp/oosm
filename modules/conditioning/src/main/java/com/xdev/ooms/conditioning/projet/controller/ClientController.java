@@ -48,9 +48,4 @@ public class ClientController extends BaseControllerImpl<Client, ClientDto, Clie
     protected String getResourceName() {
         return "CLIENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

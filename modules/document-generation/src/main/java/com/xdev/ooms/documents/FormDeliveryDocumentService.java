@@ -53,9 +53,11 @@ public class FormDeliveryDocumentService {
             default -> throw new IllegalArgumentException("Not a form document type: " + type);
         };
         if (config.getQrPayload() == null || config.getQrPayload().isBlank()) {
-            String payload = delivery.getLotNumber() != null && !delivery.getLotNumber().isBlank()
-                    ? delivery.getLotNumber()
-                    : (delivery.getDeliveryNumber() != null ? delivery.getDeliveryNumber() : delivery.getId().toString());
+            String payload = firstNonBlank(
+                    delivery.getQrHex(),
+                    delivery.getLotNumber(),
+                    delivery.getDeliveryNumber(),
+                    delivery.getId() != null ? delivery.getId().toString() : null);
             config.setQrPayload(payload);
         }
 
@@ -68,5 +70,17 @@ public class FormDeliveryDocumentService {
             return oilReceptionPdfConfigMapper.map(delivery);
         }
         return oliveReceptionPdfConfigMapper.map(delivery);
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 }

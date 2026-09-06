@@ -54,9 +54,4 @@ public class LeaveRequestController extends BaseControllerImpl<LeaveRequest, Lea
             return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.UUID;
 
 @Component
@@ -16,6 +17,7 @@ public class ReceptionLimitsParameterReader {
     public static final String MAX_DAILY_TONNAGE_CODE = "MAX_DAILY_TONNAGE_KG";
     public static final String DEFAULT_VARIETY_CODE = "DEFAULT_OLIVE_VARIETY";
     public static final String DEFAULT_METHOD_CODE = "DEFAULT_PRODUCTION_METHOD";
+    public static final String ENABLE_MILL_PLANNING_CODE = "ENABLE_MILL_PLANNING";
 
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("H:mm");
 
@@ -58,6 +60,26 @@ public class ReceptionLimitsParameterReader {
 
     public String defaultProductionMethod() {
         return readString(DEFAULT_METHOD_CODE, "");
+    }
+
+    /** Default true — keeps existing kanban mill planning behavior. */
+    public boolean isMillPlanningEnabled() {
+        return readBoolean(ENABLE_MILL_PLANNING_CODE, true);
+    }
+
+    private boolean readBoolean(String code, boolean fallback) {
+        String raw = readString(code, null);
+        if (raw == null || raw.isBlank()) {
+            return fallback;
+        }
+        String normalized = raw.trim().toLowerCase();
+        if (List.of("true", "1", "yes").contains(normalized)) {
+            return true;
+        }
+        if (List.of("false", "0", "no").contains(normalized)) {
+            return false;
+        }
+        return fallback;
     }
 
     private LocalTime readTime(String code, LocalTime fallback) {

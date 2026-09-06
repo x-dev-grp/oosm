@@ -24,9 +24,4 @@ public class LeaveBalanceController extends BaseControllerImpl<LeaveBalance, Lea
     protected String getResourceName() {
         return "LEAVEBALANCE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

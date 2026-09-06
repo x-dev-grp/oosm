@@ -158,9 +158,4 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
     protected String getResourceName() {
         return "QualityControlResult".toUpperCase();
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

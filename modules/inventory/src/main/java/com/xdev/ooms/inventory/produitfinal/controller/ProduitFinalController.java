@@ -70,9 +70,4 @@ public class ProduitFinalController extends BaseControllerImpl<ProduitFinal, Pro
     protected String getResourceName() {
         return "PRODUITFINAL";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

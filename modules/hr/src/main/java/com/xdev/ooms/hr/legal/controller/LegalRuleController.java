@@ -49,9 +49,4 @@ public class LegalRuleController extends BaseControllerImpl<LegalRule, LegalRule
             ));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

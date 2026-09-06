@@ -24,9 +24,4 @@ public class MinimumWageRuleController extends BaseControllerImpl<MinimumWageRul
     protected String getResourceName() {
         return "MINIMUMWAGERULE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -22,9 +22,4 @@ public class FiltrationDashController
     protected String getResourceName() {
         return "FILTRATIONOPERATION";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -26,10 +26,4 @@ public class BankAccountController extends BaseControllerImpl<BankAccount, BankA
     protected String getResourceName() {
         return "BANKACCOUNT" ;
     }
-
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -60,13 +60,7 @@ public class GenericTypeController extends BaseControllerImpl<BaseType, BaseType
                 "message", created > 0 ? "Default Tunisia base types provisioned" : "Base types already present"
         ));
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    @Override
+@Override
     protected String getResourceName() {
         return "BASE_TYPE";
     }

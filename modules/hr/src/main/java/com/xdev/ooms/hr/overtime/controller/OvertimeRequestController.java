@@ -57,9 +57,4 @@ public class OvertimeRequestController extends BaseControllerImpl<OvertimeReques
             return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

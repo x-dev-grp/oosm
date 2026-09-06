@@ -24,9 +24,4 @@ public class SalaryAdvanceController extends BaseControllerImpl<SalaryAdvance, S
     protected String getResourceName() {
         return "SALARYADVANCE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

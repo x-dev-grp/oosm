@@ -11,6 +11,7 @@ import com.xdev.ooms.finance.expense.repository.ExpensesRepository;
 import com.xdev.ooms.finance.financialtransaction.repository.FinancialTransactionRepository;
 import com.xdev.ooms.sharedkernel.Enum.Currency;
 import com.xdev.ooms.sharedkernel.Enum.ExpenseStatus;
+import com.xdev.ooms.sharedkernel.Enum.PaymentMethod;
 import com.xdev.ooms.sharedkernel.Enum.ResourceName;
 import com.xdev.ooms.sharedkernel.Enum.TransactionDirection;
 import com.xdev.ooms.sharedkernel.Enum.TransactionType;
@@ -102,6 +103,7 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
         }
 
         FinancialTransaction savedTx = financialTransactionRepository.save(tx);
+        savedTx = ensureQrCodeIfSupported(savedTx);
 
         if (syncProduction) {
             applyPostSaveEffects(savedTx);
@@ -232,9 +234,10 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
 
     private TransactionDirection inferDirection(TransactionType type) {
         return switch (type) {
-            case PAYMENT, SUPPLIER_PAYMENT, OIL_PURCHASE, WITHDRAWAL, CHECK_PAYMENT, WASTE_DISPOSAL_COST ->
+            case PAYMENT, SUPPLIER_PAYMENT, OIL_PURCHASE, PURCHASE, EXPENSE, WITHDRAWAL, CHECK_PAYMENT, WASTE_DISPOSAL_COST ->
                     TransactionDirection.OUTBOUND;
-            case CREDIT, SUPPLIER_CREDIT, OIL_SALE, DEPOSIT, CHECK_DEPOSIT, WASTE_SALE, WASTE_PAYMENT, STORAGE_RENTAL ->
+            case CREDIT, SUPPLIER_CREDIT, OIL_SALE, OIL_CONTAINER_SALE, DEPOSIT, CHECK_DEPOSIT,
+                 WASTE_SALE, WASTE_PAYMENT, STORAGE_RENTAL, EQUIPMENT_SERVICE ->
                     TransactionDirection.INBOUND;
             case INTERNAL_TRANSFER -> TransactionDirection.INTERNAL;
             default -> TransactionDirection.INTERNAL;
@@ -303,6 +306,97 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
                 tx.getLotNumber());
     }
 
+    /**
+     * Creates opposite-direction rows for each non-reversal FT linked to a production document.
+     * Idempotent against prior cancels: rows whose description already starts with "Annulation" are skipped.
+     */
+    @Transactional
+    public int reverseLinked(String externalTransactionId, ResourceName resourceName) {
+        if (externalTransactionId == null || externalTransactionId.isBlank() || resourceName == null) {
+            return 0;
+        }
+        List<FinancialTransaction> linked =
+                financialTransactionRepository
+                        .findByExternalTransactionIdAndResourceNameAndIsDeletedFalseOrderByTransactionDateAsc(
+                                externalTransactionId.trim(), resourceName);
+        int created = 0;
+        for (FinancialTransaction original : linked) {
+            if (isReversalRow(original)) {
+                continue;
+            }
+            if (original.getAmount() == null || original.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+            FinancialTransactionDto reversal = buildReversalFrom(original);
+            save(reversal);
+            created++;
+        }
+        OOSMLogger.logBusinessEvent(this.getClass(), "FINANCIAL_TRANSACTIONS_REVERSED",
+                "Reversed " + created + " ledger row(s) for " + resourceName + " / " + externalTransactionId);
+        return created;
+    }
+
+    private boolean isReversalRow(FinancialTransaction tx) {
+        String description = tx.getDescription();
+        if (description == null || description.isBlank()) {
+            return false;
+        }
+        String normalized = description.trim().toLowerCase();
+        return normalized.startsWith("annulation") || normalized.startsWith("reversal");
+    }
+
+    private FinancialTransactionDto buildReversalFrom(FinancialTransaction original) {
+        FinancialTransactionDto reversal = new FinancialTransactionDto();
+        reversal.setTransactionType(original.getTransactionType());
+        reversal.setOperationType(original.getOperationType());
+        reversal.setResourceName(original.getResourceName());
+        reversal.setExternalTransactionId(original.getExternalTransactionId());
+        reversal.setAmount(original.getAmount());
+        reversal.setCurrency(original.getCurrency() != null ? original.getCurrency() : Currency.TND);
+        reversal.setPaymentMethod(original.getPaymentMethod() != null
+                ? original.getPaymentMethod()
+                : PaymentMethod.CASH);
+        reversal.setCheckNumber(original.getCheckNumber());
+        reversal.setLotNumber(original.getLotNumber());
+        reversal.setInvoiceReference(original.getInvoiceReference());
+        reversal.setVendorName(original.getVendorName());
+        reversal.setTransactionDate(LocalDateTime.now());
+        reversal.setApproved(true);
+        reversal.setApprovalDate(LocalDateTime.now());
+        reversal.setSyncProductionState(false);
+
+        TransactionDirection originalDirection = original.getDirection();
+        if (originalDirection == TransactionDirection.INBOUND) {
+            reversal.setDirection(TransactionDirection.OUTBOUND);
+        } else if (originalDirection == TransactionDirection.OUTBOUND) {
+            reversal.setDirection(TransactionDirection.INBOUND);
+        } else {
+            reversal.setDirection(TransactionDirection.INTERNAL);
+        }
+
+        String baseDescription = original.getDescription() != null && !original.getDescription().isBlank()
+                ? original.getDescription().trim()
+                : (original.getTransactionType() != null ? original.getTransactionType().name() : "transaction");
+        reversal.setDescription("Annulation: " + baseDescription);
+
+        if (original.getSupplier() != null) {
+            SupplierDto supplierDto = new SupplierDto();
+            supplierDto.setId(original.getSupplier().getId());
+            reversal.setSupplier(supplierDto);
+        }
+        if (original.getBankAccount() != null) {
+            BankAccountDto bankDto = new BankAccountDto();
+            bankDto.setId(original.getBankAccount().getId());
+            reversal.setBankAccount(bankDto);
+        }
+        if (original.getExpense() != null) {
+            ExpenseDto expenseDto = new ExpenseDto();
+            expenseDto.setId(original.getExpense().getId());
+            reversal.setExpense(expenseDto);
+        }
+        return reversal;
+    }
+
     public List<FinancialTransactionDto> findBySupplierId(UUID supplierId) {
         return financialTransactionRepository.findBySupplier_IdAndIsDeletedFalseOrderByTransactionDateDesc(supplierId)
                 .stream()
@@ -359,7 +453,50 @@ public class FinancialTransactionService extends BaseServiceImpl<FinancialTransa
     @Override
     public Set<Action> actionsMapping(FinancialTransaction financialTransaction) {
         Set<Action> actions = new HashSet<>();
-        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.APPROVE, Action.REJECT));
+        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.REGENERATE_QR, Action.APPROVE, Action.REJECT));
         return actions;
+    }
+
+    @Override
+    protected String getEntityType() {
+        return "FINANCIALTRANSACTION";
+    }
+
+    @Override
+    protected String getLabel(FinancialTransaction entity) {
+        if (entity == null) {
+            return "Financial transaction";
+        }
+        if (entity.getInvoiceReference() != null && !entity.getInvoiceReference().isBlank()) {
+            return entity.getInvoiceReference();
+        }
+        return entity.getId() != null ? "Transaction " + entity.getId() : "Financial transaction";
+    }
+
+    @Override
+    protected String getStatus(FinancialTransaction entity) {
+        if (entity == null) {
+            return "UNKNOWN";
+        }
+        if (Boolean.TRUE.equals(entity.getApproved())) {
+            return "APPROVED";
+        }
+        if (Boolean.FALSE.equals(entity.getApproved())) {
+            return "REJECTED";
+        }
+        return "PENDING";
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/finance/transactions";
+    }
+
+    @Override
+    protected String getWebRoute(FinancialTransaction entity) {
+        if (entity == null || entity.getId() == null) {
+            return "/finance/transactions";
+        }
+        return "/finance/transactions/" + entity.getId() + "/view";
     }
 }

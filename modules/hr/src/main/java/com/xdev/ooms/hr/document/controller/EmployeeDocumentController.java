@@ -24,9 +24,4 @@ public class EmployeeDocumentController extends BaseControllerImpl<EmployeeDocum
     protected String getResourceName() {
         return "EMPLOYEEDOCUMENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

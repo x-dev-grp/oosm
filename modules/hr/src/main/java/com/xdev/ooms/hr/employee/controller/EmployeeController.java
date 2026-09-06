@@ -21,9 +21,4 @@ public class EmployeeController extends BaseControllerImpl<Employee, EmployeeDto
     protected String getResourceName() {
         return "EMPLOYEE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

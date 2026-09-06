@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ExpensesRepository extends BaseRepository<Expense> {
+    boolean existsByNotesContainingIgnoreCaseAndIsDeletedFalse(String notesFragment);
+
+    boolean existsByInvoiceRefIgnoreCaseAndIsDeletedFalse(String invoiceRef);
 }

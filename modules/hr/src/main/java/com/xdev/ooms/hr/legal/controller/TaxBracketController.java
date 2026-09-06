@@ -24,9 +24,4 @@ public class TaxBracketController extends BaseControllerImpl<TaxBracket, TaxBrac
     protected String getResourceName() {
         return "TAXBRACKET";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

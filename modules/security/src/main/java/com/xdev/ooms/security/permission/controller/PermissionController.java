@@ -11,11 +11,14 @@ import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.LinkedHashMap;
@@ -65,6 +68,26 @@ public class PermissionController extends BaseControllerImpl<Permission, Permiss
         return ResponseEntity.ok(permissionCatalogSyncService.getCatalogStatus(syncOnStartup));
     }
 
+    /**
+     * Returns the classpath permissions-spec.json currently used by the backend.
+     * Pass {@code download=true} to force a file download.
+     */
+    @GetMapping("/catalog-spec")
+    @PreAuthorize(OOSM_ADMIN)
+    public ResponseEntity<byte[]> catalogSpec(@RequestParam(defaultValue = "false") boolean download) {
+        try {
+            byte[] body = permissionCatalogSyncService.readRawCatalogSpec();
+            String disposition = download ? "attachment" : "inline";
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"permissions-spec.json\"")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body);
+        } catch (Exception e) {
+            OOSMLogger.logException(this.getClass(), "Failed to serve permission catalog spec", e);
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
     @PostMapping("/sync-catalog")
     @PreAuthorize(OOSM_ADMIN)
     public ResponseEntity<Map<String, Object>> syncCatalog() {
@@ -87,10 +110,5 @@ public class PermissionController extends BaseControllerImpl<Permission, Permiss
                     "message", e.getMessage() != null ? e.getMessage() : "Permission catalog sync failed"
             ));
         }
-    }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
     }
 }

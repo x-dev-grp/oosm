@@ -24,9 +24,4 @@ public class TimesheetLineController extends BaseControllerImpl<TimesheetLine, T
     protected String getResourceName() {
         return "TIMESHEET";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

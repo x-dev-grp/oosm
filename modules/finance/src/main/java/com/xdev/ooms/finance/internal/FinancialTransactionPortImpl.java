@@ -3,6 +3,7 @@ package com.xdev.ooms.finance.internal;
 import com.xdev.ooms.finance.bankaccount.repository.BankAccountRepository;
 import com.xdev.ooms.finance.financialtransaction.service.FinancialTransactionService;
 import com.xdev.ooms.production.supplier.repository.SupplierRepository;
+import com.xdev.ooms.sharedkernel.Enum.ResourceName;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.FinancialTransactionDto;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto;
 import com.xdev.ooms.sharedkernel.ports.FinancialTransactionPort;
@@ -40,6 +41,11 @@ public class FinancialTransactionPortImpl implements FinancialTransactionPort {
         resolveBankAccount(request);
         request.setSyncProductionState(false);
         financialTransactionService.recordShared(request);
+    }
+
+    @Override
+    public int reverseLinked(String externalTransactionId, ResourceName resourceName) {
+        return financialTransactionService.reverseLinked(externalTransactionId, resourceName);
     }
 
     private void validate(FinancialTransactionDto request) {

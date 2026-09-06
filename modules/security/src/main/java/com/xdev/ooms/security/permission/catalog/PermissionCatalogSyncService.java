@@ -32,6 +32,16 @@ public class PermissionCatalogSyncService {
     }
 
     @Transactional(readOnly = true)
+    public byte[] readRawCatalogSpec() {
+        try {
+            return catalogLoader.readRawSpecBytes();
+        } catch (Exception e) {
+            OOSMLogger.logException(this.getClass(), "Failed to read permission catalog spec file", e);
+            throw new IllegalStateException("Failed to read permission catalog spec file: " + e.getMessage(), e);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public PermissionCatalogStatusDTO getCatalogStatus(boolean syncOnStartup) {
         try {
             PermissionCatalogSpec spec = catalogLoader.loadSpec();

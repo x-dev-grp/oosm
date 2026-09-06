@@ -16,13 +16,7 @@ public class MillEquipmentController extends BaseControllerImpl<MillEquipment, M
     public MillEquipmentController(BaseService<MillEquipment, MillEquipmentDto, MillEquipmentDto> baseService, ModelMapper modelMapper) {
         super(baseService, modelMapper);
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    @Override
+@Override
     protected String getResourceName() {
         return "MILLEQUIPMENT";
     }

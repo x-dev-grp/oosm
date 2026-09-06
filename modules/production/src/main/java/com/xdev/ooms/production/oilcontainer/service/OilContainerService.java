@@ -148,4 +148,41 @@ public class OilContainerService extends BaseServiceImpl<OilContainer, OilContai
         }
         return userNotes.trim() + " | " + purchaseLabel + " | " + stockNote;
     }
+
+    @Override
+    protected String getEntityType() {
+        return "OILCONTAINER";
+    }
+
+    @Override
+    protected String getLabel(OilContainer entity) {
+        if (entity == null) {
+            return "Oil container";
+        }
+        if (entity.getName() != null && !entity.getName().isBlank()) {
+            return entity.getName();
+        }
+        return entity.getId() != null ? "Oil container " + entity.getId() : "Oil container";
+    }
+
+    @Override
+    protected String getStatus(OilContainer entity) {
+        if (entity == null) {
+            return "UNKNOWN";
+        }
+        return Boolean.TRUE.equals(entity.getActive()) ? "ACTIVE" : "INACTIVE";
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/oil-containers";
+    }
+
+    @Override
+    protected String getWebRoute(OilContainer entity) {
+        if (entity == null || entity.getId() == null) {
+            return "/oil-containers";
+        }
+        return "/oil-containers/" + entity.getId();
+    }
 }

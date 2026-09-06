@@ -19,6 +19,7 @@ public class BaseDto<E extends BaseEntity> implements Serializable {
     private String lastModifiedBy;
     private LocalDateTime lastModifiedDate;
     private String qrHex;
+    private String qrImageBase64;
 
     public LocalDateTime getCreatedDate() {
         return createdDate;
@@ -90,5 +91,13 @@ public class BaseDto<E extends BaseEntity> implements Serializable {
 
     public void setQrHex(String qrHex) {
         this.qrHex = qrHex;
+    }
+
+    public String getQrImageBase64() {
+        return qrImageBase64;
+    }
+
+    public void setQrImageBase64(String qrImageBase64) {
+        this.qrImageBase64 = qrImageBase64;
     }
 }

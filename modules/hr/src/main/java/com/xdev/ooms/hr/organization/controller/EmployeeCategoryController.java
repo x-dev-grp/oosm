@@ -24,9 +24,4 @@ public class EmployeeCategoryController extends BaseControllerImpl<EmployeeCateg
     protected String getResourceName() {
         return "EMPLOYEECATEGORY";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

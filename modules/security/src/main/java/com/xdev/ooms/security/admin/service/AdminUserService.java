@@ -130,13 +130,13 @@ public class AdminUserService {
     }
 
     private void checkUserDoesNotExist(String username, String email, String phoneNumber) {
-        if (username != null && userRepository.findByUsernameAndIsDeletedFalse(username).isPresent()) {
+        if (username != null && userRepository.findActiveByUsername(username).isPresent()) {
             throw new IllegalArgumentException("Username is already in use");
         }
-        if (email != null && userRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).isPresent()) {
+        if (email != null && userRepository.findActiveByEmailIgnoreCase(email).isPresent()) {
             throw new IllegalArgumentException("Email is already in use");
         }
-        if (phoneNumber != null && userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber).isPresent()) {
+        if (phoneNumber != null && userRepository.findActiveByPhoneNumber(phoneNumber).isPresent()) {
             throw new IllegalArgumentException("Phone number is already in use");
         }
     }

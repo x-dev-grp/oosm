@@ -83,7 +83,23 @@ public class OilBonCommandePdfConfigMapper {
                 ? sale.getInvoiceNumber().trim()
                 : (sale.getId() == null ? "inconnu" : sale.getId().toString());
         config.setFileName("Bon_Commande_Huile_" + fileRef + ".pdf");
+        config.setQrPayload(firstNonBlank(
+                sale.getQrHex(),
+                sale.getInvoiceNumber(),
+                sale.getId() != null ? sale.getId().toString() : null));
         return config;
+    }
+
+    private static String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value.trim();
+            }
+        }
+        return null;
     }
 
     private String resolveStorageUnitName(OilSale sale) {

@@ -24,9 +24,4 @@ public class LeaveTypeConfigController extends BaseControllerImpl<LeaveTypeConfi
     protected String getResourceName() {
         return "LEAVETYPE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

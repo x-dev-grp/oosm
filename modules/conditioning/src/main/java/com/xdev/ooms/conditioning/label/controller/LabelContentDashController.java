@@ -22,9 +22,4 @@ public class LabelContentDashController
     protected String getResourceName() {
         return "LABELCONTENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

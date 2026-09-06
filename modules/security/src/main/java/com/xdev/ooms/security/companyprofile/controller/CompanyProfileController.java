@@ -167,10 +167,4 @@ public class CompanyProfileController extends BaseControllerImpl<CompanyProfile,
     protected String getResourceName() {
         return "CompanyProfile";
     }
-
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }
