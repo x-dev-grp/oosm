@@ -24,9 +24,4 @@ public class CompanyHrLegalProfileController extends BaseControllerImpl<CompanyH
     protected String getResourceName() {
         return "COMPANYLEGALPROFILE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

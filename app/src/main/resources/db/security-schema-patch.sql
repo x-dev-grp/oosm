@@ -27,3 +27,16 @@ ALTER TABLE IF EXISTS public.company_profile
 -- If refresh/login fails with OSMUser serialVersionUID after entity changes, clear stored OAuth2
 -- authorizations once (users must sign in again). Uncomment only when needed:
 -- TRUNCATE TABLE public.authorization;
+
+-- Soft-deleted users must not block username/email/phone reuse.
+-- Drop common Hibernate/Postgres unique constraint names; partial active-only
+-- indexes are created by UserUniqueConstraintMigrationRunner on startup.
+ALTER TABLE IF EXISTS public.oosmuser DROP CONSTRAINT IF EXISTS oosmuser_username_key;
+ALTER TABLE IF EXISTS public.oosmuser DROP CONSTRAINT IF EXISTS oosmuser_email_key;
+ALTER TABLE IF EXISTS public.oosmuser DROP CONSTRAINT IF EXISTS oosmuser_phone_number_key;
+ALTER TABLE IF EXISTS public.osmuser DROP CONSTRAINT IF EXISTS osmuser_username_key;
+ALTER TABLE IF EXISTS public.osmuser DROP CONSTRAINT IF EXISTS osmuser_email_key;
+ALTER TABLE IF EXISTS public.osmuser DROP CONSTRAINT IF EXISTS osmuser_phone_number_key;
+ALTER TABLE IF EXISTS public.osm_user DROP CONSTRAINT IF EXISTS osm_user_username_key;
+ALTER TABLE IF EXISTS public.osm_user DROP CONSTRAINT IF EXISTS osm_user_email_key;
+ALTER TABLE IF EXISTS public.osm_user DROP CONSTRAINT IF EXISTS osm_user_phone_number_key;

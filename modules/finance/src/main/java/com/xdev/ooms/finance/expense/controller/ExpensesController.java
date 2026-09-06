@@ -26,9 +26,4 @@ public class ExpensesController extends BaseControllerImpl<Expense, ExpenseDto, 
     protected String getResourceName() {
         return "Expense".toUpperCase();
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

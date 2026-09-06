@@ -21,14 +21,14 @@ public class OOSMUser extends BaseEntity implements UserDetails {
     @Serial
     private static final long serialVersionUID = -7954089139215121063L;
 
-    @Column(unique = true, nullable = false)
+    // Uniqueness for active users is enforced by partial DB indexes
+    // (WHERE is_deleted is not true) — soft-deleted rows must not block reuse.
+    @Column(nullable = false)
     private String username;
     private String firstName;
     private String lastName;
     private String password;
-    @Column(unique = true)
     private String email;
-    @Column(unique = true)
     private String phoneNumber;
     @ManyToOne(fetch = FetchType.EAGER)
     private Role role;

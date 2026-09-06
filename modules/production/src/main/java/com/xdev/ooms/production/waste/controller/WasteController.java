@@ -43,10 +43,5 @@ public class WasteController extends BaseControllerImpl<Waste, WasteDTO, WasteDT
     protected String getResourceName() {
         return "WASTE".toUpperCase();
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }
 

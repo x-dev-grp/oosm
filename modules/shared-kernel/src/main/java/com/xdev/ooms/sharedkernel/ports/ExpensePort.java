@@ -11,4 +11,7 @@ public interface ExpensePort {
      * @return generated invoice / bill reference
      */
     String record(ExpenseRecordCommand command);
+
+    /** True if an expense was already recorded with this import external reference. */
+    boolean existsByExternalReference(String externalReference);
 }

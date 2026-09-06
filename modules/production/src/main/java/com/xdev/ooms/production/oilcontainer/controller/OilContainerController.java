@@ -50,10 +50,6 @@ public class OilContainerController extends BaseControllerImpl<OilContainer, Oil
     }
 
     @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-    @Override
     protected String getResourceName() {
         return "OilContainer".toUpperCase();
     }

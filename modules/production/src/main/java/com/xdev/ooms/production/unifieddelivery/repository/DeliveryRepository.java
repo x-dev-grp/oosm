@@ -171,4 +171,6 @@ public interface DeliveryRepository extends BaseRepository<UnifiedDelivery> {
 
     @Query("SELECT d.deliveryNumber FROM UnifiedDelivery d WHERE d.isDeleted = false AND d.deliveryNumber IS NOT NULL")
     List<String> findAllDeliveryNumbers();
+
+    Optional<UnifiedDelivery> findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(String descriptionFragment);
 }

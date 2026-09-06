@@ -16,4 +16,6 @@ public interface StorageUnitRepo extends BaseRepository<StorageUnit> {
     Optional<StorageUnit> findByQrHexIgnoreCaseAndIsDeletedFalse(String qrHex);
 
     Optional<StorageUnit> findByQrHexIgnoreCaseAndTenantIdAndIsDeletedFalse(String qrHex, UUID tenantId);
+
+    Optional<StorageUnit> findFirstByNameIgnoreCaseAndIsDeletedFalse(String name);
 }

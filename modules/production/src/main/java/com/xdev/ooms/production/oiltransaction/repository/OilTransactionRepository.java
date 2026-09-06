@@ -35,4 +35,6 @@ public interface OilTransactionRepository extends BaseRepository<OilTransaction>
 
     List<OilTransaction> findAllByStorageUnitDestinationIdAndTransactionTypeAndIsDeletedFalseOrderByCreatedDateAsc(
             UUID storageUnitId, TransactionType transactionType);
+
+    Optional<OilTransaction> findFirstByReceptionIdAndTransactionTypeAndIsDeletedFalse(UUID receptionId, TransactionType transactionType);
 }

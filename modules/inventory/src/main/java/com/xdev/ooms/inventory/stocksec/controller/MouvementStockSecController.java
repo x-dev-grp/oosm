@@ -22,9 +22,4 @@ public class MouvementStockSecController
     protected String getResourceName() {
         return "MOUVEMENTSTOCKSEC";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -159,7 +159,7 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
     @Override
     public Set<Action> actionsMapping(StorageUnit storageUnit) {
         Set<Action> actions = new HashSet<>();
-        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ,Action.ASSIGN_SUPPLIER));
+        actions.addAll(Set.of(Action.UPDATE, Action.DELETE, Action.READ, Action.REGENERATE_QR,Action.ASSIGN_SUPPLIER));
 
         return actions;
     }

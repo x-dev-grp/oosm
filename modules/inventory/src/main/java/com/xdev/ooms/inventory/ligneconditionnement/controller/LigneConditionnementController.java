@@ -71,9 +71,4 @@ public class LigneConditionnementController extends BaseControllerImpl<LigneCond
     protected String getResourceName() {
         return "LIGNECONDITIONNEMENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

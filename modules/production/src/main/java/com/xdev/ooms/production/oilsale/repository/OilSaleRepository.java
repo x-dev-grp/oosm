@@ -20,4 +20,8 @@ public interface OilSaleRepository extends BaseRepository<OilSale> {
             WHERE s.id = :id AND s.isDeleted = false
             """)
     Optional<OilSale> findByIdForPdf(@Param("id") UUID id);
+
+    Optional<OilSale> findFirstByInvoiceNumberIgnoreCaseAndIsDeletedFalse(String invoiceNumber);
+
+    Optional<OilSale> findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(String descriptionFragment);
 } 

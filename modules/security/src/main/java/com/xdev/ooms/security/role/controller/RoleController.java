@@ -86,9 +86,4 @@ public class RoleController extends BaseControllerImpl<Role, RoleDTO, RoleDTO> {
     protected String getResourceName() {
         return "Role".toUpperCase();
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

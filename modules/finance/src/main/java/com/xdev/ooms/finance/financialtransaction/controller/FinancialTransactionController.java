@@ -158,13 +158,7 @@ public class FinancialTransactionController extends BaseControllerImpl<Financial
             return ResponseEntity.internalServerError().body(new ApiSingleResponse<>(false, "Error rejecting financial transaction: " + e.getMessage(), null));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-
-    @Override
+@Override
     protected String getResourceName() {
         return "FinancialTransaction".toUpperCase();
     }

@@ -149,9 +149,4 @@ public class QualityController extends BaseControllerImpl<QCPlan, QCPlanDTO, QCP
     protected String getResourceName() {
         return "QUALITY";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

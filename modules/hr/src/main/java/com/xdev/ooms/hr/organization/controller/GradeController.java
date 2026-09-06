@@ -21,9 +21,4 @@ public class GradeController extends BaseControllerImpl<Grade, GradeDto, GradeDt
     protected String getResourceName() {
         return "GRADE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

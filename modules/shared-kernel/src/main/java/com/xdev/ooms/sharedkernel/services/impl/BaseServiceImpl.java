@@ -1629,6 +1629,12 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     @Transactional
     public QrCodeInfo generateQrInfo(String entityType, UUID entityId) {
+        return generateQrInfo(entityType, entityId, false);
+    }
+
+    @Transactional
+    @Override
+    public QrCodeInfo generateQrInfo(String entityType, UUID entityId, boolean forceRegenerate) {
         requireQrSupport();
 
         E entity = repository.findById(entityId)
@@ -1636,7 +1642,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                         new EntityNotFoundException("Entity not found with id: " + entityId));
 
         String existingCode = entity.getQrHex();
-        if (existingCode != null && !existingCode.isBlank()) {
+        if (existingCode != null && !existingCode.isBlank() && !forceRegenerate) {
             String publicCode = existingCode.trim();
             String qrUrl = buildQrUrl(resolveQrEntityType(entityType), publicCode);
             String imageBase64 = entity.getQrImageBase64();
@@ -1650,6 +1656,11 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             }
 
             return new QrCodeInfo(publicCode, qrUrl, imageBase64);
+        }
+
+        if (forceRegenerate) {
+            entity.setQrHex(null);
+            entity.setQrImageBase64(null);
         }
 
         String publicCode = codeGenerator.generateUnique(repository::existsByQrHex);

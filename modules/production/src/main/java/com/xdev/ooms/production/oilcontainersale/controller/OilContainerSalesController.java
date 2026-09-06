@@ -23,12 +23,7 @@ public class OilContainerSalesController extends BaseControllerImpl<OilContainer
         super(baseService, modelMapper);
 
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-    @Override
+@Override
     protected String getResourceName() {
         return "OilContainer".toUpperCase();
     }

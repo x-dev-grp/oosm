@@ -24,9 +24,4 @@ public class EmployeeLoanController extends BaseControllerImpl<EmployeeLoan, Emp
     protected String getResourceName() {
         return "EMPLOYEELOAN";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

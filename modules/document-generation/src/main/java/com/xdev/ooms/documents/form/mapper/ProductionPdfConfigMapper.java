@@ -47,7 +47,11 @@ public class ProductionPdfConfigMapper {
         config.setRevision("00");
         config.setDate("01/12/2024");
         config.setNumber(deliveryNumberSuffix(delivery));
-        config.setQrPayload(firstNonBlank(delivery.getLotNumber(), delivery.getDeliveryNumber(), delivery.getId() != null ? delivery.getId().toString() : null));
+        config.setQrPayload(firstNonBlank(
+                delivery.getQrHex(),
+                delivery.getLotNumber(),
+                delivery.getDeliveryNumber(),
+                delivery.getId() != null ? delivery.getId().toString() : null));
 
         List<FormPdfFieldDto> generalInfo = new ArrayList<>();
         generalInfo.add(field(FormPdfLabels.LOT_NUMBER,

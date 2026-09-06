@@ -49,9 +49,4 @@ public class PayslipController extends BaseControllerImpl<Payslip, PayslipDto, P
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(content);
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -24,9 +24,4 @@ public class SocialSecurityConfigurationController extends BaseControllerImpl<So
     protected String getResourceName() {
         return "SOCIALSECURITYCONFIG";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

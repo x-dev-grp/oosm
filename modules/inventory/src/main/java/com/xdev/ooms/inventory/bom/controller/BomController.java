@@ -76,9 +76,4 @@ public class BomController extends BaseControllerImpl<BOM, BOMDto, BOMDto> {
     protected String getResourceName() {
         return "BOM";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

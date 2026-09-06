@@ -108,6 +108,13 @@ public final class ProductionParameterDefaults {
                     "Optional daily reception tonnage warning threshold (kg). 0 = disabled"
             ),
             new ProductionParameterDefault(
+                    "ENABLE_MILL_PLANNING",
+                    RECEPTION_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "true",
+                    "Enable kanban mill planning board. When false, assign mill manually when completing a lot"
+            ),
+            new ProductionParameterDefault(
                     "DEFAULT_LANGUAGE",
                     LOCALE_CATEGORY,
                     ParameterType.STRING,
@@ -169,6 +176,41 @@ public final class ProductionParameterDefaults {
                     ParameterType.BOOLEAN,
                     "true",
                     "Notify mill staff when campaign end date approaches"
+            ),
+            new ProductionParameterDefault(
+                    "IMPORT_GDRIVE_ENABLED",
+                    RECEPTION_CATEGORY,
+                    ParameterType.BOOLEAN,
+                    "false",
+                    "Enable Google Drive folder polling for day Excel imports"
+            ),
+            new ProductionParameterDefault(
+                    "IMPORT_GDRIVE_FOLDER_ID",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "",
+                    "Google Drive source folder id for day import workbooks"
+            ),
+            new ProductionParameterDefault(
+                    "IMPORT_GDRIVE_PROCESSED_FOLDER_ID",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "",
+                    "Google Drive processed/archive folder id for imported workbooks"
+            ),
+            new ProductionParameterDefault(
+                    "IMPORT_GDRIVE_CRON",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "0 0 6 * * *",
+                    "Cron expression for day import Drive sync (default 06:00)"
+            ),
+            new ProductionParameterDefault(
+                    "IMPORT_GDRIVE_FAILED_FOLDER_ID",
+                    RECEPTION_CATEGORY,
+                    ParameterType.STRING,
+                    "",
+                    "Google Drive failed/ folder id for day import workbooks that fail dry-run or commit"
             )
     );
 

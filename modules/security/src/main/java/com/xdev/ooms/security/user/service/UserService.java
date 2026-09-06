@@ -318,17 +318,17 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
     }
 
     private void checkExistUser(String username, String email, String phoneNumber) {
-        if (username != null && userRepository.findByUsernameAndIsDeletedFalse(username).isPresent()) {
+        if (username != null && userRepository.findActiveByUsername(username).isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "USERNAME_ALREADY_EXISTS",
                     "Username already exists: " + username);
             throw new IllegalArgumentException("Username is already in use");
         }
-        if (email != null && userRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email).isPresent()) {
+        if (email != null && userRepository.findActiveByEmailIgnoreCase(email).isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "EMAIL_ALREADY_EXISTS",
                     "Email already exists: " + email);
             throw new IllegalArgumentException("Email is already in use");
         }
-        if (phoneNumber != null && userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber).isPresent()) {
+        if (phoneNumber != null && userRepository.findActiveByPhoneNumber(phoneNumber).isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "PHONE_ALREADY_EXISTS",
                     "Phone number already exists: " + phoneNumber);
             throw new IllegalArgumentException("Phone number is already in use");
@@ -337,7 +337,7 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
 
     private void checkUserToUpdate(OOSMUser user, String username, String email, String phoneNumber) {
         if (((user.getUsername() != null && username != null && !user.getUsername().equals(username)) || (user.getUsername() == null && username != null))
-                && userRepository.findByUsernameAndIsDeletedFalse(username)
+                && userRepository.findActiveByUsername(username)
                 .filter(existing -> !existing.getId().equals(user.getId()))
                 .isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "USERNAME_ALREADY_EXISTS_UPDATE",
@@ -345,7 +345,7 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
             throw new IllegalArgumentException("Username is already in use");
         }
         if (((user.getEmail() != null && email != null && !user.getEmail().equals(email)) || (user.getEmail() == null && email != null))
-                && userRepository.findByEmailIgnoreCaseAndIsDeletedFalse(email)
+                && userRepository.findActiveByEmailIgnoreCase(email)
                 .filter(existing -> !existing.getId().equals(user.getId()))
                 .isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "EMAIL_ALREADY_EXISTS_UPDATE",
@@ -353,12 +353,65 @@ public class UserService extends BaseServiceImpl<OOSMUser, OOSMUserDTO, OOSMUser
             throw new IllegalArgumentException("Email is already in use");
         }
         if (((user.getPhoneNumber() != null && phoneNumber != null && !user.getPhoneNumber().equals(phoneNumber)) || (user.getPhoneNumber() == null && phoneNumber != null))
-                && userRepository.findByPhoneNumberAndIsDeletedFalse(phoneNumber)
+                && userRepository.findActiveByPhoneNumber(phoneNumber)
                 .filter(existing -> !existing.getId().equals(user.getId()))
                 .isPresent()) {
             OOSMLogger.logSecurityEvent(this.getClass(), "PHONE_ALREADY_EXISTS_UPDATE",
                     "Phone number already exists during update: " + phoneNumber);
             throw new IllegalArgumentException("Phone number is already in use");
+        }
+    }
+
+    /**
+     * Soft-delete frees username/email/phone so they can be reused by a new active user.
+     * Global unique constraints (and partial active-only indexes) would otherwise keep blocking them.
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public OOSMUserOUTDTO delete(UUID id) {
+        long startTime = System.currentTimeMillis();
+        OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
+
+        try {
+            if (id == null) {
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
+                return null;
+            }
+            OOSMUser entity = userRepository.findById(id).orElse(null);
+            if (entity == null) {
+                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
+                return null;
+            }
+
+            releaseUniqueLoginIdentifiers(entity);
+            entity.setDeleted(true);
+            entity.setLocked(true);
+            entity.setEnabled(false);
+            OOSMUser updatedEntity = userRepository.save(entity);
+            OOSMUserOUTDTO result = modelMapper.map(updatedEntity, OOSMUserOUTDTO.class);
+
+            OOSMLogger.logMethodExit(this.getClass(), "delete", result);
+            OOSMLogger.logPerformance(this.getClass(), "delete", startTime, System.currentTimeMillis());
+            OOSMLogger.logSecurityEvent(this.getClass(), "USER_SOFT_DELETED",
+                    "Soft-deleted user and released unique identifiers: " + id);
+
+            return result;
+        } catch (Exception e) {
+            OOSMLogger.logException(this.getClass(), "Error deleting user with ID: " + id, e);
+            throw e;
+        }
+    }
+
+    private void releaseUniqueLoginIdentifiers(OOSMUser user) {
+        String marker = "#deleted#" + user.getId();
+        if (user.getUsername() != null && !user.getUsername().contains("#deleted#")) {
+            user.setUsername(user.getUsername() + marker);
+        }
+        if (user.getEmail() != null && !user.getEmail().contains("#deleted#")) {
+            user.setEmail(user.getEmail() + marker);
+        }
+        if (user.getPhoneNumber() != null && !user.getPhoneNumber().contains("#deleted#")) {
+            user.setPhoneNumber(user.getPhoneNumber() + marker);
         }
     }
 

@@ -10,6 +10,9 @@
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- ====== 0) Pré-requis & idempotence ======
 CREATE EXTENSION IF NOT EXISTS pgcrypto; -- pour gen_random_uuid()
 
@@ -156,6 +159,7 @@ SELECT public.seed_permissions_from_json($${
         "CREATE",
         "DELETE",
         "READ",
+        "REGENERATE_QR",
         "UPDATE"
       ]
     },
@@ -182,6 +186,39 @@ SELECT public.seed_permissions_from_json($${
         "UPDATE"
       ]
     },
+    "DEPARTMENT": {
+      "description": "Organizational departments",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "GRADE": {
+      "description": "Employee grades",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "EMPLOYEECATEGORY": {
+      "description": "Employee categories",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
     "CONTRACT": {
       "description": "Employment contracts",
       "module": "HR",
@@ -192,6 +229,29 @@ SELECT public.seed_permissions_from_json($${
         "READ",
         "UPDATE",
         "UPDATE_STATUS"
+      ]
+    },
+    "CONTRACTAMENDMENT": {
+      "description": "Employment contract amendments",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "UPDATE_STATUS"
+      ]
+    },
+    "EMPLOYEEDOCUMENT": {
+      "description": "Employee documents",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
       ]
     },
     "POINTAGE": {
@@ -251,6 +311,227 @@ SELECT public.seed_permissions_from_json($${
         "VALIDATE"
       ]
     },
+    "PAYROLLVARIABLE": {
+      "description": "Payroll period variables (bonuses, overtime, deductions)",
+      "module": "HR",
+      "permissions": [
+        "CALCULATE",
+        "CLOSE",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "PAY",
+        "READ",
+        "REPORT",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "LEGALRULE": {
+      "description": "Tunisian legal rules (rates, references)",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "COMPANYLEGALPROFILE": {
+      "description": "Company HR legal profile",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "SOCIALSECURITYCONFIG": {
+      "description": "CNSS / social security configuration",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "TAXCONFIGURATION": {
+      "description": "IRPP tax configuration",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "TAXBRACKET": {
+      "description": "IRPP tax brackets",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "MINIMUMWAGERULE": {
+      "description": "SMIG / SMAG minimum wage rules",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "SALARYCOMPONENT": {
+      "description": "Payroll salary components",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "WORKSCHEDULE": {
+      "description": "Work schedules and shifts",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "TIMESHEET": {
+      "description": "Employee timesheets",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "GEN_PDF",
+        "READ",
+        "UPDATE",
+        "VALIDATE"
+      ]
+    },
+    "OVERTIMERULE": {
+      "description": "Overtime compensation rules",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "REJECT",
+        "UPDATE"
+      ]
+    },
+    "OVERTIMEREQUEST": {
+      "description": "Overtime requests",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "REJECT",
+        "UPDATE"
+      ]
+    },
+    "LEAVETYPE": {
+      "description": "Leave type configuration",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "LEAVEBALANCE": {
+      "description": "Employee leave balances",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "PUBLICHOLIDAY": {
+      "description": "Public holidays calendar",
+      "module": "HR",
+      "permissions": [
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "SALARYADVANCE": {
+      "description": "Salary advances",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "EMPLOYEELOAN": {
+      "description": "Employee loans and installments",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CANCEL",
+        "CREATE",
+        "DELETE",
+        "EXPORT",
+        "READ",
+        "UPDATE"
+      ]
+    },
+    "COMPLIANCE": {
+      "description": "HR compliance violations and scans",
+      "module": "HR",
+      "permissions": [
+        "READ",
+        "REPORT"
+      ]
+    },
+    "HRAGENT": {
+      "description": "HR Agent natural-language query tools",
+      "module": "HR",
+      "permissions": [
+        "APPROVE",
+        "CREATE",
+        "READ"
+      ]
+    },
     "base_type": {
       "description": "Generic type system",
       "module": "PRODUCTION",
@@ -271,6 +552,7 @@ SELECT public.seed_permissions_from_json($${
         "GEN_PDF",
         "PAY",
         "READ",
+        "REGENERATE_QR",
         "REJECT",
         "UPDATE",
         "VALIDATE"
@@ -287,6 +569,7 @@ SELECT public.seed_permissions_from_json($${
         "GEN_PDF",
         "PAY",
         "READ",
+        "REGENERATE_QR",
         "REJECT",
         "UPDATE",
         "VALIDATE"
@@ -302,6 +585,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "GEN_PDF",
         "READ",
+        "REGENERATE_QR",
         "REJECT",
         "UPDATE",
         "VALIDATE"
@@ -338,6 +622,7 @@ SELECT public.seed_permissions_from_json($${
         "PAY",
         "PLANNING",
         "READ",
+        "REGENERATE_QR",
         "SET_PRICE",
         "TO_PROD",
         "UPDATE",
@@ -416,6 +701,7 @@ SELECT public.seed_permissions_from_json($${
         "OIL_OUT_TRANSACTION",
         "OIL_PAYMENT",
         "READ",
+        "REGENERATE_QR",
         "UPDATE",
         "VALIDATE"
       ]
@@ -440,6 +726,7 @@ SELECT public.seed_permissions_from_json($${
         "OIL_QUALITY",
         "OLIVE_QUALITY",
         "READ",
+        "REGENERATE_QR",
         "UPDATE",
         "UPDATE_OIL_QUALITY",
         "UPDATE_OLIVE_QUALITY",
@@ -466,6 +753,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "GEN_PDF",
         "READ",
+        "REGENERATE_QR",
         "SET_PRICE",
         "UPDATE",
         "VALIDATE"
@@ -495,6 +783,7 @@ SELECT public.seed_permissions_from_json($${
         "GEN_PDF",
         "PAY",
         "READ",
+        "REGENERATE_QR",
         "REJECT",
         "UPDATE",
         "VALIDATE"
@@ -525,6 +814,7 @@ SELECT public.seed_permissions_from_json($${
         "GEN_PDF",
         "PAY",
         "READ",
+        "REGENERATE_QR",
         "UPDATE",
         "VALIDATE"
       ]
@@ -616,6 +906,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "ENTREE_STOCK",
         "READ",
+        "REGENERATE_QR",
         "SORTIE_STOCK",
         "UPDATE"
       ]
@@ -639,6 +930,7 @@ SELECT public.seed_permissions_from_json($${
         "CREATE",
         "DELETE",
         "READ",
+        "REGENERATE_QR",
         "UPDATE"
       ]
     },
@@ -650,6 +942,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "GEN_PDF",
         "READ",
+        "REGENERATE_QR",
         "UPDATE",
         "VALIDATE"
       ]
@@ -663,6 +956,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "LIBERER_STOCK",
         "READ",
+        "REGENERATE_QR",
         "RESERVER_STOCK",
         "TRANSFERER_STOCK",
         "UPDATE"
@@ -675,6 +969,7 @@ SELECT public.seed_permissions_from_json($${
         "CREATE",
         "DELETE",
         "READ",
+        "REGENERATE_QR",
         "UPDATE"
       ]
     },
@@ -685,6 +980,7 @@ SELECT public.seed_permissions_from_json($${
         "CREATE",
         "DELETE",
         "READ",
+        "REGENERATE_QR",
         "UPDATE"
       ]
     },
@@ -705,6 +1001,7 @@ SELECT public.seed_permissions_from_json($${
         "CREATE",
         "DELETE",
         "READ",
+        "REGENERATE_QR",
         "UPDATE"
       ]
     },
@@ -757,6 +1054,7 @@ SELECT public.seed_permissions_from_json($${
         "GEN_PDF",
         "PAUSE",
         "READ",
+        "REGENERATE_QR",
         "RESUME",
         "START",
         "UPDATE"
@@ -771,6 +1069,7 @@ SELECT public.seed_permissions_from_json($${
         "DELETE",
         "GEN_PDF",
         "READ",
+        "REGENERATE_QR",
         "UPDATE",
         "UPDATE_STATUS"
       ]

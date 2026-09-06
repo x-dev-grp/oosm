@@ -16,8 +16,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.ValidationException;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.apache.commons.math3.util.Precision.round;
 
@@ -33,6 +35,7 @@ public class PlanningController {
     public static final String TRT_DURATION = "triturationDurationInMinutes";
     public static final String TRT_DATE = "trtDate";
     public static final String FINAL_OBSERVATION = "finalObservation";
+    public static final String MILL_MACHINE_ID = "millMachineId";
 
     private final PlanningService planningService;
 
@@ -94,7 +97,8 @@ public class PlanningController {
             }
             String trtDate = body.get(TRT_DATE) instanceof String s ? s : null;
             String finalObservation = body.get(FINAL_OBSERVATION) instanceof String s ? s : null;
-            planningService.markLotCompleted(lotNumber, "0" , oilQuantity, rendement, unpaidPrice,autoSetStorage,duree, trtDate, finalObservation);
+            UUID millMachineId = parseUuid(body.get(MILL_MACHINE_ID));
+            planningService.markLotCompleted(lotNumber, "0" , oilQuantity, rendement, unpaidPrice,autoSetStorage,duree, trtDate, finalObservation, millMachineId);
             return ResponseEntity
                     .ok("Lot completed successfully");
 
@@ -103,6 +107,12 @@ public class PlanningController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body("Lot not found: " + e.getMessage());
+
+        } catch (ValidationException | IllegalArgumentException e) {
+            log.error("Validation error completing lot: {}", e.getMessage());
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
 
         } catch (Exception e) {
             log.error("Error completing lot: {}", e.getMessage());
@@ -115,6 +125,20 @@ public class PlanningController {
             OOSMLogger.logPerformance(
                     this.getClass(), "completeLot", startTime, System.currentTimeMillis());
         }
+    }
+
+    private UUID parseUuid(Object raw) {
+        if (raw == null) {
+            return null;
+        }
+        if (raw instanceof UUID uuid) {
+            return uuid;
+        }
+        String text = String.valueOf(raw).trim();
+        if (text.isEmpty() || "null".equalsIgnoreCase(text)) {
+            return null;
+        }
+        return UUID.fromString(text);
     }
 
     private int getInt(Map<String, Object> body, String key) {
@@ -147,6 +171,12 @@ public class PlanningController {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
                     .body("Global lot not found: " + e.getMessage());
+
+        } catch (ValidationException | IllegalArgumentException e) {
+            log.error("Validation error completing global lot {}: {}", globalLotNumber, e.getMessage());
+            return ResponseEntity
+                    .badRequest()
+                    .body(e.getMessage());
 
         } catch (Exception e) {
             OOSMLogger.logException(this.getClass(), "completeGlobalLot", e);

@@ -67,4 +67,7 @@ public enum Action {
 
     TRANSFERER_STOCK,
 
+    /** Force regenerate of an existing public QR code / image. */
+    REGENERATE_QR,
+
 }

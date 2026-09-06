@@ -71,9 +71,4 @@ public class BonCommandeController extends BaseControllerImpl<BonCommande, BonCo
     protected String getResourceName() {
         return "BONCOMMANDE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

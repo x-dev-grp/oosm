@@ -12,4 +12,10 @@ import java.util.UUID;
 public interface QualityControlRuleRepository extends BaseRepository<QualityControlRule> {
 
     boolean existsByTenantIdAndRuleKeyAndOilQcAndIsDeletedFalse(UUID tenantId, String ruleKey, Boolean oilQc);
+
+    java.util.Optional<QualityControlRule> findFirstByTenantIdAndRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(
+            UUID tenantId, String ruleKey, Boolean oilQc);
+
+    java.util.Optional<QualityControlRule> findFirstByRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(
+            String ruleKey, Boolean oilQc);
 }

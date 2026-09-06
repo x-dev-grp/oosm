@@ -27,4 +27,44 @@ public class FiltrationDashService
     public Set<Action> actionsMapping(FiltrationOperation entity) {
         return Set.of(Action.READ, Action.UPDATE, Action.DELETE);
     }
+
+    @Override
+    protected String getEntityType() {
+        return "FILTRATIONOPERATION";
+    }
+
+    @Override
+    protected String getLabel(FiltrationOperation entity) {
+        if (entity == null) {
+            return "Filtration";
+        }
+        if (entity.getSourceLotNumber() != null && !entity.getSourceLotNumber().isBlank()) {
+            return entity.getSourceLotNumber();
+        }
+        if (entity.getTargetLotNumber() != null && !entity.getTargetLotNumber().isBlank()) {
+            return entity.getTargetLotNumber();
+        }
+        return entity.getId() != null ? "Filtration " + entity.getId() : "Filtration";
+    }
+
+    @Override
+    protected String getStatus(FiltrationOperation entity) {
+        if (entity == null || entity.getStatus() == null) {
+            return "UNKNOWN";
+        }
+        return entity.getStatus().name();
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/production/filtration";
+    }
+
+    @Override
+    protected String getWebRoute(FiltrationOperation entity) {
+        if (entity == null || entity.getId() == null) {
+            return "/production/filtration";
+        }
+        return "/production/filtration/" + entity.getId();
+    }
 }

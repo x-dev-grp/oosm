@@ -58,9 +58,4 @@ public class PayrollPeriodController extends BaseControllerImpl<PayrollPeriod, P
             return ResponseEntity.ok(new ApiResponse<>(false, e.getMessage(), null));
         }
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -24,9 +24,4 @@ public class PayrollVariableController extends BaseControllerImpl<PayrollVariabl
     protected String getResourceName() {
         return "PAYROLLVARIABLE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

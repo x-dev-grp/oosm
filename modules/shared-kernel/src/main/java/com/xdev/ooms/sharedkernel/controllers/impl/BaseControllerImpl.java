@@ -565,8 +565,20 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public ResponseEntity<QrCodeInfo> genQr(String entityType, UUID entityId) {
 
         try {
-            QrCodeInfo qrInfo = baseService.generateQrInfo(entityType, entityId);
-             return ResponseEntity.ok(qrInfo);
+            OUTDTO current = baseService.findById(entityId);
+            boolean regenerating = current != null
+                    && current.getQrHex() != null && !current.getQrHex().isBlank()
+                    && current.getQrImageBase64() != null && !current.getQrImageBase64().isBlank();
+
+            if (regenerating) {
+                com.xdev.ooms.sharedkernel.utils.PermissionSupport.requireAction(
+                        getResourceName(),
+                        Action.REGENERATE_QR
+                );
+            }
+
+            QrCodeInfo qrInfo = baseService.generateQrInfo(entityType, entityId, regenerating);
+            return ResponseEntity.ok(qrInfo);
         } catch (Exception e) {
             OOSMLogger.logException(this.getClass(), "Error generating QR", e);
             throw e;

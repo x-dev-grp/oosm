@@ -21,9 +21,4 @@ public class DepartmentController extends BaseControllerImpl<Department, Departm
     protected String getResourceName() {
         return "DEPARTMENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

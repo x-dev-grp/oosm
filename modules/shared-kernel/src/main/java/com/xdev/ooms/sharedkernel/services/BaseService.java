@@ -55,6 +55,7 @@ public interface BaseService<E extends BaseEntity, INDTO extends BaseDto<E>, OUT
         actions.add(Action.CREATE);
         actions.add(Action.UPDATE);
         actions.add(Action.DELETE);
+        actions.add(Action.REGENERATE_QR);
         return actions;
     }
 
@@ -62,6 +63,10 @@ public interface BaseService<E extends BaseEntity, INDTO extends BaseDto<E>, OUT
     //------QRCode----//
 
     QrCodeInfo generateQrInfo(String entityType, UUID entityId);
+
+    default QrCodeInfo generateQrInfo(String entityType, UUID entityId, boolean forceRegenerate) {
+        return generateQrInfo(entityType, entityId);
+    }
 
     byte[] generateQrImage(String publicCode);
 

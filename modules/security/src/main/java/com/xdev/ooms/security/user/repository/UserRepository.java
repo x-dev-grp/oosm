@@ -22,6 +22,13 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
 
     @Query("""
             SELECT u FROM OOSMUser u
+            WHERE u.username = :username
+              AND COALESCE(u.isDeleted, FALSE) = FALSE
+            """)
+    Optional<OOSMUser> findActiveByUsername(@Param("username") String username);
+
+    @Query("""
+            SELECT u FROM OOSMUser u
             WHERE COALESCE(u.isDeleted, FALSE) = FALSE
               AND (
                   u.username = :input
@@ -59,9 +66,23 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
 
     Optional<OOSMUser> findByEmailIgnoreCaseAndIsDeletedFalse(String email);
 
+    @Query("""
+            SELECT u FROM OOSMUser u
+            WHERE LOWER(u.email) = LOWER(:email)
+              AND COALESCE(u.isDeleted, FALSE) = FALSE
+            """)
+    Optional<OOSMUser> findActiveByEmailIgnoreCase(@Param("email") String email);
+
     Optional<OOSMUser> findByPhoneNumber(String phoneNumber);
 
     Optional<OOSMUser> findByPhoneNumberAndIsDeletedFalse(String phoneNumber);
+
+    @Query("""
+            SELECT u FROM OOSMUser u
+            WHERE u.phoneNumber = :phoneNumber
+              AND COALESCE(u.isDeleted, FALSE) = FALSE
+            """)
+    Optional<OOSMUser> findActiveByPhoneNumber(@Param("phoneNumber") String phoneNumber);
 
     List<OOSMUser> findByRoleRoleNameAndTenantIdAndIsDeletedFalse(String roleName, UUID tenantId);
 
@@ -139,19 +160,50 @@ public interface UserRepository extends BaseRepository<OOSMUser> {
     List<OOSMUser> findByTenantId(UUID tenantId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            UPDATE OOSMUser u
-            SET u.isLocked = TRUE, u.enabled = FALSE, u.isDeleted = TRUE
-            WHERE u.tenantId = :tenantId
-            """)
+    @Query(value = """
+            UPDATE oosmuser
+            SET is_locked = TRUE,
+                enabled = FALSE,
+                is_deleted = TRUE,
+                username = CASE
+                    WHEN username LIKE '%#deleted#%' THEN username
+                    ELSE username || '#deleted#' || id::text
+                END,
+                email = CASE
+                    WHEN email IS NULL OR email LIKE '%#deleted#%' THEN email
+                    ELSE email || '#deleted#' || id::text
+                END,
+                phone_number = CASE
+                    WHEN phone_number IS NULL OR phone_number LIKE '%#deleted#%' THEN phone_number
+                    ELSE phone_number || '#deleted#' || id::text
+                END
+            WHERE tenant_id = :tenantId
+            """, nativeQuery = true)
     int deactivateUsersForTenant(@Param("tenantId") UUID tenantId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
-    @Query("""
-            UPDATE OOSMUser u
-            SET u.isLocked = FALSE, u.enabled = TRUE, u.isDeleted = FALSE
-            WHERE u.tenantId = :tenantId
-            """)
+    @Query(value = """
+            UPDATE oosmuser
+            SET is_locked = FALSE,
+                enabled = TRUE,
+                is_deleted = FALSE,
+                username = CASE
+                    WHEN strpos(username, '#deleted#' || id::text) > 0
+                        THEN replace(username, '#deleted#' || id::text, '')
+                    ELSE username
+                END,
+                email = CASE
+                    WHEN email IS NOT NULL AND strpos(email, '#deleted#' || id::text) > 0
+                        THEN replace(email, '#deleted#' || id::text, '')
+                    ELSE email
+                END,
+                phone_number = CASE
+                    WHEN phone_number IS NOT NULL AND strpos(phone_number, '#deleted#' || id::text) > 0
+                        THEN replace(phone_number, '#deleted#' || id::text, '')
+                    ELSE phone_number
+                END
+            WHERE tenant_id = :tenantId
+            """, nativeQuery = true)
     int reactivateUsersForTenant(@Param("tenantId") UUID tenantId);
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)

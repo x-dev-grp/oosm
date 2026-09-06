@@ -24,9 +24,4 @@ public class ContractAmendmentController extends BaseControllerImpl<ContractAmen
     protected String getResourceName() {
         return "CONTRACTAMENDMENT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

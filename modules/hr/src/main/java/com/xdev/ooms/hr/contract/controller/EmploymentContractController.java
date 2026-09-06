@@ -21,9 +21,4 @@ public class EmploymentContractController extends BaseControllerImpl<EmploymentC
     protected String getResourceName() {
         return "CONTRACT";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

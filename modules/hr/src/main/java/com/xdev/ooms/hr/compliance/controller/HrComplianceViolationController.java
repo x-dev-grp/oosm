@@ -25,9 +25,4 @@ public class HrComplianceViolationController
     protected String getResourceName() {
         return "COMPLIANCE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -57,9 +57,4 @@ public class MaterielSupplierController extends BaseControllerImpl<MaterielSuppl
     protected String getResourceName() {
         return "MATERIEL_SUPPLIER";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

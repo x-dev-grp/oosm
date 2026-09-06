@@ -25,11 +25,7 @@ public class MillMachineController extends BaseControllerImpl<MillMachine, MillM
         super(baseService, modelMapper);
         this.UnifiedDeliveryService = UnifiedDeliveryService;
     }
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-    @Override
+@Override
     protected String getResourceName() {
         return "MillMachine".toUpperCase();
     }

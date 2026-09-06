@@ -21,9 +21,4 @@ public class PosteController extends BaseControllerImpl<Poste, PosteDto, PosteDt
     protected String getResourceName() {
         return "POSTE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

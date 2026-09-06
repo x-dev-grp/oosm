@@ -24,9 +24,4 @@ public class TaxConfigurationController extends BaseControllerImpl<TaxConfigurat
     protected String getResourceName() {
         return "TAXCONFIGURATION";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

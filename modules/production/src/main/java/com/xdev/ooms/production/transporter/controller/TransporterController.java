@@ -25,12 +25,7 @@ public class TransporterController extends BaseControllerImpl<Transporter, Trans
         super(baseService, modelMapper);
         this.transporterDTOService = transporterDTOService;
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
-    @Override
+@Override
     protected String getResourceName() {
         return "Transporter".toUpperCase();
     }

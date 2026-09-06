@@ -21,9 +21,4 @@ public class PointageController extends BaseControllerImpl<Pointage, PointageDto
     protected String getResourceName() {
         return "POINTAGE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

@@ -44,16 +44,19 @@ public class FiltrationService {
     private final OilTransactionService oilTransactionService;
     private final BusinessCodeGenerator businessCodeGenerator;
     private final TraceabilityLotService traceabilityLotService;
+    private final FiltrationDashService filtrationDashService;
 
     public FiltrationService(StorageUnitRepo storageUnitRepo, FiltrationOperationRepo filtrationRepo,
             org.modelmapper.ModelMapper modelMapper, OilTransactionService oilTransactionService,
-            BusinessCodeGenerator businessCodeGenerator, TraceabilityLotService traceabilityLotService) {
+            BusinessCodeGenerator businessCodeGenerator, TraceabilityLotService traceabilityLotService,
+            FiltrationDashService filtrationDashService) {
         this.storageUnitRepo = storageUnitRepo;
         this.filtrationRepo = filtrationRepo;
         this.modelMapper = modelMapper;
         this.oilTransactionService = oilTransactionService;
         this.businessCodeGenerator = businessCodeGenerator;
         this.traceabilityLotService = traceabilityLotService;
+        this.filtrationDashService = filtrationDashService;
     }
 
     @Transactional
@@ -96,6 +99,7 @@ public class FiltrationService {
             operation.setSourceLotNumber(sourceLotNumber); // ← Ajout du lot source
 
             FiltrationOperation saved = filtrationRepo.save(operation);
+            filtrationDashService.generateQrInfo("FILTRATIONOPERATION", saved.getId());
 
             return mapToDto(saved);
 

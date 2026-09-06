@@ -489,7 +489,10 @@
       "module": "FINANCE",
       "description": "Bank account management",
       "section": "entities",
-      "profile": "CRUD"
+      "profile": "CRUD",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "EMPLOYEE": {
       "module": "HR",
@@ -687,19 +690,28 @@
       "module": "FINANCE",
       "description": "Expense management",
       "section": "entities",
-      "profile": "FINANCE_DOC"
+      "profile": "FINANCE_DOC",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "FINANCIALTRANSACTION": {
       "module": "FINANCE",
       "description": "Universal financial transactions",
       "section": "entities",
-      "profile": "FINANCE_TRANSACTION"
+      "profile": "FINANCE_TRANSACTION",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "OILCREDIT": {
       "module": "PRODUCTION",
       "description": "Oil credit management",
       "section": "entities",
-      "profile": "OIL_CREDIT"
+      "profile": "OIL_CREDIT",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "SUPPLIER": {
       "module": "RECEPTION",
@@ -711,7 +723,10 @@
       "module": "RECEPTION",
       "description": "Delivery management",
       "section": "entities",
-      "profile": "UNIFIED_DELIVERY"
+      "profile": "UNIFIED_DELIVERY",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "MACHINEPLAN": {
       "module": "PRODUCTION",
@@ -755,7 +770,10 @@
       "module": "PRODUCTION",
       "description": "Oil transaction management",
       "section": "entities",
-      "profile": "OIL_TRANSACTION"
+      "profile": "OIL_TRANSACTION",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "PARAMETER": {
       "module": "HABILITATION",
@@ -767,7 +785,10 @@
       "module": "PRODUCTION",
       "description": "Quality control results",
       "section": "entities",
-      "profile": "QC_RESULT"
+      "profile": "QC_RESULT",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "QUALITYCONTROLRULE": {
       "module": "PRODUCTION",
@@ -779,7 +800,10 @@
       "module": "PRODUCTION",
       "description": "Storage unit management",
       "section": "entities",
-      "profile": "STORAGE_UNIT"
+      "profile": "STORAGE_UNIT",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "TRANSPORTER": {
       "module": "RECEPTION",
@@ -791,7 +815,10 @@
       "module": "FINANCE",
       "description": "Oil sales management (includes bundled container lines; creates OIL_SALE and OIL_CONTAINER_SALE financial transactions)",
       "section": "entities",
-      "profile": "FINANCE_SALE"
+      "profile": "FINANCE_SALE",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "WASTESALE": {
       "module": "FINANCE",
@@ -821,7 +848,11 @@
         "PAY",
         "GEN_PDF",
         "VALIDATE",
-        "COMPLETE"
+        "COMPLETE",
+        "REGENERATE_QR"
+      ],
+      "addActions": [
+        "REGENERATE_QR"
       ]
     },
     "OILCONTAINER": {
@@ -870,7 +901,10 @@
       "module": "INVENTAIR",
       "description": "Article management (frontend routes and menus)",
       "section": "security_entities",
-      "profile": "ARTICLE"
+      "profile": "ARTICLE",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "ARTICLE": {
       "module": "INVENTAIR",
@@ -882,19 +916,28 @@
       "module": "INVENTAIR",
       "description": "Bill of materials",
       "section": "security_entities",
-      "profile": "CRUD"
+      "profile": "CRUD",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "BONCOMMANDE": {
       "module": "INVENTAIR",
       "description": "Purchase order",
       "section": "security_entities",
-      "profile": "OIL_CONTAINER"
+      "profile": "OIL_CONTAINER",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "EMPLACEMENTSTOCK": {
       "module": "INVENTAIR",
       "description": "Stock location",
       "section": "security_entities",
-      "profile": "STOCK_LOCATION"
+      "profile": "STOCK_LOCATION",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "MATERIEL_SUPPLIER": {
       "module": "INVENTAIR",
@@ -903,6 +946,9 @@
       "profile": "CRUD",
       "legacyAliases": [
         "FOURNISSEUR"
+      ],
+      "addActions": [
+        "REGENERATE_QR"
       ]
     },
     "LIGNEBONCOMMANDE": {
@@ -915,7 +961,10 @@
       "module": "INVENTAIR",
       "description": "Packaging line",
       "section": "security_entities",
-      "profile": "CRUD"
+      "profile": "CRUD",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "MOUVEMENTSTOCKSEC": {
       "module": "INVENTAIR",
@@ -939,13 +988,19 @@
       "module": "CONDITIONING",
       "description": "Conditioning manufacturing orders",
       "section": "security_entities",
-      "profile": "CONDITIONING_OF"
+      "profile": "CONDITIONING_OF",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "PROJET": {
       "module": "CONDITIONING",
       "description": "Conditioning projects",
       "section": "security_entities",
-      "profile": "CONDITIONING_PROJECT"
+      "profile": "CONDITIONING_PROJECT",
+      "addActions": [
+        "REGENERATE_QR"
+      ]
     },
     "CERTIFICATION": {
       "module": "CONDITIONING",
@@ -1021,116 +1076,757 @@
       "name": "HR_CLERK",
       "description": "Daily HR operations — employee records, attendance, leave submission",
       "grants": [
-        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT"] },
-        { "module": "HR", "entity": "POSTE", "actions": ["READ"] },
-        { "module": "HR", "entity": "CONTRACT", "actions": ["READ"] },
-        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT"] },
-        { "module": "HR", "entity": "WORKSCHEDULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "TIMESHEET", "actions": ["READ", "CREATE", "UPDATE", "EXPORT"] },
-        { "module": "HR", "entity": "OVERTIMERULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "OVERTIMEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "CANCEL"] },
-        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "CANCEL"] },
-        { "module": "HR", "entity": "LEAVETYPE", "actions": ["READ"] },
-        { "module": "HR", "entity": "LEAVEBALANCE", "actions": ["READ"] },
-        { "module": "HR", "entity": "PUBLICHOLIDAY", "actions": ["READ"] },
-        { "module": "HR", "entity": "SALARYADVANCE", "actions": ["READ", "CREATE", "UPDATE"] },
-        { "module": "HR", "entity": "EMPLOYEELOAN", "actions": ["READ"] },
-        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ"] },
-        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ"] }
+        {
+          "module": "HR",
+          "entity": "EMPLOYEE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POSTE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACT",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POINTAGE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "WORKSCHEDULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "TIMESHEET",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMERULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMEREQUEST",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "CANCEL"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEREQUEST",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "CANCEL"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVETYPE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEBALANCE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PUBLICHOLIDAY",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYADVANCE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEELOAN",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLPERIOD",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYSLIP",
+          "actions": [
+            "READ"
+          ]
+        }
       ]
     },
     {
       "name": "HR_MANAGER",
       "description": "HR supervision — approve leave, manage contracts, employee documents",
       "grants": [
-        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "CREATE", "UPDATE", "EXPORT", "GEN_PDF"] },
-        { "module": "HR", "entity": "POSTE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "DEPARTMENT", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "GRADE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "EMPLOYEECATEGORY", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "CONTRACT", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "GEN_PDF", "UPDATE_STATUS"] },
-        { "module": "HR", "entity": "CONTRACTAMENDMENT", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "GEN_PDF", "UPDATE_STATUS"] },
-        { "module": "HR", "entity": "EMPLOYEEDOCUMENT", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "GEN_PDF", "EXPORT"] },
-        { "module": "HR", "entity": "WORKSCHEDULE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "TIMESHEET", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "VALIDATE", "EXPORT", "GEN_PDF"] },
-        { "module": "HR", "entity": "OVERTIMERULE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "OVERTIMEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "CANCEL", "EXPORT"] },
-        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "APPROVE", "REJECT", "CANCEL", "GEN_PDF"] },
-        { "module": "HR", "entity": "LEAVETYPE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "LEAVEBALANCE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "PUBLICHOLIDAY", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "EXPORT"] },
-        { "module": "HR", "entity": "SALARYADVANCE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "APPROVE", "CANCEL", "EXPORT"] },
-        { "module": "HR", "entity": "EMPLOYEELOAN", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "APPROVE", "CANCEL", "EXPORT"] },
-        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ", "REPORT", "EXPORT"] },
-        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ", "GEN_PDF", "EXPORT"] }
+        {
+          "module": "HR",
+          "entity": "EMPLOYEE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "EXPORT",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POSTE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "DEPARTMENT",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "GRADE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEECATEGORY",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACT",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "GEN_PDF",
+            "UPDATE_STATUS"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACTAMENDMENT",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "GEN_PDF",
+            "UPDATE_STATUS"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEEDOCUMENT",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POINTAGE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "GEN_PDF",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "WORKSCHEDULE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "TIMESHEET",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "VALIDATE",
+            "EXPORT",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMERULE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMEREQUEST",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "APPROVE",
+            "REJECT",
+            "CANCEL",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEREQUEST",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "APPROVE",
+            "REJECT",
+            "CANCEL",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVETYPE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEBALANCE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PUBLICHOLIDAY",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYADVANCE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "APPROVE",
+            "CANCEL",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEELOAN",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "APPROVE",
+            "CANCEL",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLPERIOD",
+          "actions": [
+            "READ",
+            "REPORT",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYSLIP",
+          "actions": [
+            "READ",
+            "GEN_PDF",
+            "EXPORT"
+          ]
+        }
       ]
     },
     {
       "name": "HR_PAYROLL_OFFICER",
       "description": "Payroll processing — calculate, validate, pay and close periods",
       "grants": [
-        { "module": "HR", "entity": "EMPLOYEE", "actions": ["READ", "EXPORT"] },
-        { "module": "HR", "entity": "POSTE", "actions": ["READ"] },
-        { "module": "HR", "entity": "CONTRACT", "actions": ["READ", "GEN_PDF"] },
-        { "module": "HR", "entity": "POINTAGE", "actions": ["READ", "EXPORT", "GEN_PDF"] },
-        { "module": "HR", "entity": "WORKSCHEDULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "TIMESHEET", "actions": ["READ", "VALIDATE", "EXPORT", "GEN_PDF"] },
-        { "module": "HR", "entity": "OVERTIMERULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "OVERTIMEREQUEST", "actions": ["READ", "APPROVE", "EXPORT"] },
-        { "module": "HR", "entity": "LEAVEREQUEST", "actions": ["READ"] },
-        { "module": "HR", "entity": "LEAVETYPE", "actions": ["READ"] },
-        { "module": "HR", "entity": "LEAVEBALANCE", "actions": ["READ", "EXPORT"] },
-        { "module": "HR", "entity": "PUBLICHOLIDAY", "actions": ["READ"] },
-        { "module": "HR", "entity": "SALARYADVANCE", "actions": ["READ", "CREATE", "UPDATE", "APPROVE", "EXPORT"] },
-        { "module": "HR", "entity": "EMPLOYEELOAN", "actions": ["READ", "CREATE", "UPDATE", "APPROVE", "EXPORT"] },
-        { "module": "HR", "entity": "PAYROLLPERIOD", "actions": ["READ", "CREATE", "UPDATE", "CALCULATE", "VALIDATE", "PAY", "CLOSE", "EXPORT", "REPORT"] },
-        { "module": "HR", "entity": "PAYSLIP", "actions": ["READ", "CREATE", "UPDATE", "CALCULATE", "VALIDATE", "PAY", "GEN_PDF", "EXPORT"] },
-        { "module": "HR", "entity": "PAYROLLVARIABLE", "actions": ["READ", "CREATE", "UPDATE", "DELETE", "CALCULATE", "VALIDATE", "EXPORT"] },
-        { "module": "HR", "entity": "LEGALRULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "COMPANYLEGALPROFILE", "actions": ["READ"] },
-        { "module": "HR", "entity": "SOCIALSECURITYCONFIG", "actions": ["READ"] },
-        { "module": "HR", "entity": "TAXCONFIGURATION", "actions": ["READ"] },
-        { "module": "HR", "entity": "TAXBRACKET", "actions": ["READ"] },
-        { "module": "HR", "entity": "MINIMUMWAGERULE", "actions": ["READ"] },
-        { "module": "HR", "entity": "SALARYCOMPONENT", "actions": ["READ"] }
+        {
+          "module": "HR",
+          "entity": "EMPLOYEE",
+          "actions": [
+            "READ",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POSTE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACT",
+          "actions": [
+            "READ",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "POINTAGE",
+          "actions": [
+            "READ",
+            "EXPORT",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "WORKSCHEDULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "TIMESHEET",
+          "actions": [
+            "READ",
+            "VALIDATE",
+            "EXPORT",
+            "GEN_PDF"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMERULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMEREQUEST",
+          "actions": [
+            "READ",
+            "APPROVE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEREQUEST",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVETYPE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEBALANCE",
+          "actions": [
+            "READ",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PUBLICHOLIDAY",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYADVANCE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "APPROVE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEELOAN",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "APPROVE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLPERIOD",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "CALCULATE",
+            "VALIDATE",
+            "PAY",
+            "CLOSE",
+            "EXPORT",
+            "REPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYSLIP",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "CALCULATE",
+            "VALIDATE",
+            "PAY",
+            "GEN_PDF",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLVARIABLE",
+          "actions": [
+            "READ",
+            "CREATE",
+            "UPDATE",
+            "DELETE",
+            "CALCULATE",
+            "VALIDATE",
+            "EXPORT"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "LEGALRULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "COMPANYLEGALPROFILE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "SOCIALSECURITYCONFIG",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "TAXCONFIGURATION",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "TAXBRACKET",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "MINIMUMWAGERULE",
+          "actions": [
+            "READ"
+          ]
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYCOMPONENT",
+          "actions": [
+            "READ"
+          ]
+        }
       ]
     },
     {
       "name": "HR_ADMIN",
       "description": "Full HR module access — all actions on all HR entities",
       "grants": [
-        { "module": "HR", "entity": "EMPLOYEE", "profile": "HR_EMPLOYEE" },
-        { "module": "HR", "entity": "POSTE", "profile": "HR_MASTER" },
-        { "module": "HR", "entity": "DEPARTMENT", "profile": "HR_MASTER" },
-        { "module": "HR", "entity": "GRADE", "profile": "HR_MASTER" },
-        { "module": "HR", "entity": "EMPLOYEECATEGORY", "profile": "HR_MASTER" },
-        { "module": "HR", "entity": "CONTRACT", "profile": "HR_CONTRACT" },
-        { "module": "HR", "entity": "CONTRACTAMENDMENT", "profile": "HR_CONTRACT" },
-        { "module": "HR", "entity": "EMPLOYEEDOCUMENT", "profile": "HR_MASTER" },
-        { "module": "HR", "entity": "POINTAGE", "profile": "HR_ATTENDANCE" },
-        { "module": "HR", "entity": "WORKSCHEDULE", "profile": "HR_SCHEDULE" },
-        { "module": "HR", "entity": "TIMESHEET", "profile": "HR_TIMESHEET" },
-        { "module": "HR", "entity": "OVERTIMERULE", "profile": "HR_OVERTIME" },
-        { "module": "HR", "entity": "OVERTIMEREQUEST", "profile": "HR_OVERTIME" },
-        { "module": "HR", "entity": "LEAVEREQUEST", "profile": "HR_LEAVE" },
-        { "module": "HR", "entity": "LEAVETYPE", "profile": "HR_LEAVE_MASTER" },
-        { "module": "HR", "entity": "LEAVEBALANCE", "profile": "HR_LEAVE_MASTER" },
-        { "module": "HR", "entity": "PUBLICHOLIDAY", "profile": "HR_LEAVE_MASTER" },
-        { "module": "HR", "entity": "SALARYADVANCE", "profile": "HR_ADVANCE_LOAN" },
-        { "module": "HR", "entity": "EMPLOYEELOAN", "profile": "HR_ADVANCE_LOAN" },
-        { "module": "HR", "entity": "PAYROLLPERIOD", "profile": "HR_PAYROLL_PERIOD" },
-        { "module": "HR", "entity": "PAYSLIP", "profile": "HR_PAYSLIP" },
-        { "module": "HR", "entity": "PAYROLLVARIABLE", "profile": "HR_PAYROLL_PERIOD" },
-        { "module": "HR", "entity": "LEGALRULE", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "COMPANYLEGALPROFILE", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "SOCIALSECURITYCONFIG", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "TAXCONFIGURATION", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "TAXBRACKET", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "MINIMUMWAGERULE", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "SALARYCOMPONENT", "profile": "HR_LEGAL_CONFIG" },
-        { "module": "HR", "entity": "COMPLIANCE", "profile": "HR_COMPLIANCE_ADMIN" },
-        { "module": "HR", "entity": "HRAGENT", "profile": "HR_AGENT_USE" }
+        {
+          "module": "HR",
+          "entity": "EMPLOYEE",
+          "profile": "HR_EMPLOYEE"
+        },
+        {
+          "module": "HR",
+          "entity": "POSTE",
+          "profile": "HR_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "DEPARTMENT",
+          "profile": "HR_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "GRADE",
+          "profile": "HR_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEECATEGORY",
+          "profile": "HR_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACT",
+          "profile": "HR_CONTRACT"
+        },
+        {
+          "module": "HR",
+          "entity": "CONTRACTAMENDMENT",
+          "profile": "HR_CONTRACT"
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEEDOCUMENT",
+          "profile": "HR_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "POINTAGE",
+          "profile": "HR_ATTENDANCE"
+        },
+        {
+          "module": "HR",
+          "entity": "WORKSCHEDULE",
+          "profile": "HR_SCHEDULE"
+        },
+        {
+          "module": "HR",
+          "entity": "TIMESHEET",
+          "profile": "HR_TIMESHEET"
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMERULE",
+          "profile": "HR_OVERTIME"
+        },
+        {
+          "module": "HR",
+          "entity": "OVERTIMEREQUEST",
+          "profile": "HR_OVERTIME"
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEREQUEST",
+          "profile": "HR_LEAVE"
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVETYPE",
+          "profile": "HR_LEAVE_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "LEAVEBALANCE",
+          "profile": "HR_LEAVE_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "PUBLICHOLIDAY",
+          "profile": "HR_LEAVE_MASTER"
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYADVANCE",
+          "profile": "HR_ADVANCE_LOAN"
+        },
+        {
+          "module": "HR",
+          "entity": "EMPLOYEELOAN",
+          "profile": "HR_ADVANCE_LOAN"
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLPERIOD",
+          "profile": "HR_PAYROLL_PERIOD"
+        },
+        {
+          "module": "HR",
+          "entity": "PAYSLIP",
+          "profile": "HR_PAYSLIP"
+        },
+        {
+          "module": "HR",
+          "entity": "PAYROLLVARIABLE",
+          "profile": "HR_PAYROLL_PERIOD"
+        },
+        {
+          "module": "HR",
+          "entity": "LEGALRULE",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "COMPANYLEGALPROFILE",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "SOCIALSECURITYCONFIG",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "TAXCONFIGURATION",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "TAXBRACKET",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "MINIMUMWAGERULE",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "SALARYCOMPONENT",
+          "profile": "HR_LEGAL_CONFIG"
+        },
+        {
+          "module": "HR",
+          "entity": "COMPLIANCE",
+          "profile": "HR_COMPLIANCE_ADMIN"
+        },
+        {
+          "module": "HR",
+          "entity": "HRAGENT",
+          "profile": "HR_AGENT_USE"
+        }
       ]
     }
   ]

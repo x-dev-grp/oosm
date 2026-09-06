@@ -24,9 +24,4 @@ public class OvertimeRuleController extends BaseControllerImpl<OvertimeRule, Ove
     protected String getResourceName() {
         return "OVERTIMERULE";
     }
-
-    @Override
-    public ResponseEntity<?> resolve(String publicCode) {
-        return null;
-    }
 }

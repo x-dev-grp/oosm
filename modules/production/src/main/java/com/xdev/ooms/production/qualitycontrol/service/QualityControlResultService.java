@@ -139,6 +139,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         // 6) Persist QC results
         List<QualityControlResult> saved = repository.saveAll(entities);
+        saved = saved.stream().map(this::ensureQrCodeIfSupported).toList();
 
         // 7) Mark delivery as quality-checked
         delivery.setHasQualityControl(true);
@@ -194,6 +195,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         // Persist QC results
         List<QualityControlResult> saved = repository.saveAll(entities);
+        saved = saved.stream().map(this::ensureQrCodeIfSupported).toList();
 
         newOIlRec.setHasQualityControl(true);
         newOIlRec.setStatus(OliveLotStatus.OIL_CONTROLLED);
@@ -237,6 +239,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }).toList();
 
         return repository.saveAll(entities).stream()
+                .map(this::ensureQrCodeIfSupported)
                 .map(this::toDto)
                 .toList();
     }
@@ -282,7 +285,9 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                         throw new IllegalArgumentException("Measured value above maxValue for rule ID: " + rule.getId());
                     }
                 } catch (NumberFormatException e) {
-                    throw new IllegalArgumentException("Invalid numeric value for rule ID: " + rule.getId());
+                    throw new IllegalArgumentException(
+                            "Invalid numeric value '" + measuredValue + "' for rule '"
+                                    + rule.getRuleKey() + "' (id=" + rule.getId() + ")");
                 }
                 break;
 
@@ -293,6 +298,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                 break;
 
             case STRING:
+            case RAW_STRING:
                 String allowedText = rule.getRuleTextValue();
                 if (allowedText != null && !allowedText.trim().isEmpty()) {
                     List<String> allowedValues = Arrays.stream(allowedText.split(",")).map(String::trim).filter(s -> !s.isEmpty()).collect(Collectors.toList());
@@ -457,6 +463,43 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                 || value.equals("fail")
                 || value.equals("failed")
                 || value.equals("ko");
+    }
+
+    @Override
+    protected String getEntityType() {
+        return "QUALITYCONTROLRESULT";
+    }
+
+    @Override
+    protected String getLabel(QualityControlResult entity) {
+        if (entity == null) {
+            return "Quality control";
+        }
+        if (entity.getMeasuredValue() != null && !entity.getMeasuredValue().isBlank()) {
+            return entity.getMeasuredValue();
+        }
+        return entity.getId() != null ? "QC " + entity.getId() : "Quality control";
+    }
+
+    @Override
+    protected String getStatus(QualityControlResult entity) {
+        if (entity == null) {
+            return "UNKNOWN";
+        }
+        return isFailedQcValue(entity) ? "FAILED" : "OK";
+    }
+
+    @Override
+    protected String getMobileRoute() {
+        return "/reception/quality";
+    }
+
+    @Override
+    protected String getWebRoute(QualityControlResult entity) {
+        if (entity == null || entity.getDelivery() == null || entity.getDelivery().getId() == null) {
+            return "/reception/quality";
+        }
+        return "/reception/quality/" + entity.getDelivery().getId();
     }
 
 //    @Transactional(readOnly = true)
