@@ -58,7 +58,7 @@ public class DayImportWorkbookReader {
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             if (row == null) continue;
-            String key = text(row, 0);
+            String key = DayImportColumnLabels.key("ImportMetaValues", text(row, 0));
             String value = text(row, 1);
             if (!key.isBlank()) {
                 map.put(key.trim().toLowerCase(), value);
@@ -274,7 +274,7 @@ public class DayImportWorkbookReader {
             Cell cell = it.next();
             String name = cell.getStringCellValue();
             if (name != null) {
-                map.put(name.trim().toLowerCase(), cell.getColumnIndex());
+                map.put(DayImportColumnLabels.key(header.getSheet().getSheetName(), name), cell.getColumnIndex());
             }
         }
         return map;

@@ -36,24 +36,32 @@ public class DayImportTemplateFactory {
     private static final int LIST_ROWS = 200;
 
     public byte[] blankTemplate() throws IOException {
+        return blankTemplate("fr");
+    }
+
+    public byte[] blankTemplate(String language) throws IOException {
         try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            buildWorkbook(wb, null, false);
+            buildWorkbook(wb, null, false, language);
             wb.write(out);
             return out.toByteArray();
         }
     }
 
     public byte[] sampleTemplate(LocalDate businessDate) throws IOException {
+        return sampleTemplate(businessDate, "fr");
+    }
+
+    public byte[] sampleTemplate(LocalDate businessDate, String language) throws IOException {
         LocalDate day = businessDate != null ? businessDate : LocalDate.now();
         try (XSSFWorkbook wb = new XSSFWorkbook(); ByteArrayOutputStream out = new ByteArrayOutputStream()) {
-            buildWorkbook(wb, day, true);
+            buildWorkbook(wb, day, true, language);
             wb.write(out);
             return out.toByteArray();
         }
     }
 
-    private void buildWorkbook(XSSFWorkbook wb, LocalDate businessDate, boolean sample) {
-        Styles styles = new Styles(wb);
+    private void buildWorkbook(XSSFWorkbook wb, LocalDate businessDate, boolean sample, String language) {
+        Styles styles = new Styles(wb, DayImportColumnLabels.language(language));
 
         writeGuide(wb, styles, businessDate, sample);
         writeImportMeta(wb, styles, businessDate);
@@ -215,11 +223,11 @@ public class DayImportTemplateFactory {
     private void writeImportMeta(XSSFWorkbook wb, Styles styles, LocalDate businessDate) {
         Sheet meta = createSheet(wb, "ImportMeta");
         writeHeaders(meta, styles, "key", "value");
-        set(meta.getRow(1), 0, "businessDate", styles.data);
+        set(meta.getRow(1), 0, DayImportColumnLabels.heading("ImportMetaValues", "businessDate", styles.language), styles.data);
         set(meta.getRow(1), 1, businessDate != null ? businessDate.toString() : "", styles.data);
-        set(meta.getRow(2), 0, "timezone", styles.data);
+        set(meta.getRow(2), 0, DayImportColumnLabels.heading("ImportMetaValues", "timezone", styles.language), styles.data);
         set(meta.getRow(2), 1, "Africa/Tunis", styles.data);
-        set(meta.getRow(3), 0, "templateVersion", styles.data);
+        set(meta.getRow(3), 0, DayImportColumnLabels.heading("ImportMetaValues", "templateVersion", styles.language), styles.data);
         set(meta.getRow(3), 1, "2", styles.data);
     }
 
@@ -344,9 +352,10 @@ public class DayImportTemplateFactory {
         header.setHeightInPoints(22);
         for (int i = 0; i < headers.length; i++) {
             Cell cell = header.createCell(i);
-            cell.setCellValue(headers[i]);
+            String heading = DayImportColumnLabels.heading(sheet.getSheetName(), headers[i], styles.language);
+            cell.setCellValue(heading);
             cell.setCellStyle(styles.header);
-            sheet.setColumnWidth(i, Math.min(30, Math.max(14, headers[i].length() + 4)) * 256);
+            sheet.setColumnWidth(i, Math.min(38, Math.max(16, heading.length() + 4)) * 256);
         }
         for (int r = 1; r <= 40; r++) {
             Row data = sheet.createRow(r);
@@ -406,6 +415,7 @@ public class DayImportTemplateFactory {
     }
 
     private static final class Styles {
+        final String language;
         private static final byte[] PRIMARY = new byte[]{(byte) 0x46, (byte) 0x80, (byte) 0xFF};
         private static final byte[] OLIVE = new byte[]{(byte) 0x3D, (byte) 0x5A, (byte) 0x2C};
         private static final byte[] GREY_100 = new byte[]{(byte) 0xF8, (byte) 0xF9, (byte) 0xFA};
@@ -422,7 +432,8 @@ public class DayImportTemplateFactory {
         final XSSFCellStyle guideLabel;
         final XSSFCellStyle guideValue;
 
-        Styles(XSSFWorkbook wb) {
+        Styles(XSSFWorkbook wb, String language) {
+            this.language = language;
             DefaultIndexedColorMap colors = new DefaultIndexedColorMap();
 
             XSSFFont titleFont = wb.createFont();

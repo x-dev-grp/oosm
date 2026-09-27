@@ -21,9 +21,9 @@ public class DayImportController {
     }
 
     @GetMapping("/template")
-    public ResponseEntity<byte[]> template() throws Exception { return download(engine.blankTemplate(), "oosm-day-import-template.xlsx", false); }
+    public ResponseEntity<byte[]> template(@RequestParam(required=false) String lang) throws Exception { return download(engine.blankTemplate(lang), "oosm-day-import-template.xlsx", false); }
     @GetMapping("/sample")
-    public ResponseEntity<byte[]> sample() throws Exception { return download(engine.sampleTemplate(), "oosm-day-import-sample.xlsx", false); }
+    public ResponseEntity<byte[]> sample(@RequestParam(required=false) String lang) throws Exception { return download(engine.sampleTemplate(lang), "oosm-day-import-sample.xlsx", false); }
 
     @PostMapping(value="/dry-run", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<DayImportReportDto>> dryRun(@RequestPart("file") MultipartFile file) throws Exception {

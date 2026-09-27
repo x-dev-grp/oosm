@@ -126,20 +126,28 @@ public class DayImportService {
     }
 
     public byte[] blankTemplate() throws Exception {
+        return blankTemplate("fr");
+    }
+
+    public byte[] blankTemplate(String language) throws Exception {
         DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "blankTemplate");
-        byte[] bytes = templateFactory.blankTemplate();
+        byte[] bytes = templateFactory.blankTemplate(language);
         OOSMLogger.logMethodExit(getClass(), "blankTemplate", bytes != null ? bytes.length + " bytes" : null);
         OOSMLogger.logPerformance(getClass(), "blankTemplate", start, System.currentTimeMillis());
         return bytes;
     }
 
     public byte[] sampleTemplate() throws Exception {
+        return sampleTemplate("fr");
+    }
+
+    public byte[] sampleTemplate(String language) throws Exception {
         DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "sampleTemplate");
-        byte[] bytes = templateFactory.sampleTemplate(LocalDate.now());
+        byte[] bytes = templateFactory.sampleTemplate(LocalDate.now(), language);
         OOSMLogger.logMethodExit(getClass(), "sampleTemplate", bytes != null ? bytes.length + " bytes" : null);
         OOSMLogger.logPerformance(getClass(), "sampleTemplate", start, System.currentTimeMillis());
         return bytes;
