@@ -68,6 +68,7 @@ public class DayImportWorkbookReader {
         if (!date.isBlank()) {
             wb.setBusinessDate(LocalDate.parse(date));
         }
+        wb.setTemplateVersion(Integer.parseInt(map.getOrDefault("templateversion", "1")));
         wb.setTimezone(map.getOrDefault("timezone", "Africa/Tunis"));
     }
 
@@ -197,6 +198,9 @@ public class DayImportWorkbookReader {
             if (isEmpty(row)) continue;
             PaymentRow p = new PaymentRow();
             p.rowNumber = i + 1;
+            p.externalRef = cell(row, idx, "externalref");
+            String paymentDate = cell(row, idx, "paymentdate");
+            p.paymentDate = paymentDate.isBlank() ? wb.getBusinessDate() : LocalDate.parse(paymentDate);
             p.receptionExternalRef = cell(row, idx, "receptionexternalref");
             p.amount = dbl(row, idx, "amount");
             p.paymentMethod = cell(row, idx, "paymentmethod");
@@ -326,12 +330,14 @@ public class DayImportWorkbookReader {
         try {
             return Double.parseDouble(t.replace(',', '.'));
         } catch (NumberFormatException e) {
-            return null;
+            throw new IllegalArgumentException(row.getSheet().getSheetName() + " row " + (row.getRowNum() + 1) + ": invalid " + key);
         }
     }
 
     private Integer integer(Row row, Map<String, Integer> idx, String key) {
         Double d = dbl(row, idx, key);
+        if (d != null && (!Double.isFinite(d) || d != Math.rint(d) || d > Integer.MAX_VALUE || d < Integer.MIN_VALUE))
+            throw new IllegalArgumentException("Invalid integer " + key + " at row " + (row.getRowNum() + 1));
         return d == null ? null : d.intValue();
     }
 

@@ -25,11 +25,19 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
 
     private final GoogleDriveOAuthService oauthService;
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient;
+    private final String apiBase;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public TenantGoogleDriveClient(GoogleDriveOAuthService oauthService, ObjectMapper objectMapper) {
+        this(oauthService, objectMapper, HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(15)).build(), "https://www.googleapis.com/drive/v3");
+    }
+
+    TenantGoogleDriveClient(GoogleDriveOAuthService oauthService, ObjectMapper objectMapper, HttpClient httpClient, String apiBase) {
         this.oauthService = oauthService;
         this.objectMapper = objectMapper;
+        this.httpClient = httpClient;
+        this.apiBase = apiBase;
     }
 
     @Override
@@ -45,19 +53,21 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
         String q = "'" + folderId + "' in parents and trashed=false and ("
                 + "mimeType='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'"
                 + " or name contains '.xlsx')";
-        String url = "https://www.googleapis.com/drive/v3/files?pageSize=100&fields=files(id,name)"
+        if (!folderId.matches("[A-Za-z0-9_-]+")) throw new IllegalArgumentException("Invalid Drive folder ID");
+        String url = apiBase + "/files?pageSize=100&fields=nextPageToken,files(id,name)"
                 + "&q=" + URLEncoder.encode(q, StandardCharsets.UTF_8);
-        JsonNode root = getJson(url, accessToken);
         List<DriveFileRef> out = new ArrayList<>();
-        JsonNode files = root.path("files");
-        if (files.isArray()) {
-            for (JsonNode f : files) {
-                String name = f.path("name").asText("");
-                if (name.toLowerCase().endsWith(".xlsx") || name.toLowerCase().endsWith(".xls")) {
-                    out.add(new DriveFileRef(f.path("id").asText(), name));
-                }
+        String token = "";
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        do {
+            JsonNode root = getJson(url + (token.isBlank() ? "" : "&pageToken=" + URLEncoder.encode(token, StandardCharsets.UTF_8)), accessToken);
+            for (JsonNode f : root.path("files")) {
+                String name=f.path("name").asText("");
+                if (name.toLowerCase(java.util.Locale.ROOT).endsWith(".xlsx")) out.add(new DriveFileRef(f.path("id").asText(), name));
             }
-        }
+            token=root.path("nextPageToken").asText("");
+            if (!token.isBlank() && !seen.add(token)) throw new IllegalStateException("Repeated Drive page token");
+        } while (!token.isBlank());
         OOSMLogger.info(getClass(), "[listXlsx] folder={} count={}", folderId, out.size());
         return out;
     }
@@ -66,8 +76,8 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
     public byte[] download(String fileId) throws Exception {
         OOSMLogger.logMethodEntry(getClass(), "download", fileId);
         String accessToken = oauthService.getAccessTokenForCurrentTenant();
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create("https://www.googleapis.com/drive/v3/files/" + fileId + "?alt=media"))
+        HttpRequest request = HttpRequest.newBuilder().timeout(java.time.Duration.ofSeconds(45))
+                .uri(URI.create(apiBase + "/files/" + fileId + "?alt=media"))
                 .header("Authorization", "Bearer " + accessToken)
                 .GET()
                 .build();
@@ -85,7 +95,7 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
         OOSMLogger.logMethodEntry(getClass(), "moveToFolder", fileId, targetFolderId);
         String accessToken = oauthService.getAccessTokenForCurrentTenant();
         JsonNode meta = getJson(
-                "https://www.googleapis.com/drive/v3/files/" + fileId + "?fields=parents",
+                apiBase + "/files/" + fileId + "?fields=parents",
                 accessToken);
         String removeParents = "";
         JsonNode parents = meta.path("parents");
@@ -94,12 +104,12 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
             parents.forEach(p -> ids.add(p.asText()));
             removeParents = String.join(",", ids);
         }
-        String url = "https://www.googleapis.com/drive/v3/files/" + fileId
+        String url = apiBase + "/files/" + fileId
                 + "?addParents=" + URLEncoder.encode(targetFolderId, StandardCharsets.UTF_8);
         if (!removeParents.isBlank()) {
             url += "&removeParents=" + URLEncoder.encode(removeParents, StandardCharsets.UTF_8);
         }
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder().timeout(java.time.Duration.ofSeconds(45))
                 .uri(URI.create(url))
                 .header("Authorization", "Bearer " + accessToken)
                 .header("Content-Type", "application/json")
@@ -112,7 +122,7 @@ public class TenantGoogleDriveClient implements DayImportDriveClient {
     }
 
     private JsonNode getJson(String url, String accessToken) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder().timeout(java.time.Duration.ofSeconds(45))
                 .uri(URI.create(url))
                 .header("Authorization", "Bearer " + accessToken)
                 .GET()
