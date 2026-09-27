@@ -26,6 +26,10 @@ import static org.apache.commons.math3.util.Precision.round;
  */
 @Entity
 public class StorageUnit extends BaseEntity {
+    @jakarta.persistence.Version
+    @jakarta.persistence.Column(name = "balance_version", nullable = false)
+    private long balanceVersion;
+
 
     // ========================
     // Données générales cuve

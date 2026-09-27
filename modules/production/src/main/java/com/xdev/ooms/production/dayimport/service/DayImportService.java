@@ -61,6 +61,7 @@ public class DayImportService {
     public static final String IMP_PREFIX = "[IMP:";
     public static final String SALE_IMP_PREFIX = "[IMP:sale:";
 
+    private final DayImportLedger ledger;
     private final DayImportWorkbookReader reader;
     private final DayImportTemplateFactory templateFactory;
     private final GenericTypeService genericTypeService;
@@ -82,6 +83,7 @@ public class DayImportService {
     private final QualityControlResultRepository qualityControlResultRepository;
 
     public DayImportService(
+            DayImportLedger ledger,
             DayImportWorkbookReader reader,
             DayImportTemplateFactory templateFactory,
             GenericTypeService genericTypeService,
@@ -101,6 +103,7 @@ public class DayImportService {
             QualityControlRuleRepository qualityControlRuleRepository,
             QualityControlResultService qualityControlResultService,
             QualityControlResultRepository qualityControlResultRepository) {
+        this.ledger = ledger;
         this.reader = reader;
         this.templateFactory = templateFactory;
         this.genericTypeService = genericTypeService;
@@ -123,6 +126,7 @@ public class DayImportService {
     }
 
     public byte[] blankTemplate() throws Exception {
+        DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "blankTemplate");
         byte[] bytes = templateFactory.blankTemplate();
@@ -132,12 +136,17 @@ public class DayImportService {
     }
 
     public byte[] sampleTemplate() throws Exception {
+        DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "sampleTemplate");
         byte[] bytes = templateFactory.sampleTemplate(LocalDate.now());
         OOSMLogger.logMethodExit(getClass(), "sampleTemplate", bytes != null ? bytes.length + " bytes" : null);
         OOSMLogger.logPerformance(getClass(), "sampleTemplate", start, System.currentTimeMillis());
         return bytes;
+    }
+
+    public void authorize(byte[] bytes) throws Exception {
+        DayImportAccess.requireWorkbook(reader.read(new java.io.ByteArrayInputStream(bytes)));
     }
 
     @Transactional(readOnly = true)
@@ -183,7 +192,7 @@ public class DayImportService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public DayImportReportDto commit(MultipartFile file) throws Exception {
         long start = System.currentTimeMillis();
         String name = file != null ? file.getOriginalFilename() : null;
@@ -203,7 +212,7 @@ public class DayImportService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public DayImportReportDto commit(byte[] bytes) throws Exception {
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "commit(bytes)", bytes != null ? bytes.length : 0);
@@ -220,8 +229,10 @@ public class DayImportService {
         }
     }
 
-    @Transactional
+    @Transactional(rollbackFor = Exception.class)
     public DayImportReportDto commit(InputStream in) throws Exception {
+        DayImportAccess.requireImport();
+        ledger.lockTenant();
         // Multipart streams may not be rewindable: buffer once.
         byte[] buffered = in.readAllBytes();
         DayImportWorkbook workbook = reader.read(new java.io.ByteArrayInputStream(buffered));
@@ -230,12 +241,15 @@ public class DayImportService {
             OOSMLogger.warn(getClass(),
                     "[commit] blocked businessDate={} invalidCount={} statusCounts={}",
                     report.getBusinessDate(), report.getInvalidCount(), report.getStatusCounts());
-            throw new IllegalStateException("Commit blocked: dry-run has ERROR rows or missing businessDate");
+            throw new DayImportRejectedException("Commit blocked: correct the reported errors", report);
         }
-        return analyze(reader.read(new java.io.ByteArrayInputStream(buffered)), true);
+        DayImportReportDto result = analyze(reader.read(new java.io.ByteArrayInputStream(buffered)), true);
+        if (!result.isCanCommit()) throw new DayImportRejectedException("Import rolled back: commit validation failed", result);
+        return result;
     }
 
     private DayImportReportDto analyze(DayImportWorkbook wb, boolean commit) {
+        DayImportAccess.requireWorkbook(wb);
         long start = System.currentTimeMillis();
         OOSMLogger.info(getClass(), "[analyze] mode={} businessDate={} tenant={}",
                 commit ? "COMMIT" : "DRY_RUN",
@@ -252,6 +266,9 @@ public class DayImportService {
             return report;
         }
 
+        DayImportValidation.validate(wb, report);
+        if (report.getInvalidCount() > 0) { report.finalizeReport(); return report; }
+        Map<UUID, Double> tankBalances = new HashMap<>();
         Map<String, UUID> typeCache = new HashMap<>();
         Map<String, UUID> supplierCache = new HashMap<>();
         Map<String, UUID> containerCache = new HashMap<>();
@@ -266,13 +283,16 @@ public class DayImportService {
         processQcRules(wb, report, qcRuleCache, commit);
         processSuppliers(wb, report, typeCache, supplierCache, commit);
         processContainers(wb, report, containerCache, containerPlannedStock, commit);
-        processReceptions(wb, report, typeCache, supplierCache, receptionCache, storageCache, commit);
+        processReceptions(wb, report, typeCache, supplierCache, receptionCache, storageCache, tankBalances, commit);
         processQcResults(wb, report, receptionCache, qcRuleCache, commit);
         processPayments(wb, report, receptionCache, commit);
-        processOilSales(wb, report, supplierCache, containerCache, containerPlannedStock, storageCache, commit);
+        processOilSales(wb, report, supplierCache, containerCache, containerPlannedStock, storageCache, tankBalances, commit);
         processExpenses(wb, report, commit);
         if (commit) {
-            finalizeImportedReceptionStatuses(wb, receptionCache);
+            Set<String> created = report.getRows().stream()
+                    .filter(row -> "Receptions".equals(row.getSheet()) && row.getStatus() == ImportRowStatus.CREATE)
+                    .map(row -> normalize(row.getBusinessKey())).collect(Collectors.toSet());
+            finalizeImportedReceptionStatuses(wb, receptionCache, created);
         }
 
         report.finalizeReport();
@@ -333,10 +353,6 @@ public class DayImportService {
                 existing = qualityControlRuleRepository
                         .findFirstByTenantIdAndRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(tenantId, row.ruleKey.trim(), oilQc);
             }
-            if (existing.isEmpty()) {
-                existing = qualityControlRuleRepository
-                        .findFirstByRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(row.ruleKey.trim(), oilQc);
-            }
             if (existing.isPresent()) {
                 qcRuleCache.put(cacheKey, existing.get().getId());
                 report.addRow(ImportRowResultDto.of("QcRules", row.rowNumber, row.ruleKey, ImportRowStatus.LINK_EXISTING,
@@ -394,27 +410,26 @@ public class DayImportService {
             UUID deliveryId = receptionCache.get(normalize(row.receptionExternalRef));
             if (deliveryId == null) {
                 String stamp = IMP_PREFIX + row.receptionExternalRef.trim() + "]";
-                deliveryId = deliveryRepository.findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(stamp)
+                deliveryId = deliveryRepository.findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(tenant(), stamp)
                         .map(UnifiedDelivery::getId).orElse(null);
             }
-            if (deliveryId == null && !commit) {
-                report.addRow(ImportRowResultDto.of("QcResults", row.rowNumber, row.ruleKey, ImportRowStatus.CREATE,
-                        "Will create QC result after reception"));
-                continue;
+            ReceptionRow planned = wb.getReceptions().stream()
+                    .filter(r -> normalize(r.externalRef).equals(normalize(row.receptionExternalRef))).findFirst().orElse(null);
+            if (deliveryId == null && (commit || planned == null)) {
+                error(report, "QcResults", row.rowNumber, row.ruleKey, "Reception not found for QC result"); continue;
             }
-            if (deliveryId == null) {
-                report.addRow(ImportRowResultDto.of("QcResults", row.rowNumber, row.ruleKey, ImportRowStatus.ERROR,
-                        "Reception not found for QC result"));
-                continue;
-            }
-
-            Boolean oilQcHint = row.oilQc;
+            Boolean oilQcHint = row.oilQc != null ? row.oilQc : planned == null ? null : "OIL".equalsIgnoreCase(planned.deliveryType);
             QualityControlRule rule = resolveQcRule(row.ruleKey, oilQcHint, qcRuleCache);
-            if (rule == null) {
-                report.addRow(ImportRowResultDto.of("QcResults", row.rowNumber, row.ruleKey, ImportRowStatus.ERROR,
-                        "Unknown ruleKey (add QcRules sheet row or provision defaults)"));
-                continue;
+            if (rule == null && !commit) {
+                QcRuleRow plannedRule = wb.getQcRules().stream().filter(r -> normalize(r.ruleKey).equals(normalize(row.ruleKey))
+                        && (oilQcHint == null || oilQcHint == (r.oilQc == null || r.oilQc))).findFirst().orElse(null);
+                if (plannedRule != null) {
+                    rule = new QualityControlRule(); rule.setRuleKey(plannedRule.ruleKey);
+                    rule.setRuleType(resolveRuleType(plannedRule.ruleType)); rule.setRuleTextValue(plannedRule.ruleTextValue);
+                    rule.setMinValue(plannedRule.minValue); rule.setMaxValue(plannedRule.maxValue);
+                }
             }
+            if (rule == null) { error(report, "QcResults", row.rowNumber, row.ruleKey, "Unknown ruleKey"); continue; }
 
             String measured = row.value.trim();
             String typeMismatch = validateQcMeasuredValue(measured, rule);
@@ -424,8 +439,14 @@ public class DayImportService {
                 continue;
             }
 
+            report.getValidationContext().put("qc:" + normalize(row.ruleKey) + ":" + oilQcHint,
+                    rule.getId() + ":" + rule.getRuleType() + ":" + rule.getMinValue() + ":" + rule.getMaxValue() + ":" + rule.getRuleTextValue());
             UUID ruleId = rule.getId();
-            boolean already = qualityControlResultRepository.findByDeliveryIdWithRule(deliveryId).stream()
+            if (deliveryId != null && ruleId != null && qualityControlResultRepository.findByDeliveryIdWithRule(deliveryId).stream()
+                    .anyMatch(r -> r.getRule() != null && ruleId.equals(r.getRule().getId()) && !measured.equals(r.getMeasuredValue()))) {
+                error(report, "QcResults", row.rowNumber, row.ruleKey, "Existing QC result differs; use the QC correction workflow"); continue;
+            }
+            boolean already = deliveryId != null && ruleId != null && qualityControlResultRepository.findByDeliveryIdWithRule(deliveryId).stream()
                     .anyMatch(r -> r.getRule() != null && (
                             ruleId.equals(r.getRule().getId())
                                     || row.ruleKey.equalsIgnoreCase(r.getRule().getRuleKey())));
@@ -467,7 +488,10 @@ public class DayImportService {
         switch (type) {
             case NUMERIC -> {
                 try {
-                    Double.parseDouble(measured);
+                    double value = Double.parseDouble(measured);
+                    if (!Double.isFinite(value)) throw new NumberFormatException();
+                    if (rule.getMinValue() != null && value < rule.getMinValue() - 1e-6 || rule.getMaxValue() != null && value > rule.getMaxValue() + 1e-6)
+                        return "QC value is outside the rule range";
                 } catch (NumberFormatException e) {
                     return "Value '" + measured + "' is not numeric but rule '" + rule.getRuleKey()
                             + "' is NUMERIC (id=" + rule.getId() + "). Use a number, or recreate the rule as STRING.";
@@ -479,7 +503,8 @@ public class DayImportService {
                 }
             }
             case STRING, RAW_STRING -> {
-                // allowed list enforced later by QualityControlResultService when ruleTextValue set
+                if (!blank(rule.getRuleTextValue()) && Arrays.stream(rule.getRuleTextValue().split(",")).map(String::trim).noneMatch(measured::equals))
+                    return "QC value is not in the rule's allowed values";
             }
             default -> {
                 return "Unsupported ruleType " + type + " for rule '" + rule.getRuleKey() + "'";
@@ -493,10 +518,10 @@ public class DayImportService {
             String cacheKey = normalize(ruleKey) + "|" + oilQcHint;
             UUID id = qcRuleCache.get(cacheKey);
             if (id != null) {
-                return qualityControlRuleRepository.findById(id).orElse(null);
+                return qualityControlRuleRepository.findByIdAndTenantIdAndIsDeletedFalse(id, tenant()).orElse(null);
             }
             Optional<QualityControlRule> found = qualityControlRuleRepository
-                    .findFirstByRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(ruleKey.trim(), oilQcHint);
+                    .findFirstByTenantIdAndRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(tenant(), ruleKey.trim(), oilQcHint);
             found.ifPresent(r -> qcRuleCache.put(cacheKey, r.getId()));
             return found.orElse(null);
         }
@@ -504,10 +529,10 @@ public class DayImportService {
             String cacheKey = normalize(ruleKey) + "|" + oilQc;
             UUID id = qcRuleCache.get(cacheKey);
             if (id != null) {
-                return qualityControlRuleRepository.findById(id).orElse(null);
+                return qualityControlRuleRepository.findByIdAndTenantIdAndIsDeletedFalse(id, tenant()).orElse(null);
             }
             Optional<QualityControlRule> found = qualityControlRuleRepository
-                    .findFirstByRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(ruleKey.trim(), oilQc);
+                    .findFirstByTenantIdAndRuleKeyIgnoreCaseAndOilQcAndIsDeletedFalse(tenant(), ruleKey.trim(), oilQc);
             if (found.isPresent()) {
                 qcRuleCache.put(cacheKey, found.get().getId());
                 return found.get();
@@ -531,6 +556,7 @@ public class DayImportService {
                         "Exists — link only, fields not updated"));
                 continue;
             }
+            DayImportAccess.requireAdmin();
             report.addRow(ImportRowResultDto.of(sheet, row.rowNumber, row.name, ImportRowStatus.CREATE, "Will create"));
             if (commit) {
                 BaseTypeDto dto = new BaseTypeDto();
@@ -563,6 +589,7 @@ public class DayImportService {
                         "Exists — link only"));
                 continue;
             }
+            if (blank(row.name)) { error(report, "Suppliers", row.rowNumber, key, "Name is required for a new supplier"); continue; }
             report.addRow(ImportRowResultDto.of("Suppliers", row.rowNumber, key, ImportRowStatus.CREATE, "Will create supplier"));
             if (commit) {
                 SupplierDto dto = new SupplierDto();
@@ -597,7 +624,7 @@ public class DayImportService {
                 report.addRow(ImportRowResultDto.of("OilContainers", row.rowNumber, "", ImportRowStatus.ERROR, "name/containerKey required"));
                 continue;
             }
-            OilContainer existing = oilContainerRepository.findFirstByNameIgnoreCaseAndIsDeletedFalse(name.trim()).orElse(null);
+            OilContainer existing = oilContainerRepository.findFirstByTenantIdAndNameIgnoreCaseAndIsDeletedFalse(tenant(), name.trim()).orElse(null);
             if (existing != null) {
                 containerCache.put(normalize(name), existing.getId());
                 if (!blank(row.containerKey)) {
@@ -637,16 +664,25 @@ public class DayImportService {
 
     private void processReceptions(DayImportWorkbook wb, DayImportReportDto report,
                                    Map<String, UUID> typeCache, Map<String, UUID> supplierCache,
-                                   Map<String, UUID> receptionCache, Map<String, UUID> storageCache, boolean commit) {
+                                   Map<String, UUID> receptionCache, Map<String, UUID> storageCache, Map<UUID, Double> tankBalances, boolean commit) {
         LocalDate day = wb.getBusinessDate();
         for (ReceptionRow row : wb.getReceptions()) {
             if (blank(row.externalRef)) {
                 report.addRow(ImportRowResultDto.of("Receptions", row.rowNumber, "", ImportRowStatus.ERROR, "externalRef required"));
                 continue;
             }
+            String payload = ledger.payload(row, wb.getBusinessDate());
+            if (identityConflict("RECEPTION", row.externalRef, payload, "Receptions", row.rowNumber, report)) continue;
             String stamp = IMP_PREFIX + row.externalRef.trim() + "]";
-            Optional<UnifiedDelivery> existing = deliveryRepository.findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(stamp);
+            UUID importedId = ledger.entity("RECEPTION", row.externalRef);
+            Optional<UnifiedDelivery> existing = importedId == null
+                    ? deliveryRepository.findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(tenant(), stamp)
+                    : deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(importedId, tenant());
+            if (importedId != null && existing.isEmpty()) { error(report, "Receptions", row.rowNumber, row.externalRef, "Imported reception is unavailable; reconcile before retrying"); continue; }
             if (existing.isPresent()) {
+                if (ledger.operation("RECEPTION", row.externalRef) == null) {
+                    error(report, "Receptions", row.rowNumber, row.externalRef, "Historical import reference requires reconciliation"); continue;
+                }
                 receptionCache.put(normalize(row.externalRef), existing.get().getId());
                 ImportRowResultDto skip = ImportRowResultDto.of("Receptions", row.rowNumber, row.externalRef,
                         ImportRowStatus.SKIP_DUPLICATE, "Already imported — skipped");
@@ -654,6 +690,9 @@ public class DayImportService {
                 continue;
             }
 
+            if (!supplierKnown(row.supplierKey, wb, supplierCache)) {
+                error(report, "Receptions", row.rowNumber, row.externalRef, "Unknown supplierKey"); continue;
+            }
             DeliveryType deliveryType;
             try {
                 deliveryType = DeliveryType.valueOf(safe(row.deliveryType).toUpperCase(Locale.ROOT));
@@ -691,6 +730,7 @@ public class DayImportService {
                 }
             }
 
+            if (storage != null) report.getValidationContext().put("tank:" + storage.getId(), String.valueOf(volume(storage)) + ":" + storage.getMaxCapacity());
             boolean stockIn = deliveryType == DeliveryType.OIL
                     && row.oilQuantity != null && row.oilQuantity > 0
                     && row.unitPrice != null && row.unitPrice > 0
@@ -699,6 +739,11 @@ public class DayImportService {
             ImportRowResultDto result = ImportRowResultDto.of("Receptions", row.rowNumber, row.externalRef,
                     ImportRowStatus.CREATE, stockIn ? "Create + STOCK_IN" : "Create reception");
             if (stockIn) {
+                double projected = tankBalances.computeIfAbsent(storage.getId(), id -> volume(storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(id, tenant()).orElseThrow())) + row.oilQuantity;
+                if (storage.getMaxCapacity() != null && storage.getMaxCapacity() > 0 && projected > storage.getMaxCapacity() + 1e-9) {
+                    error(report, "Receptions", row.rowNumber, row.externalRef, "Tank capacity exceeded"); continue;
+                }
+                tankBalances.put(storage.getId(), projected);
                 result.setStockDelta(row.oilQuantity);
             } else if (deliveryType == DeliveryType.OIL) {
                 result.setMessage("Create reception (STOCK_NONE — need oilQuantity, unitPrice, storageUnitKey)");
@@ -735,7 +780,7 @@ public class DayImportService {
                 dto.setOilQuantity(row.oilQuantity);
                 dto.setUnitPrice(row.unitPrice);
                 if (row.oilQuantity != null && row.unitPrice != null) {
-                    dto.setPrice(row.oilQuantity * row.unitPrice);
+                    dto.setPrice(BigDecimal.valueOf(row.oilQuantity).multiply(BigDecimal.valueOf(row.unitPrice)).doubleValue());
                 }
                 dto.setDescription(stamp + " " + safe(row.description));
                 dto.setRegion(ensureType(TypeCategory.REGION, row.regionName, typeCache, true));
@@ -761,9 +806,10 @@ public class DayImportService {
                 }
                 UnifiedDeliveryDTO saved = unifiedDeliveryService.save(dto);
                 receptionCache.put(normalize(row.externalRef), saved.getId());
+                ledger.record("RECEPTION", row.externalRef, payload, saved.getId());
 
                 if (stockIn) {
-                    UnifiedDelivery entity = deliveryRepository.findById(saved.getId()).orElse(null);
+                    UnifiedDelivery entity = deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(saved.getId(), tenant()).orElse(null);
                     if (entity != null) {
                         if (entity.getStorageUnit() == null && storage != null) {
                             entity.setStorageUnit(storage);
@@ -785,21 +831,21 @@ public class DayImportService {
      * Day-import rows land at OLIVE_CONTROLLED / OIL_CONTROLLED after QC, but reception history /
      * payment ledgers default-filter COMPLETED / IN_STOCK / STOCK_READY — so finalize visibility.
      */
-    private void finalizeImportedReceptionStatuses(DayImportWorkbook wb, Map<String, UUID> receptionCache) {
+    private void finalizeImportedReceptionStatuses(DayImportWorkbook wb, Map<String, UUID> receptionCache, Set<String> created) {
         for (ReceptionRow row : wb.getReceptions()) {
-            if (blank(row.externalRef)) {
+            if (blank(row.externalRef) || !created.contains(normalize(row.externalRef))) {
                 continue;
             }
             UUID id = receptionCache.get(normalize(row.externalRef));
             if (id == null) {
                 String stamp = IMP_PREFIX + row.externalRef.trim() + "]";
-                id = deliveryRepository.findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(stamp)
+                id = deliveryRepository.findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(tenant(), stamp)
                         .map(UnifiedDelivery::getId).orElse(null);
             }
             if (id == null) {
                 continue;
             }
-            UnifiedDelivery entity = deliveryRepository.findById(id).orElse(null);
+            UnifiedDelivery entity = deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(id, tenant()).orElse(null);
             if (entity == null || Boolean.TRUE.equals(entity.getDeleted())) {
                 continue;
             }
@@ -817,89 +863,63 @@ public class DayImportService {
                 OOSMLogger.info(getClass(), "[finalize] corrected operationType={} for {}", op, row.externalRef);
             }
 
-            OliveLotStatus target;
-            if (deliveryType == DeliveryType.OIL) {
-                boolean hasStock = oilTransactionRepository
-                        .findFirstByReceptionIdAndTransactionTypeAndIsDeletedFalse(entity.getId(), TransactionType.RECEPTION_IN)
-                        .isPresent();
-                target = hasStock ? OliveLotStatus.IN_STOCK : OliveLotStatus.STOCK_READY;
-            } else if (op == OperationType.OLIVE_PURCHASE) {
-                target = OliveLotStatus.COMPLETED;
-            } else if (op == OperationType.BASE) {
-                target = OliveLotStatus.PROD_READY;
-            } else {
-                // SIMPLE_RECEPTION / EXCHANGE — history & supplier tabs filter COMPLETED
-                target = OliveLotStatus.COMPLETED;
-            }
+            // QC and stock services own lifecycle transitions. Do not force COMPLETED/PROD_READY.
 
-            if (entity.getStatus() != target) {
-                OliveLotStatus previous = entity.getStatus();
-                entity.setStatus(target);
-                deliveryRepository.save(entity);
-                OOSMLogger.info(getClass(), "[finalize] {} {} → {}", row.externalRef, previous, target);
-            }
         }
     }
 
     private OperationType resolveOperationType(DeliveryType deliveryType, String raw) {
-        OperationType parsed = null;
-        if (!blank(raw)) {
-            try {
-                parsed = OperationType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-            } catch (Exception ignored) {
-                // fall through to defaults
-            }
-        }
-        if (deliveryType == DeliveryType.OIL) {
-            // Common spreadsheet mistake: OIL + OLIVE_PURCHASE — coerce to oil purchase.
-            if (parsed == null || parsed == OperationType.OLIVE_PURCHASE || parsed == OperationType.SIMPLE_RECEPTION) {
-                return OperationType.OIL_PURCHASE;
-            }
-            return parsed;
-        }
-        if (parsed != null) {
-            return parsed;
-        }
-        return OperationType.SIMPLE_RECEPTION;
+        if (!blank(raw)) return OperationType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+        return deliveryType == DeliveryType.OIL ? OperationType.OIL_PURCHASE : OperationType.SIMPLE_RECEPTION;
     }
 
     private void processPayments(DayImportWorkbook wb, DayImportReportDto report,
                                  Map<String, UUID> receptionCache, boolean commit) {
+        Map<String, Double> remaining = new HashMap<>();
         for (PaymentRow row : wb.getPayments()) {
-            if (blank(row.receptionExternalRef) || row.amount == null || row.amount <= 0) {
-                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.receptionExternalRef,
-                        ImportRowStatus.ERROR, "receptionExternalRef and positive amount required"));
-                continue;
+            if (blank(row.externalRef) || blank(row.receptionExternalRef) || row.amount == null || !Double.isFinite(row.amount) || row.amount <= 0) {
+                error(report, "Payments", row.rowNumber, row.externalRef, "Payment reference, reception reference and positive amount required"); continue;
             }
-            UUID deliveryId = receptionCache.get(normalize(row.receptionExternalRef));
-            if (deliveryId == null) {
-                String stamp = IMP_PREFIX + row.receptionExternalRef.trim() + "]";
-                deliveryId = deliveryRepository.findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(stamp)
-                        .map(UnifiedDelivery::getId).orElse(null);
+            String payload = ledger.payload(row, row.paymentDate == null ? wb.getBusinessDate() : row.paymentDate);
+            if (identityConflict("PAYMENT", row.externalRef, payload, "Payments", row.rowNumber, report)) continue;
+            if (ledger.operation("PAYMENT", row.externalRef) != null) {
+                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.externalRef, ImportRowStatus.SKIP_DUPLICATE, "Payment already imported")); continue;
             }
-            if (deliveryId == null && !commit) {
-                // may be created in same file
-                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.receptionExternalRef,
-                        ImportRowStatus.CREATE, "Will settle after reception create"));
-            } else if (deliveryId == null) {
-                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.receptionExternalRef,
-                        ImportRowStatus.ERROR, "Reception not found for payment"));
-                continue;
-            } else {
-                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.receptionExternalRef,
-                        ImportRowStatus.CREATE, "Will process payment " + row.amount));
+            String receptionKey = normalize(row.receptionExternalRef);
+            UUID deliveryId = receptionCache.get(receptionKey);
+            if (deliveryId == null) deliveryId = ledger.entity("RECEPTION", row.receptionExternalRef);
+            UnifiedDelivery delivery = deliveryId == null
+                    ? deliveryRepository.findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(tenant(), IMP_PREFIX + row.receptionExternalRef.trim() + "]").orElse(null)
+                    : deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(deliveryId, tenant()).orElse(null);
+            ReceptionRow planned = wb.getReceptions().stream().filter(r -> normalize(r.externalRef).equals(receptionKey)).findFirst().orElse(null);
+            if (delivery == null && (commit || planned == null)) {
+                error(report, "Payments", row.rowNumber, row.externalRef, "Reception not found for payment"); continue;
             }
-            if (commit && deliveryId != null) {
+            if (delivery != null && !ledger.knownEntity("RECEPTION", delivery.getId())) {
+                error(report, "Payments", row.rowNumber, row.externalRef, "Historical reception requires payment reconciliation before importing installments"); continue;
+            }
+            double available;
+            if (commit || !remaining.containsKey(receptionKey)) {
+                double total = delivery != null ? (delivery.getPrice() == null ? 0d : delivery.getPrice())
+                        : planned.oilQuantity != null && planned.unitPrice != null ? BigDecimal.valueOf(planned.oilQuantity).multiply(BigDecimal.valueOf(planned.unitPrice)).doubleValue() : 0d;
+                double paid = delivery != null && delivery.getPaidAmount() != null ? delivery.getPaidAmount() : 0d;
+                available = Math.max(0, total - paid);
+            } else available = remaining.get(receptionKey);
+            if (row.amount > available + 0.000001) {
+                error(report, "Payments", row.rowNumber, row.externalRef, "Payment exceeds remaining payable balance"); continue;
+            }
+            if (delivery != null) report.getValidationContext().put("payment:" + receptionKey, delivery.getId() + ":" + available);
+            remaining.put(receptionKey, available - row.amount);
+            report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.externalRef, ImportRowStatus.CREATE, "Will process payment " + row.amount));
+            if (commit) {
                 PaymentDTO payment = new PaymentDTO();
-                payment.setIdOperation(deliveryId);
+                payment.setIdOperation(delivery.getId());
                 payment.setAmount(row.amount);
                 payment.setCurrency(Currency.TND);
-                try {
-                    payment.setPaymentMethod(PaymentMethod.valueOf(safe(row.paymentMethod).toUpperCase(Locale.ROOT)));
-                } catch (Exception e) {
-                    payment.setPaymentMethod(PaymentMethod.CASH);
-                }
+                payment.setPaymentDate(row.paymentDate == null ? wb.getBusinessDate() : row.paymentDate);
+                payment.setPaymentMethod(blank(row.paymentMethod) ? PaymentMethod.CASH : PaymentMethod.valueOf(row.paymentMethod.trim().toUpperCase(Locale.ROOT)));
                 unifiedDeliveryService.processPayment(payment);
+                ledger.record("PAYMENT", row.externalRef, payload, delivery.getId());
             }
         }
     }
@@ -907,7 +927,7 @@ public class DayImportService {
     private void processOilSales(DayImportWorkbook wb, DayImportReportDto report,
                                  Map<String, UUID> supplierCache, Map<String, UUID> containerCache,
                                  Map<UUID, Integer> containerPlannedStock,
-                                 Map<String, UUID> storageCache, boolean commit) {
+                                 Map<String, UUID> storageCache, Map<UUID, Double> tankBalances, boolean commit) {
         Map<String, List<OilSaleContainerRow>> linesBySale = wb.getOilSaleContainers().stream()
                 .filter(l -> !blank(l.saleExternalRef))
                 .collect(Collectors.groupingBy(l -> normalize(l.saleExternalRef)));
@@ -921,15 +941,23 @@ public class DayImportService {
                 continue;
             }
 
-            Optional<OilSale> existing = Optional.empty();
-            if (!blank(row.invoiceNumber)) {
-                existing = oilSaleRepository.findFirstByInvoiceNumberIgnoreCaseAndIsDeletedFalse(row.invoiceNumber.trim());
+            String payload = ledger.payload(row, wb.getBusinessDate(), linesBySale.getOrDefault(normalize(row.externalRef), List.of()));
+            if (identityConflict("SALE", ref, payload, "OilSales", row.rowNumber, report)) continue;
+            if (!supplierKnown(row.supplierKey, wb, supplierCache)) {
+                error(report, "OilSales", row.rowNumber, ref, "Unknown supplierKey"); continue;
+            }
+            UUID importedSaleId = ledger.entity("SALE", ref);
+            Optional<OilSale> existing = importedSaleId == null ? Optional.empty() : oilSaleRepository.findByIdAndTenantIdAndIsDeletedFalse(importedSaleId, tenant());
+            if (importedSaleId != null && existing.isEmpty()) { error(report, "OilSales", row.rowNumber, ref, "Imported sale is unavailable; reconcile before retrying"); continue; }
+            if (existing.isEmpty() && !blank(row.invoiceNumber)) {
+                existing = oilSaleRepository.findFirstByTenantIdAndInvoiceNumberIgnoreCaseAndIsDeletedFalse(tenant(), row.invoiceNumber.trim());
             }
             if (existing.isEmpty() && !blank(row.externalRef)) {
-                existing = oilSaleRepository.findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(
+                existing = oilSaleRepository.findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(tenant(),
                         SALE_IMP_PREFIX + row.externalRef.trim() + "]");
             }
             if (existing.isPresent()) {
+                if (ledger.operation("SALE", ref) == null) { error(report, "OilSales", row.rowNumber, ref, "Historical import reference requires reconciliation"); continue; }
                 report.addRow(ImportRowResultDto.of("OilSales", row.rowNumber, ref, ImportRowStatus.SKIP_DUPLICATE,
                         "Sale already imported — skipped"));
                 continue;
@@ -954,8 +982,9 @@ public class DayImportService {
                         "Unknown storageUnitKey: " + row.storageUnitKey));
                 continue;
             }
+            report.getValidationContext().put("tank:" + storage.getId(), String.valueOf(volume(storage)) + ":" + storage.getMaxCapacity());
             if (qty > 0) {
-                double available = storage.getCurrentVolume() != null ? storage.getCurrentVolume() : 0d;
+                double available = tankBalances.computeIfAbsent(storage.getId(), id -> volume(storage));
                 if (available + 1e-9 < qty) {
                     report.addRow(ImportRowResultDto.of("OilSales", row.rowNumber, ref, ImportRowStatus.ERROR,
                             String.format("Insufficient tank volume (available=%.3f, required=%.3f)", available, qty)));
@@ -963,6 +992,7 @@ public class DayImportService {
                 }
             }
 
+            BigDecimal saleTotal = BigDecimal.valueOf(qty).multiply(BigDecimal.valueOf(row.unitPrice == null ? 0 : row.unitPrice));
             boolean containerOk = true;
             for (OilSaleContainerRow line : lines) {
                 UUID cid = resolveContainerId(line.containerKey, containerCache);
@@ -972,9 +1002,10 @@ public class DayImportService {
                     containerOk = false;
                     continue;
                 }
-                OilContainer c = oilContainerRepository.findById(cid).orElse(null);
+                OilContainer c = oilContainerRepository.findByIdAndTenantIdAndIsDeletedFalse(cid, tenant()).orElse(null);
+                if (c != null) report.getValidationContext().put("container:" + cid, c.getStockQuantity() + ":" + c.getSellingPrice());
                 int count = line.count != null ? line.count : 0;
-                Integer stock = c != null ? c.getStockQuantity() : containerPlannedStock.get(cid);
+                Integer stock = containerPlannedStock.computeIfAbsent(cid, id -> c != null && c.getStockQuantity() != null ? c.getStockQuantity() : 0);
                 if (count <= 0) {
                     report.addRow(ImportRowResultDto.of("OilSaleContainers", line.rowNumber, line.containerKey,
                             ImportRowStatus.ERROR, "Invalid count"));
@@ -991,10 +1022,19 @@ public class DayImportService {
                     ImportRowResultDto lr = ImportRowResultDto.of("OilSaleContainers", line.rowNumber, line.containerKey,
                             ImportRowStatus.CREATE, "CONTAINER_OUT x" + count);
                     report.addRow(lr);
+                    containerPlannedStock.put(cid, stock - count);
+                    BigDecimal price = c == null ? wb.getContainers().stream()
+                            .filter(r -> cid.equals(containerCache.get(normalize(r.containerKey))) || cid.equals(containerCache.get(normalize(r.name))))
+                            .map(r -> BigDecimal.valueOf(r.sellingPrice == null ? 0 : r.sellingPrice)).findFirst().orElse(BigDecimal.ZERO)
+                            : c.getSellingPrice() == null ? BigDecimal.ZERO : c.getSellingPrice();
+                    saleTotal = saleTotal.add(price.multiply(BigDecimal.valueOf(count)));
                 }
             }
             if (!containerOk) {
                 continue;
+            }
+            if (row.paidAmount != null && BigDecimal.valueOf(row.paidAmount).compareTo(saleTotal) > 0) {
+                error(report, "OilSales", row.rowNumber, ref, "Paid amount exceeds sale total"); continue;
             }
 
             ImportRowResultDto saleRow = ImportRowResultDto.of("OilSales", row.rowNumber, ref, ImportRowStatus.CREATE,
@@ -1003,6 +1043,7 @@ public class DayImportService {
                 saleRow.setStockDelta(-qty);
             }
             report.addRow(saleRow);
+            if (qty > 0) tankBalances.put(storage.getId(), tankBalances.get(storage.getId()) - qty);
 
             if (commit) {
                 OilSaleCreateRequest req = new OilSaleCreateRequest();
@@ -1013,17 +1054,17 @@ public class DayImportService {
                 }
                 req.setUnitPrice(BigDecimal.valueOf(row.unitPrice != null ? row.unitPrice : 0d));
                 try {
-                    req.setCurrency(Currency.valueOf(safe(row.currency).isBlank() ? "TND" : row.currency.toUpperCase(Locale.ROOT)));
+                    req.setCurrency(Currency.valueOf(safe(row.currency).isBlank() ? "TND" : row.currency.trim().toUpperCase(Locale.ROOT)));
                 } catch (Exception e) {
                     req.setCurrency(Currency.TND);
                 }
                 try {
-                    req.setPaymentMethod(PaymentMethod.valueOf(safe(row.paymentMethod).isBlank() ? "CASH" : row.paymentMethod.toUpperCase(Locale.ROOT)));
+                    req.setPaymentMethod(PaymentMethod.valueOf(safe(row.paymentMethod).isBlank() ? "CASH" : row.paymentMethod.trim().toUpperCase(Locale.ROOT)));
                 } catch (Exception e) {
                     req.setPaymentMethod(PaymentMethod.CASH);
                 }
                 try {
-                    req.setQualityGrade(QualityGrades.valueOf(safe(row.qualityGrade).isBlank() ? "EXTRA_VIRGIN" : row.qualityGrade.toUpperCase(Locale.ROOT)));
+                    req.setQualityGrade(QualityGrades.valueOf(safe(row.qualityGrade).isBlank() ? "EXTRA_VIRGIN" : row.qualityGrade.trim().toUpperCase(Locale.ROOT)));
                 } catch (Exception e) {
                     req.setQualityGrade(QualityGrades.EXTRA_VIRGIN);
                 }
@@ -1054,6 +1095,7 @@ public class DayImportService {
                 }
 
                 OilSaleDTO saved = oilSaleService.createWithContainers(req);
+                ledger.record("SALE", ref, payload, saved.getId());
                 if (qty > 0 && saved.getId() != null) {
                     oilTransactionRepository.findByOilSaleIdAndIsDeletedFalse(saved.getId()).ifPresent(tx -> {
                         OilTransactionDTO approve = new OilTransactionDTO();
@@ -1076,7 +1118,12 @@ public class DayImportService {
                         "externalRef and positive amount required"));
                 continue;
             }
-            if (expensePort.existsByExternalReference(row.externalRef.trim())) {
+            String payload = ledger.payload(row, wb.getBusinessDate());
+            if (identityConflict("EXPENSE", row.externalRef, payload, "Expenses", row.rowNumber, report)) continue;
+            if (ledger.operation("EXPENSE", row.externalRef) == null && expensePort.existsByExternalReference(row.externalRef.trim())) {
+                error(report, "Expenses", row.rowNumber, row.externalRef, "Historical import reference requires reconciliation"); continue;
+            }
+            if (ledger.operation("EXPENSE", row.externalRef) != null) {
                 report.addRow(ImportRowResultDto.of("Expenses", row.rowNumber, row.externalRef, ImportRowStatus.SKIP_DUPLICATE,
                         "Expense already imported"));
                 continue;
@@ -1088,14 +1135,14 @@ public class DayImportService {
                 ExpenseCategory category = ExpenseCategory.OTHER;
                 try {
                     if (!blank(row.category)) {
-                        category = ExpenseCategory.valueOf(row.category.toUpperCase(Locale.ROOT));
+                        category = ExpenseCategory.valueOf(row.category.trim().toUpperCase(Locale.ROOT));
                     }
                 } catch (Exception ignored) {
                 }
                 PaymentMethod pm = PaymentMethod.CASH;
                 try {
                     if (!blank(row.paymentMethod)) {
-                        pm = PaymentMethod.valueOf(row.paymentMethod.toUpperCase(Locale.ROOT));
+                        pm = PaymentMethod.valueOf(row.paymentMethod.trim().toUpperCase(Locale.ROOT));
                     }
                 } catch (Exception ignored) {
                 }
@@ -1110,6 +1157,7 @@ public class DayImportService {
                         row.externalRef.trim(),
                         wb.getBusinessDate()
                 ));
+                ledger.record("EXPENSE", row.externalRef, payload, null);
             }
         }
         report.setExpenseTotal(expenseTotal);
@@ -1117,6 +1165,7 @@ public class DayImportService {
 
     private BaseTypeDto findType(TypeCategory category, String name) {
         return genericTypeService.getAllTypes(category).stream()
+                .filter(t -> tenant().equals(t.getTenantId()) && !Boolean.TRUE.equals(t.getDeleted()))
                 .filter(t -> t.getName() != null && t.getName().equalsIgnoreCase(name.trim()))
                 .findFirst()
                 .map(t -> {
@@ -1146,6 +1195,7 @@ public class DayImportService {
         if (!commit) {
             return null;
         }
+        DayImportAccess.requireAdmin();
         BaseTypeDto dto = new BaseTypeDto();
         dto.setType(category);
         dto.setName(name.trim());
@@ -1156,10 +1206,10 @@ public class DayImportService {
 
     private Supplier findSupplier(SupplierRow row) {
         if (!blank(row.matriculeFiscal)) {
-            return supplierRepository.findFirstByMatriculeFiscalIgnoreCaseAndIsDeletedFalse(row.matriculeFiscal.trim()).orElse(null);
+            return supplierRepository.findFirstByTenantIdAndMatriculeFiscalIgnoreCaseAndIsDeletedFalse(tenant(), row.matriculeFiscal.trim()).orElse(null);
         }
         if (!blank(row.phone) && !blank(row.name)) {
-            return supplierRepository.findFirstByPhoneAndNameIgnoreCaseAndLastnameIgnoreCaseAndIsDeletedFalse(
+            return supplierRepository.findFirstByTenantIdAndPhoneAndNameIgnoreCaseAndLastnameIgnoreCaseAndIsDeletedFalse(tenant(),
                     row.phone.trim(), safe(row.name), safe(row.lastname)).orElse(null);
         }
         return findSupplierByKey(row.supplierKey);
@@ -1168,7 +1218,7 @@ public class DayImportService {
     private Supplier findSupplierByKey(String supplierKey) {
         if (blank(supplierKey)) return null;
         // supplierKey stored only in import context — match phone or name fallback
-        return supplierRepository.findAll().stream()
+        return supplierRepository.findAllByTenantIdAndIsDeletedFalse(tenant()).stream()
                 .filter(s -> !Boolean.TRUE.equals(s.getDeleted()))
                 .filter(s -> supplierKey.equalsIgnoreCase(s.getPhone())
                         || supplierKey.equalsIgnoreCase(s.getMatriculeFiscal())
@@ -1182,18 +1232,18 @@ public class DayImportService {
         if (blank(key)) return null;
         String n = normalize(key);
         if (storageCache.containsKey(n)) {
-            return storageUnitRepo.findById(storageCache.get(n)).orElse(null);
+            return storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(storageCache.get(n), tenant()).orElse(null);
         }
         try {
             UUID id = UUID.fromString(key.trim());
-            StorageUnit su = storageUnitRepo.findByIdAndIsDeletedFalse(id).orElse(null);
+            StorageUnit su = storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(id, tenant()).orElse(null);
             if (su != null) {
                 storageCache.put(n, su.getId());
             }
             return su;
         } catch (Exception ignored) {
         }
-        StorageUnit su = storageUnitRepo.findFirstByNameIgnoreCaseAndIsDeletedFalse(key.trim()).orElse(null);
+        StorageUnit su = storageUnitRepo.findFirstByTenantIdAndNameIgnoreCaseAndIsDeletedFalse(tenant(), key.trim()).orElse(null);
         if (su != null) {
             storageCache.put(n, su.getId());
         }
@@ -1206,12 +1256,36 @@ public class DayImportService {
         if (containerCache.containsKey(n)) {
             return containerCache.get(n);
         }
-        return oilContainerRepository.findFirstByNameIgnoreCaseAndIsDeletedFalse(key.trim())
+        return oilContainerRepository.findFirstByTenantIdAndNameIgnoreCaseAndIsDeletedFalse(tenant(), key.trim())
                 .map(c -> {
                     containerCache.put(n, c.getId());
                     return c.getId();
                 })
                 .orElse(null);
+    }
+
+    private void error(DayImportReportDto report, String sheet, int row, String key, String message) {
+        report.addRow(ImportRowResultDto.of(sheet, row, key, ImportRowStatus.ERROR, message));
+    }
+
+    private boolean identityConflict(String kind, String ref, String payload, String sheet, int row, DayImportReportDto report) {
+        String existing = ledger.operation(kind, ref);
+        if (existing != null && !existing.equals(payload)) {
+            error(report, sheet, row, ref, "External reference was already used with different values");
+            return true;
+        }
+        return false;
+    }
+
+    private boolean supplierKnown(String key, DayImportWorkbook wb, Map<String, UUID> cache) {
+        return blank(key) || cache.containsKey(normalize(key)) || findSupplierByKey(key) != null
+                || wb.getSuppliers().stream().anyMatch(row -> normalize(row.supplierKey).equals(normalize(key)));
+    }
+
+    private double volume(StorageUnit tank) { return tank.getCurrentVolume() == null ? 0d : tank.getCurrentVolume(); }
+
+    private UUID tenant() {
+        return DayImportAccess.tenant();
     }
 
     private boolean blank(String s) {

@@ -5,6 +5,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DayImportWorkbook {
+    private int templateVersion = 1;
+    public int getTemplateVersion() { return templateVersion; }
+    public void setTemplateVersion(int value) { templateVersion = value; }
     private LocalDate businessDate;
     private String timezone;
     private final List<NamedRow> regions = new ArrayList<>();
@@ -178,6 +181,8 @@ public class DayImportWorkbook {
     }
 
     public static class PaymentRow {
+        public String externalRef;
+        public LocalDate paymentDate;
         public int rowNumber;
         public String receptionExternalRef;
         public Double amount;

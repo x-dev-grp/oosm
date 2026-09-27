@@ -16,4 +16,6 @@ public interface GenericRepository extends BaseRepository<BaseType> {
     Optional<BaseType> findFirstByTypeAndNameIgnoreCaseAndIsDeletedFalse(TypeCategory type, String name);
 
     Optional<BaseType> findFirstByTypeAndNameIgnoreCaseAndIdNotAndIsDeletedFalse(TypeCategory type, String name, UUID id);
+    Optional<BaseType> findFirstByTenantIdAndTypeAndNameIgnoreCaseAndIsDeletedFalse(UUID tenantId, TypeCategory type, String name);
+    List<BaseType> findAllByTenantIdAndTypeAndIsDeletedFalse(UUID tenantId, TypeCategory type);
 }

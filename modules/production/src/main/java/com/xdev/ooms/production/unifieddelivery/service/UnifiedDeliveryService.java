@@ -1277,7 +1277,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             throw new IllegalArgumentException("Payment amount must be greater than 0");
         }
 
-        UnifiedDelivery delivery = deliveryRepository.findByIdAndIsDeletedFalse(paymentDTO.getIdOperation()).orElse(null);
+        UnifiedDelivery delivery = deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(paymentDTO.getIdOperation(), com.xdev.ooms.sharedkernel.config.TenantContext.getCurrentTenant()).orElse(null);
 
         if (delivery == null) {
             throw new IllegalArgumentException("Delivery not found for ID: " + paymentDTO.getIdOperation());
@@ -1358,7 +1358,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         financialTransactionDto.setCheckNumber(paymentDTO.getCheckNumber() != null ? paymentDTO.getCheckNumber() : null);
         financialTransactionDto.setLotNumber(delivery.getLotNumber());
         financialTransactionDto.setsupplier((paymentDTO.getSupplier() != null) ? modelMapper.map(paymentDTO.getSupplier(), com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class) : (delivery.getSupplier() != null ? modelMapper.map(delivery.getSupplier(), com.xdev.ooms.sharedkernel.communicator.models.shared.SupplierDto.class) : null));
-        financialTransactionDto.setTransactionDate(LocalDateTime.now());
+        financialTransactionDto.setTransactionDate(paymentDTO.getPaymentDate() == null ? LocalDateTime.now() : paymentDTO.getPaymentDate().atTime(12, 0));
         financialTransactionDto.setApproved(true);
         financialTransactionDto.setApprovalDate(LocalDateTime.now());
         financialTransactionDto.setOperationType(operationType);

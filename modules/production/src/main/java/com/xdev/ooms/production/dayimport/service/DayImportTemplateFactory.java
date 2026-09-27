@@ -93,7 +93,7 @@ public class DayImportTemplateFactory {
         writeHeaders(qcResults, styles, "receptionExternalRef", "ruleKey", "value", "oilQc");
 
         Sheet payments = createSheet(wb, "Payments");
-        writeHeaders(payments, styles, "receptionExternalRef", "amount", "paymentMethod");
+        writeHeaders(payments, styles, "receptionExternalRef", "amount", "paymentMethod", "externalRef", "paymentDate");
 
         Sheet oilSales = createSheet(wb, "OilSales");
         writeHeaders(oilSales, styles,
@@ -219,6 +219,8 @@ public class DayImportTemplateFactory {
         set(meta.getRow(1), 1, businessDate != null ? businessDate.toString() : "", styles.data);
         set(meta.getRow(2), 0, "timezone", styles.data);
         set(meta.getRow(2), 1, "Africa/Tunis", styles.data);
+        set(meta.getRow(3), 0, "templateVersion", styles.data);
+        set(meta.getRow(3), 1, "2", styles.data);
     }
 
     private void fillSample(Sheet regions, Sheet parcels, Sheet supplierTypes, Sheet qcRules, Sheet suppliers,
@@ -298,6 +300,7 @@ public class DayImportTemplateFactory {
         set(p, 0, "R-OIL-001", styles.data);
         set(p, 1, "500", styles.data);
         set(p, 2, "CASH", styles.data);
+        set(p, 3, "P-OIL-001", styles.data);
 
         Row sale = oilSales.getRow(1);
         set(sale, 0, "S-001", styles.data);
