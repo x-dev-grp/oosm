@@ -9,6 +9,8 @@ import com.xdev.ooms.production.unifieddelivery.dto.PaymentDTO;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -37,6 +39,7 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
 
     @PostMapping("/payment")
     public ResponseEntity<?> processPayment(@RequestBody PaymentDTO paymentDTO) {
+        PermissionSupport.requireAction(getResourceName(), Action.PAY);
         try {
             oilSaleService.processPayment(paymentDTO);
             return ResponseEntity.ok().build();
@@ -47,6 +50,7 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
 
     @PostMapping("/create")
     public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> create(@RequestBody OilSaleCreateRequest request) {
+        PermissionSupport.requireAction(getResourceName(), Action.CREATE);
         try {
             OilSaleDTO saved = oilSaleService.createWithContainers(request);
             return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale created successfully", List.of(saved)));
@@ -57,6 +61,9 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
 
     @PatchMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> confirm(@PathVariable UUID id) {
+        if (!PermissionSupport.hasAction(getResourceName(), Action.CONFIRM)) {
+            PermissionSupport.requireAction(getResourceName(), Action.VALIDATE);
+        }
         try {
             OilSaleDTO saved = oilSaleService.confirmSale(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale confirmed", List.of(saved)));
@@ -67,6 +74,7 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
 
     @PatchMapping("/{id}/cancel")
     public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> cancel(@PathVariable UUID id) {
+        PermissionSupport.requireAction(getResourceName(), Action.CANCEL);
         try {
             OilSaleDTO saved = oilSaleService.cancelSaleAndReturn(id);
             return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale cancelled", List.of(saved)));
@@ -79,6 +87,9 @@ public class OilSaleController extends BaseControllerImpl<OilSale, OilSaleDTO, O
     public ResponseEntity<ApiResponse<OilSale, OilSaleDTO>> deliver(
             @PathVariable UUID id,
             @RequestBody(required = false) OilSaleDeliveryRequest request) {
+        if (!PermissionSupport.hasAction(getResourceName(), Action.DELIVER)) {
+            PermissionSupport.requireAction(getResourceName(), Action.COMPLETE);
+        }
         try {
             OilSaleDTO saved = oilSaleService.deliverSale(id, request);
             return ResponseEntity.ok(new ApiResponse<>(true, "Oil sale delivered", List.of(saved)));

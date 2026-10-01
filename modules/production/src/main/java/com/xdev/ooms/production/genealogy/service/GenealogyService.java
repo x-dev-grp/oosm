@@ -24,6 +24,7 @@ import com.xdev.ooms.production.qualitycontrol.repository.QualityControlResultRe
 import com.xdev.ooms.production.storageunit.repository.StorageUnitRepo;
 import  com.xdev.ooms.sharedkernel.Enum.DeliveryType;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,8 +69,10 @@ public class GenealogyService {
             return buildFromTraceabilityLot(traceabilityLotOpt.get());
         }
 
-        StorageUnit unit = storageUnitRepo.findById(lotOrStorageId)
-                .orElseThrow(() -> new RuntimeException("Storage unit or traceability lot not found"));
+        StorageUnit unit = TenantAccess.require(
+                storageUnitRepo.findById(lotOrStorageId),
+                "Cuve ou lot de tracabilite",
+                lotOrStorageId);
 
         GenealogyDto dto = new GenealogyDto();
         dto.setStorageUnitId(unit.getId());
@@ -92,6 +95,7 @@ public class GenealogyService {
 
         if (traceabilityLot.getStorageUnitId() != null) {
             storageUnitRepo.findById(traceabilityLot.getStorageUnitId())
+                    .filter(TenantAccess::isAccessible)
                     .ifPresent(storageUnit -> dto.setStorageUnitName(storageUnit.getName()));
         }
 
@@ -139,7 +143,7 @@ public class GenealogyService {
             return;
         }
 
-        deliveryRepo.findById(rootSourceId).ifPresent(delivery ->
+        deliveryRepo.findById(rootSourceId).filter(TenantAccess::isAccessible).ifPresent(delivery ->
                 appendRootSourceFromDelivery(delivery, traceabilityLot.getSourceType(), dto));
         mergeOilReceptionsForStorageUnit(traceabilityLot.getStorageUnitId(), traceabilityLot.getLotNumber(), dto);
     }
@@ -250,6 +254,7 @@ public class GenealogyService {
                 continue;
             }
             deliveryRepo.findById(step.getDeliveryId())
+                    .filter(TenantAccess::isAccessible)
                     .ifPresent(delivery -> appendRootSourceFromDelivery(delivery, null, dto));
         }
     }
@@ -341,7 +346,9 @@ public class GenealogyService {
             return List.of();
         }
 
-        StorageUnit storageUnit = storageUnitRepo.findById(storageUnitId).orElse(null);
+        StorageUnit storageUnit = storageUnitRepo.findById(storageUnitId)
+                .filter(TenantAccess::isAccessible)
+                .orElse(null);
         List<IntakeStepDto> chain = new ArrayList<>();
         Set<UUID> seenOilDeliveryIds = new HashSet<>();
         Set<UUID> seenOliveDeliveryIds = new HashSet<>();
@@ -381,7 +388,7 @@ public class GenealogyService {
         if (receptionId == null) {
             return receptionTx.getReception();
         }
-        return deliveryRepo.findById(receptionId).orElse(receptionTx.getReception());
+        return deliveryRepo.findById(receptionId).filter(TenantAccess::isAccessible).orElse(receptionTx.getReception());
     }
 
     private IntakeStepDto toIntakeStepFromDelivery(UnifiedDelivery delivery, String type) {
