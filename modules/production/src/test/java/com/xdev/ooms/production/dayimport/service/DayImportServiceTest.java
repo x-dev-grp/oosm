@@ -84,9 +84,12 @@ class DayImportServiceTest {
         var rows=service.dryRun(new byte[0]).getRows().stream().filter(r -> "Receptions".equals(r.getSheet())).toList();
         assertEquals(List.of("0007OB26","0012OC26"), rows.stream().map(r -> r.getLotNumber()).toList());
     }
-    @Test void legacyPaymentsAndInvalidEnumsAreRejected() throws Exception {
-        workbook.setTemplateVersion(1);PaymentRow p=payment();p.externalRef=null;p.paymentMethod="TYPO";workbook.getPayments().add(p);
-        assertTrue(service.dryRun(new byte[0]).getInvalidCount() >= 2);
+    @Test void legacyPaymentWithoutReferenceIsSkippedOnReupload() throws Exception {
+        workbook.setTemplateVersion(1);PaymentRow p=payment();p.externalRef=null;p.paymentMethod="TYPO";p.rowNumber=4;workbook.getPayments().add(p);
+        when(dep(DayImportLedger.class).operation("PAYMENT", "LEGACY|2026-09-05|r1|row4")).thenReturn("payload");
+        var result=service.commit(new byte[0]);
+        assertTrue(result.isCanCommit()); assertEquals(1,result.getStatusCounts().get("SKIP_DUPLICATE"));
+        verifyNoInteractions(dep(UnifiedDeliveryService.class));
     }
     @Test void duplicateReceptionDoesNotFinalizeExistingState() throws Exception {
         ReceptionRow row=new ReceptionRow();row.externalRef="R1";workbook.getReceptions().add(row);

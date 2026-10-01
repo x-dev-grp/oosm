@@ -9,8 +9,6 @@ import com.xdev.ooms.production.supplier.service.SupplierTypeService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
-import com.xdev.ooms.sharedkernel.models.Action;
-import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,7 +31,6 @@ public class SupplierTypeController extends BaseControllerImpl<Supplier, Supplie
 // Get count of paid payments for a supplier
     @GetMapping("/{supplierId}/payments/paid/count")
     public ResponseEntity<Long> getPaidPaymentsCount(@PathVariable UUID supplierId) {
-        PermissionSupport.requireAction(getResourceName(), Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getPaidPaymentsCount", supplierId);
         try {
@@ -51,7 +48,6 @@ public class SupplierTypeController extends BaseControllerImpl<Supplier, Supplie
     // Get count of unpaid payments for a supplier
     @GetMapping("/{supplierId}/payments/unpaid/count")
     public ResponseEntity<Long> getUnpaidPaymentsCount(@PathVariable UUID supplierId) {
-        PermissionSupport.requireAction(getResourceName(), Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getUnpaidPaymentsCount", supplierId);
         try {

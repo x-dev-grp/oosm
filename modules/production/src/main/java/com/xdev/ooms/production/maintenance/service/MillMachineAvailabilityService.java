@@ -45,7 +45,7 @@ public class MillMachineAvailabilityService {
 
     public Optional<String> getBlockingReason(UUID millId) {
         MillMachine machine = TenantAccess.require(
-                millMachineRepository.findByIdAndIsDeletedFalse(millId),
+                millMachineRepository.findById(millId),
                 "Machine de trituration",
                 millId);
 
@@ -73,7 +73,7 @@ public class MillMachineAvailabilityService {
 
     public void refreshMillOperatingStatus(UUID millId) {
         MillMachine machine = TenantAccess.require(
-                millMachineRepository.findByIdAndIsDeletedFalse(millId),
+                millMachineRepository.findById(millId),
                 "Machine de trituration",
                 millId);
 
@@ -85,7 +85,7 @@ public class MillMachineAvailabilityService {
         if (hasActiveMaintenance) {
             machine.setOperatingStatus("MAINTENANCE");
         } else if (machine.getOperatingStatus() == null
-                || "MAINTENANCE".equals(normalize(machine.getOperatingStatus()))) {
+                || BLOCKED_OPERATING_STATUSES.contains(normalize(machine.getOperatingStatus()))) {
             machine.setOperatingStatus("OPERATIONAL");
         }
 
