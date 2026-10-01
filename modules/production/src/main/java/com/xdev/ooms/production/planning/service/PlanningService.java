@@ -25,6 +25,7 @@ import com.xdev.ooms.production.millmachine.repository.MillMachineRepository;
 import  com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionDto;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.springframework.security.access.AccessDeniedException;
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
@@ -314,13 +315,14 @@ public class PlanningService {
                 }).collect(Collectors.toList());
 
                 // Add GLOBAL_LOT to mill if assigned
-                deliveries.stream().filter(d -> d.getMillMachine() != null).findFirst().ifPresent(d -> {
-                    MillPlanDTO millPlan = millPlans.stream().filter(mp -> mp.getMillMachineId().equals(d.getMillMachine().getId())).findFirst().orElseThrow(() -> new IllegalStateException("Mill plan not found"));
-                    PlanItemDTO item = new PlanItemDTO();
-                    item.setType("GLOBAL_LOT");
-                    item.setId(globalLotNumber);
-                    millPlan.getItems().add(item);
-                });
+                deliveries.stream().filter(d -> d.getMillMachine() != null).findFirst()
+                        .flatMap(d -> millPlans.stream().filter(mp -> mp.getMillMachineId().equals(d.getMillMachine().getId())).findFirst())
+                        .ifPresent(millPlan -> {
+                            PlanItemDTO item = new PlanItemDTO();
+                            item.setType("GLOBAL_LOT");
+                            item.setId(globalLotNumber);
+                            millPlan.getItems().add(item);
+                        });
 
                 return new GlobalLotDto(globalLotNumber, totalWeight, deliveryDtos);
             }).collect(Collectors.toList());
@@ -373,16 +375,10 @@ public class PlanningService {
     }
 
     private MillMachine findMill(UUID millId) {
-        return millRepo.findByIdAndTenantIdAndIsDeletedFalse(millId, requireTenant())
+        return millRepo.findById(millId)
+                .filter(TenantAccess::isAccessible)
                 .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millId));
     }
-
-    private static boolean isCompletable(OliveLotStatus status) {
-        return status == OliveLotStatus.IN_PROGRESS
-                || status == OliveLotStatus.PROD_READY
-                || status == OliveLotStatus.OLIVE_CONTROLLED;
-    }
-
     @Transactional
     public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation, UUID millMachineId) {
         long startTime = System.currentTimeMillis();
@@ -394,9 +390,6 @@ public class PlanningService {
                 throw new EntityNotFoundException("Lot not found: " + lotNumber);
             }
             UnifiedDelivery lot = delivery.getFirst();
-            if (!isCompletable(lot.getStatus())) {
-                throw new ValidationException("Lot " + lotNumber + " cannot be completed in status " + lot.getStatus());
-            }
             if (oilQuantity == null || oilQuantity < 0) {
                 throw new ValidationException("Oil quantity is required to complete lot " + lotNumber);
             }

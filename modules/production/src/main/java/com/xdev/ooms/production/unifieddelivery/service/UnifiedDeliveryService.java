@@ -352,17 +352,11 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         OOSMLogger.logMethodEntry(this.getClass(), "actionsMapping", delivery);
         if (delivery.getDeliveryType() == DeliveryType.OIL) {
             Set<Action> actions = mapOilDeliveryActions(delivery);
-            if (!isDeletable(delivery)) {
-                actions.remove(Action.DELETE);
-            }
             OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
             OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
             return actions;
         } else {
             Set<Action> actions = mapOliveDeliveryActions(delivery);
-            if (!isDeletable(delivery)) {
-                actions.remove(Action.DELETE);
-            }
             OOSMLogger.logMethodExit(this.getClass(), "actionsMapping", actions);
             OOSMLogger.logPerformance(this.getClass(), "actionsMapping", startTime, System.currentTimeMillis());
             return actions;
@@ -823,31 +817,6 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         deliveryRepository.save(oilDelivery);
     }
 
-    /** Statuses reached before any stock movement or milling result is recorded. */
-    private static boolean isCancellable(OliveLotStatus status) {
-        return status == null || switch (status) {
-            case COMPLETED, IN_STOCK, STOCK_READY -> false;
-            default -> true;
-        };
-    }
-
-    /** A reception can be deleted only while nothing downstream (milling, stock, payment) depends on it. */
-    private static boolean isDeletable(UnifiedDelivery delivery) {
-        OliveLotStatus status = delivery.getStatus();
-        if (status == null) {
-            return true;
-        }
-        if (safe(delivery.getPaidAmount()) > 0) {
-            return false;
-        }
-        return switch (status) {
-            case WAITING, NEW, OLIVE_CONTROLLED, OIL_CONTROLLED, WAITING_FOR_PRICING, REFUSED, CANCELLED -> true;
-            // Exchange pricing books the oil stock-out when moving to PROD_READY.
-            case PROD_READY -> delivery.getOperationType() != OperationType.EXCHANGE;
-            default -> false;
-        };
-    }
-
     private boolean hasActiveOilLeg(UnifiedDelivery oliveDelivery) {
         if (oliveDelivery == null || oliveDelivery.getLotNumber() == null) {
             return false;
@@ -972,15 +941,9 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 return new EntityNotFoundException("Delivery not found: " + id);
             });
             OliveLotStatus oldStatus = delivery.getStatus();
-            if (status != OliveLotStatus.CANCELLED) {
-                throw new IllegalArgumentException("Only cancellation is allowed through this endpoint");
-            }
-            if (oldStatus != OliveLotStatus.CANCELLED && !isCancellable(oldStatus)) {
-                throw new IllegalArgumentException("Reception " + delivery.getLotNumber() + " cannot be cancelled in status " + oldStatus);
-            }
             if (cause != null && !cause.isBlank() && oldStatus != status) {
                 String previous = delivery.getDescription();
-                String note = "Annulation : " + cause.trim();
+                String note = status == OliveLotStatus.CANCELLED ? "Annulation : " + cause.trim() : cause.trim();
                 delivery.setDescription(previous == null || previous.isBlank() ? note : previous + "\n" + note);
             }
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateStatus] Found delivery %s (Type: %s, Old Status: %s, New Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), oldStatus, status);
@@ -1052,13 +1015,8 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Found delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
 
-            OliveLotStatus current = delivery.getStatus();
-            boolean priceable = delivery.getDeliveryType() == DeliveryType.OIL
-                    ? (current == OliveLotStatus.OIL_CONTROLLED || current == OliveLotStatus.WAITING_FOR_PRICING)
-                        && delivery.getOperationType() != OperationType.PAYMENT
-                    : current == OliveLotStatus.OLIVE_CONTROLLED || current == OliveLotStatus.WAITING_FOR_PRICING;
-            if (!priceable) {
-                throw new IllegalArgumentException("Price cannot be set on reception " + delivery.getLotNumber() + " in status " + current);
+            if (delivery.getDeliveryType() == DeliveryType.OIL && delivery.getStatus() == OliveLotStatus.IN_STOCK) {
+                throw new IllegalArgumentException("Oil reception " + delivery.getLotNumber() + " is already in stock; its price cannot be set again");
             }
 
             // Update unit price
@@ -1474,10 +1432,6 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
             if (entity == null) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
-            }
-            if (!isDeletable(entity)) {
-                throw new IllegalStateException("Reception " + entity.getLotNumber() + " cannot be deleted in status "
-                        + entity.getStatus() + "; cancel it before milling or reverse the downstream operations first");
             }
             financialTransactionPort.reverseLinked(entity.getId().toString(), ResourceName.UnifiedDelivery);
             entity.setDeleted(true);
