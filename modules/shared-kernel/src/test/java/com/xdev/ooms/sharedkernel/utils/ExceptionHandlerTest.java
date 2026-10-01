@@ -3,6 +3,7 @@ package com.xdev.ooms.sharedkernel.utils;
 import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -22,6 +23,15 @@ class ExceptionHandlerTest {
     @Test
     void unsupportedOperationIsConflict() {
         assertEquals(HttpStatus.CONFLICT, status(new UnsupportedOperationException("Lecture seule")));
+    }
+
+    @Test
+    void concurrentBalanceUpdateIsConflictAskingToRetry() {
+        var response = ExceptionHandler.handleException(getClass(), "approve",
+                new ObjectOptimisticLockingFailureException("StorageUnit", "id"));
+
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("Les données ont été modifiées par un autre utilisateur, réessayez", response.getBody().getMessage());
     }
 
     @Test

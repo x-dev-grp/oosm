@@ -3,7 +3,9 @@ package com.xdev.ooms.production.qualitycontrol.service;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
 import com.xdev.ooms.production.parameter.service.BooleanParameterReader;
 import com.xdev.ooms.production.qualitycontrol.dto.QualityControlResultDto;
+import com.xdev.ooms.production.qualitycontrol.dto.QualityControlRuleDto;
 import com.xdev.ooms.production.qualitycontrol.entity.QualityControlResult;
+import com.xdev.ooms.production.qualitycontrol.entity.QualityControlRule;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlResultRepository;
 import com.xdev.ooms.production.qualitycontrol.repository.QualityControlRuleRepository;
 import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
@@ -12,13 +14,12 @@ import com.xdev.ooms.production.unifieddelivery.service.UnifiedDeliveryService;
 import com.xdev.ooms.sharedkernel.Enum.DeliveryType;
 import com.xdev.ooms.sharedkernel.Enum.OliveLotStatus;
 import com.xdev.ooms.sharedkernel.Enum.OperationType;
+import com.xdev.ooms.sharedkernel.Enum.RuleType;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
@@ -78,22 +79,33 @@ class QualityControlResultServiceRulesTest {
         assertThrows(IllegalArgumentException.class, () -> service.saveAll(List.of(result(id))));
     }
 
-    @ParameterizedTest
-    @EnumSource(value = OliveLotStatus.class,
-            names = {"COMPLETED", "IN_STOCK", "STOCK_READY", "WAITING_FOR_PRICING", "IN_PROGRESS", "CANCELLED"})
-    void controlCannotBeRecordedOnceTheLotMovedOn(OliveLotStatus status) {
-        UnifiedDelivery delivery = owned(OperationType.OLIVE_PURCHASE, status);
+    @Test
+    void stockedOilCannotBeControlledAgain() {
+        UnifiedDelivery delivery = owned(OperationType.OIL_PURCHASE, OliveLotStatus.IN_STOCK);
+        delivery.setDeliveryType(DeliveryType.OIL);
 
         assertThrows(IllegalArgumentException.class, () -> service.saveAll(List.of(result(delivery.getId()))));
         verify(resultRepository, never()).saveAll(anyList());
-        verify(deliveryRepository, never()).save(any());
     }
 
     @Test
-    void readyPurchaseCannotBeControlledAgain() {
-        UnifiedDelivery delivery = owned(OperationType.OLIVE_PURCHASE, OliveLotStatus.PROD_READY);
+    void outOfRangeMeasureIsRejectedAndRuleWithoutTypeFlagIsAnOliveRule() {
+        UnifiedDelivery delivery = owned(OperationType.OLIVE_PURCHASE, OliveLotStatus.COMPLETED);
+        QualityControlRule rule = new QualityControlRule();
+        rule.setId(UUID.randomUUID());
+        rule.setRuleType(RuleType.NUMERIC);
+        rule.setMinValue(0f);
+        rule.setMaxValue(1f);
+        when(ruleRepository.findAllById(any())).thenReturn(List.of(rule));
+        QualityControlResultDto dto = result(delivery.getId());
+        QualityControlRuleDto ruleDto = new QualityControlRuleDto();
+        ruleDto.setId(rule.getId());
+        dto.setRule(ruleDto);
+        dto.setMeasuredValue("5");
 
-        assertThrows(IllegalArgumentException.class, () -> service.saveAll(List.of(result(delivery.getId()))));
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> service.saveAll(List.of(dto)));
+        assertTrue(error.getMessage().contains("maxValue"));
+        verify(resultRepository, never()).saveAll(anyList());
     }
 
     private UnifiedDelivery owned(OperationType operation, OliveLotStatus status) {

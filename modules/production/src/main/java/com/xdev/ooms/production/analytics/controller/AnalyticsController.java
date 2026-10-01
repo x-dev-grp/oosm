@@ -4,8 +4,6 @@ package com.xdev.ooms.production.analytics.controller;
 
 import com.xdev.ooms.production.filtration.dto.FiltrationAnalyticsDto;
 import com.xdev.ooms.production.analytics.service.ProdAnalyticsService;
-import com.xdev.ooms.sharedkernel.models.Action;
-import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -34,7 +32,6 @@ public class AnalyticsController {
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(value = "endDate", required = false)
             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate) {
-        PermissionSupport.requireAction("ANALYTICS", Action.READ);
         return ResponseEntity.ok(prodAnalyticsService.getFiltrationReport(startDate, endDate));
     }
 }

@@ -25,40 +25,15 @@ final class DayImportValidation {
         unique(wb.getQcResults(), r -> r.receptionExternalRef + "|" + r.ruleKey + "|" + r.oilQc, "QcResults", out);
         for (var r : wb.getReceptions()) {
             numeric(r, "Receptions", out);
-            if ("OIL".equalsIgnoreCase(r.deliveryType) && !blank(r.operationType) && !Set.of("OIL_PURCHASE", "INTERNAL_RECEPTION").contains(r.operationType.trim().toUpperCase(Locale.ROOT)))
-                error(out, "Receptions", r.rowNumber, "operationType", "Oil receipts require OIL_PURCHASE or INTERNAL_RECEPTION");
-            if ("OLIVE".equalsIgnoreCase(r.deliveryType) && !blank(r.operationType) && !Set.of("BASE", "OLIVE_PURCHASE", "SIMPLE_RECEPTION", "EXCHANGE", "PAYMENT").contains(r.operationType.trim().toUpperCase(Locale.ROOT)))
-                error(out, "Receptions", r.rowNumber, "operationType", "Invalid olive reception operation");
-            enumValue(r.operationType, OperationType.class, "Receptions", r.rowNumber, "operationType", out);
-            if ("OIL".equalsIgnoreCase(r.deliveryType) && (blank(r.storageUnitKey) || r.oilQuantity == null || r.oilQuantity <= 0 || r.unitPrice == null || r.unitPrice <= 0))
-                error(out, "Receptions", r.rowNumber, r.externalRef, "Oil reception requires a tank, positive quantity and unit price");
-            if ("OLIVE".equalsIgnoreCase(r.deliveryType) && (r.poidsNet == null || r.poidsNet <= 0))
-                error(out, "Receptions", r.rowNumber, r.externalRef, "Positive olive weight required");
         }
-        for (var r : wb.getPayments()) {
-            numeric(r, "Payments", out);
-            if (wb.getTemplateVersion() < 2 || blank(r.externalRef)) error(out, "Payments", r.rowNumber, "externalRef", "Use template version 2 with a unique payment externalRef; legacy payments require reconciliation");
-            enumValue(r.paymentMethod, PaymentMethod.class, "Payments", r.rowNumber, "paymentMethod", out);
-            if (r.paymentDate != null && r.paymentDate.isAfter(java.time.LocalDate.now()))
-                error(out, "Payments", r.rowNumber, "paymentDate", "Payment date cannot be in the future");
-        }
+        for (var r : wb.getPayments()) numeric(r, "Payments", out);
         for (var r : wb.getOilSales()) {
             numeric(r, "OilSales", out);
             enumValue(r.paymentMethod, PaymentMethod.class, "OilSales", r.rowNumber, "paymentMethod", out);
             enumValue(r.currency, com.xdev.ooms.sharedkernel.Enum.Currency.class, "OilSales", r.rowNumber, "currency", out);
             enumValue(r.qualityGrade, QualityGrades.class, "OilSales", r.rowNumber, "qualityGrade", out);
-            if (r.quantity != null && r.quantity > 0 && (r.unitPrice == null || r.unitPrice <= 0))
-                error(out, "OilSales", r.rowNumber, "unitPrice", "Positive unit price required");
         }
-        for (var r : wb.getOilSaleContainers()) {
-            boolean found = wb.getOilSales().stream().anyMatch(s -> !blank(s.externalRef) && DayImportLedger.key(s.externalRef).equals(DayImportLedger.key(r.saleExternalRef)));
-            if (!found) error(out, "OilSaleContainers", r.rowNumber, r.saleExternalRef, "Sale reference not found in workbook");
-        }
-        for (var r : wb.getExpenses()) {
-            numeric(r, "Expenses", out);
-            enumValue(r.paymentMethod, PaymentMethod.class, "Expenses", r.rowNumber, "paymentMethod", out);
-            enumValue(r.category, ExpenseCategory.class, "Expenses", r.rowNumber, "category", out);
-        }
+        for (var r : wb.getExpenses()) numeric(r, "Expenses", out);
         for (var r : wb.getContainers()) numeric(r, "OilContainers", out);
     }
     private static <T> void unique(List<T> rows, Function<T,String> key, String sheet, DayImportReportDto out) {

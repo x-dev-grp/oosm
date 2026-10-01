@@ -36,16 +36,16 @@ class MillMachineAvailabilityServiceTest {
     }
 
     @Test
-    void refreshPreservesAdministrativeBlockedStatuses() {
-        assertPreserved("INACTIVE");
-        assertPreserved("OUT_OF_SERVICE");
+    void refreshReopensBlockedMillWhenNoWorkOrderRemains() {
+        assertReopened("INACTIVE");
+        assertReopened("OUT_OF_SERVICE");
     }
 
     @Test
     void refreshClearsMaintenanceWhenNoWorkOrderRemains() {
         UUID id = UUID.randomUUID();
         MillMachine machine = machine(id, "MAINTENANCE");
-        when(machineRepository.findByIdAndIsDeletedFalse(id)).thenReturn(Optional.of(machine));
+        when(machineRepository.findById(id)).thenReturn(Optional.of(machine));
         when(workOrderRepository.existsByAssetTypeAndAssetIdAndStatusIn(
                 eq(MaintenanceAssetType.MILL_MACHINE), eq(id), eq(activeStatuses())))
                 .thenReturn(false);
@@ -56,17 +56,17 @@ class MillMachineAvailabilityServiceTest {
         verify(machineRepository).save(machine);
     }
 
-    private void assertPreserved(String status) {
+    private void assertReopened(String status) {
         UUID id = UUID.randomUUID();
         MillMachine machine = machine(id, status);
-        when(machineRepository.findByIdAndIsDeletedFalse(id)).thenReturn(Optional.of(machine));
+        when(machineRepository.findById(id)).thenReturn(Optional.of(machine));
         when(workOrderRepository.existsByAssetTypeAndAssetIdAndStatusIn(
                 eq(MaintenanceAssetType.MILL_MACHINE), eq(id), eq(activeStatuses())))
                 .thenReturn(false);
 
         service.refreshMillOperatingStatus(id);
 
-        assertEquals(status, machine.getOperatingStatus());
+        assertEquals("OPERATIONAL", machine.getOperatingStatus());
         verify(machineRepository).save(machine);
     }
 

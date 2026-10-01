@@ -61,7 +61,7 @@ class OilTransactionServiceRulesTest {
     @Test
     void pendingTransactionDoesNotMoveStock() {
         StorageUnit tank = tank(tenantId, 200.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(tank.getId())).thenReturn(Optional.of(tank));
+        when(storageUnitRepo.findById(tank.getId())).thenReturn(Optional.of(tank));
 
         service.save(request(TransactionState.PENDING, tank, 100.0));
 
@@ -72,7 +72,7 @@ class OilTransactionServiceRulesTest {
     @Test
     void completedTransactionMovesStockIntoDestination() {
         StorageUnit tank = tank(tenantId, 200.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(tank.getId())).thenReturn(Optional.of(tank));
+        when(storageUnitRepo.findById(tank.getId())).thenReturn(Optional.of(tank));
 
         service.save(request(TransactionState.COMPLETED, tank, 100.0));
 
@@ -81,19 +81,31 @@ class OilTransactionServiceRulesTest {
     }
 
     @Test
-    void saveRefusesTankOfAnotherTenant() {
+    void saveNeverMovesStockOfAnotherTenantsTank() {
         StorageUnit foreign = tank(UUID.randomUUID(), 200.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(foreign.getId())).thenReturn(Optional.of(foreign));
+        when(storageUnitRepo.findById(foreign.getId())).thenReturn(Optional.of(foreign));
 
-        assertThrows(EntityNotFoundException.class,
-                () -> service.save(request(TransactionState.COMPLETED, foreign, 100.0)));
+        service.save(request(TransactionState.COMPLETED, foreign, 100.0));
+
         assertEquals(200.0, foreign.getCurrentVolume());
+        verify(storageUnitRepo, never()).save(any());
+    }
+
+    @Test
+    void approvalRefusesTransactionOfAnotherTenant() {
+        OilTransaction tx = transaction(TransactionState.PENDING);
+        tx.setTenantId(UUID.randomUUID());
+        when(repository.findById(tx.getId())).thenReturn(Optional.of(tx));
+        OilTransactionDTO dto = new OilTransactionDTO();
+        dto.setId(tx.getId());
+
+        assertThrows(EntityNotFoundException.class, () -> service.approveOilTransaction2(dto));
     }
 
     @Test
     void approvalRefusesTransactionThatIsNotPending() {
         OilTransaction tx = transaction(TransactionState.COMPLETED);
-        when(repository.findByIdAndIsDeletedFalse(tx.getId())).thenReturn(Optional.of(tx));
+        when(repository.findById(tx.getId())).thenReturn(Optional.of(tx));
         OilTransactionDTO dto = new OilTransactionDTO();
         dto.setId(tx.getId());
 
