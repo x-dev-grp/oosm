@@ -61,15 +61,13 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         storageUnitRepo.save(storageUnit);
     }
 
-    /** Stock and cost change through oil transactions; the supplier through assign-supplier. */
+    /** Fields the tank form does not send; cost changes through oil transactions, the supplier through assign-supplier. */
     @Override
     protected Set<String> protectedUpdateFields() {
         return Set.of(
-                "currentVolume",
                 "avgCost",
                 "totalCost",
                 "supplier",
-                "lastInspectionDate",
                 "lastFillDate",
                 "lastEmptyDate",
                 "lastFiltrationDate"
@@ -81,13 +79,6 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         if (request.getMaxCapacity() != null && existing.getCurrentVolume() != null
                 && request.getMaxCapacity() < existing.getCurrentVolume()) {
             throw new IllegalArgumentException("La capacite ne peut pas etre inferieure au volume actuel de la cuve.");
-        }
-    }
-
-    @Override
-    protected void checkDeletable(StorageUnit existing) {
-        if (existing.getCurrentVolume() != null && existing.getCurrentVolume() > 0) {
-            throw new IllegalStateException("Impossible de supprimer une cuve qui contient encore de l'huile.");
         }
     }
 
