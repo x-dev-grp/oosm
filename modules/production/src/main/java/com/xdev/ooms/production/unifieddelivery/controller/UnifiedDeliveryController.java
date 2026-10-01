@@ -113,7 +113,7 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/updateStatue/{id}/{status}")
+    @PostMapping("/updateStatue/{id}/{status}")
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updateStatue(@PathVariable("id") UUID id, @PathVariable("status") OliveLotStatus status, @RequestParam(value = "cause", required = false) String cause) {
         // delegate to your service
        try{
@@ -126,7 +126,7 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
        }
 
 
-    }@GetMapping("/updateprice/{id}/{updateprice}")
+    }@PostMapping("/updateprice/{id}/{updateprice}")
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updatePrice(@PathVariable("id") UUID id, @PathVariable("updateprice") Double unitPrice) {
         // delegate to your service
        try{
@@ -171,7 +171,7 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
 
     }
 
-    @GetMapping("/createOilRecFromOliveRec/{uuid}")
+    @PostMapping("/createOilRecFromOliveRec/{uuid}")
     public ResponseEntity<ApiSingleResponse<UnifiedDelivery, UnifiedDeliveryDTO>> createOilRecFromOliveRec(
             @PathVariable UUID uuid) {
         try {
