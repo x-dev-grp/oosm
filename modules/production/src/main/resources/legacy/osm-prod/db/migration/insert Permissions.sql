@@ -13,6 +13,9 @@
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- ====== 0) Pré-requis & idempotence ======
 CREATE EXTENSION IF NOT EXISTS pgcrypto; -- pour gen_random_uuid()
 
@@ -577,7 +580,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "OILCREDIT": {
       "description": "Oil credit management",
-      "module": "PRODUCTION",
+      "module": "FINANCE",
       "permissions": [
         "APPROVE",
         "COMPLETE",
@@ -832,8 +835,8 @@ SELECT public.seed_permissions_from_json($${
       ]
     },
     "FILTRATIONOPERATION": {
-      "description": "Oil filtration operations",
-      "module": "PRODUCTION",
+      "description": "Oil filtration operations for conditioning",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -900,7 +903,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "ARTICLESEC": {
       "description": "Article management (frontend routes and menus)",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -913,7 +916,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "ARTICLE": {
       "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -925,7 +928,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "BOM": {
       "description": "Bill of materials",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -948,8 +951,8 @@ SELECT public.seed_permissions_from_json($${
       ]
     },
     "EMPLACEMENTSTOCK": {
-      "description": "Stock location",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock location",
+      "module": "CONDITIONING",
       "permissions": [
         "ASSIGN_EMPLACEMENT",
         "CREATE",
@@ -996,7 +999,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "LIGNECONDITIONNEMENT": {
       "description": "Packaging line",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -1006,8 +1009,8 @@ SELECT public.seed_permissions_from_json($${
       ]
     },
     "MOUVEMENTSTOCKSEC": {
-      "description": "Stock movement",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock movement",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -1017,7 +1020,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "PRODUITFINAL": {
       "description": "Finished product",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -1026,8 +1029,8 @@ SELECT public.seed_permissions_from_json($${
       ]
     },
     "STOCKSEC": {
-      "description": "Stock management",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock management",
+      "module": "CONDITIONING",
       "permissions": [
         "AJUSTER_STOCK",
         "ASSIGN_EMPLACEMENT",

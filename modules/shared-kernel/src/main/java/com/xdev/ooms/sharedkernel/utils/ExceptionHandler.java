@@ -8,6 +8,7 @@ import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -132,6 +133,9 @@ public class ExceptionHandler {
                 exception instanceof BindException ||
                 exception instanceof ConstraintViolationException) {
             return HttpStatus.BAD_REQUEST;
+        } else if (exception instanceof OptimisticLockingFailureException
+                || exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return HttpStatus.CONFLICT;
         } else if (exception instanceof SQLException) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         } else {
@@ -153,6 +157,10 @@ public class ExceptionHandler {
             return "Access denied: insufficient permissions";
         } else if (exception instanceof IllegalArgumentException) {
             return "Invalid argument provided: " + exception.getMessage();
+        } else if (exception instanceof OptimisticLockingFailureException) {
+            return "Les données ont été modifiées par un autre utilisateur, réessayez";
+        } else if (exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return exception.getMessage();
         } else if (exception instanceof MethodArgumentTypeMismatchException ex) {
             return String.format("Invalid parameter type for '%s': expected %s, got %s",
                     ex.getName(), ex.getRequiredType().getSimpleName(),

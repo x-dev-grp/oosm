@@ -15,6 +15,7 @@ import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -45,6 +46,21 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public BaseControllerImpl(BaseService<E, INDTO, OUTDTO> baseService, ModelMapper modelMapper) {
         this.baseService = baseService;
         this.modelMapper = modelMapper;
+    }
+
+    /** Other actions on this resource that also grant the generic {@code action}. */
+    protected Set<Action> alternativeActions(Action action) {
+        return Set.of();
+    }
+
+    protected void authorize(Action action) {
+        String resource = getResourceName();
+        for (Action alternative : alternativeActions(action)) {
+            if (PermissionSupport.hasAction(resource, alternative)) {
+                return;
+            }
+        }
+        PermissionSupport.requireAction(resource, action);
     }
 
     @Override

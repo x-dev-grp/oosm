@@ -425,7 +425,7 @@
     },
     "OILCREDIT": {
       "description": "Oil credit management",
-      "module": "PRODUCTION",
+      "module": "FINANCE",
       "permissions": [
         "APPROVE",
         "COMPLETE",
@@ -680,8 +680,8 @@
       ]
     },
     "FILTRATIONOPERATION": {
-      "description": "Oil filtration operations",
-      "module": "PRODUCTION",
+      "description": "Oil filtration operations for conditioning",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -748,7 +748,7 @@
     },
     "ARTICLESEC": {
       "description": "Article management (frontend routes and menus)",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -761,7 +761,7 @@
     },
     "ARTICLE": {
       "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -773,7 +773,7 @@
     },
     "BOM": {
       "description": "Bill of materials",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -796,8 +796,8 @@
       ]
     },
     "EMPLACEMENTSTOCK": {
-      "description": "Stock location",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock location",
+      "module": "CONDITIONING",
       "permissions": [
         "ASSIGN_EMPLACEMENT",
         "CREATE",
@@ -844,7 +844,7 @@
     },
     "LIGNECONDITIONNEMENT": {
       "description": "Packaging line",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -854,8 +854,8 @@
       ]
     },
     "MOUVEMENTSTOCKSEC": {
-      "description": "Stock movement",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock movement",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -865,7 +865,7 @@
     },
     "PRODUITFINAL": {
       "description": "Finished product",
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "permissions": [
         "CREATE",
         "DELETE",
@@ -874,8 +874,8 @@
       ]
     },
     "STOCKSEC": {
-      "description": "Stock management",
-      "module": "INVENTAIR",
+      "description": "Conditioning stock management",
+      "module": "CONDITIONING",
       "permissions": [
         "AJUSTER_STOCK",
         "ASSIGN_EMPLACEMENT",

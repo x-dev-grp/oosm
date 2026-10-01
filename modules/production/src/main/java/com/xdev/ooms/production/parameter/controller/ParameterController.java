@@ -34,7 +34,8 @@ public class ParameterController extends BaseControllerImpl<Parameter, Parameter
             @PathVariable String code,
             @RequestHeader(value = X_TENANT_ID, required = false) UUID tenantId
     ) {
-        UUID resolvedTenantId = tenantId != null ? tenantId : TenantContext.getCurrentTenant();
+        UUID currentTenant = TenantContext.getCurrentTenant();
+        UUID resolvedTenantId = currentTenant != null ? currentTenant : tenantId;
         ApiResponse<Parameter, ParameterDto> response = new ApiResponse<>(
                 true,
                 "",
@@ -51,7 +52,8 @@ public class ParameterController extends BaseControllerImpl<Parameter, Parameter
     public ResponseEntity<ParameterService.ParameterSeedResult> seedDefaults(
             @RequestHeader(value = X_TENANT_ID, required = false) UUID tenantId
     ) {
-        UUID resolvedTenantId = tenantId != null ? tenantId : TenantContext.getCurrentTenant();
+        UUID currentTenant = TenantContext.getCurrentTenant();
+        UUID resolvedTenantId = currentTenant != null ? currentTenant : tenantId;
         return ResponseEntity.ok(parameterService.seedDefaultsForTenant(resolvedTenantId));
     }
 

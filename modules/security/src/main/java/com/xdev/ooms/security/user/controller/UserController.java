@@ -206,7 +206,7 @@ public class UserController extends BaseControllerImpl<OOSMUser, OOSMUserDTO, OO
 
     @Override
     protected String getResourceName() {
-        return "USER".toUpperCase();
+        return "OOSMUSER";
     }
 @GetMapping("/role/{roleName}")
     public ResponseEntity<List<OOSMUserDTO>> getUsersByRole(@PathVariable String roleName) {
