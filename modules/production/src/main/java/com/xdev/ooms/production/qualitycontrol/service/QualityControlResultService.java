@@ -112,14 +112,9 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         // 2) Load that delivery
         UnifiedDelivery delivery = deliveryRepo.findOwned(deliveryId).orElseThrow(() -> new IllegalArgumentException("Delivery not found for ID " + deliveryId));
-        OliveLotStatus current = delivery.getStatus();
-        boolean controllable = current == OliveLotStatus.NEW
-                || current == OliveLotStatus.WAITING
-                || current == OliveLotStatus.OLIVE_CONTROLLED
-                || current == OliveLotStatus.OIL_CONTROLLED
-                || (current == OliveLotStatus.PROD_READY && delivery.getOperationType() == OperationType.BASE);
-        if (!controllable) {
-            throw new IllegalArgumentException("Quality control cannot be recorded on reception " + delivery.getLotNumber() + " in status " + current);
+        // Re-controlling stocked oil would reopen pricing and book the stock-in a second time.
+        if (delivery.getDeliveryType() == DeliveryType.OIL && delivery.getStatus() == OliveLotStatus.IN_STOCK) {
+            throw new IllegalArgumentException("Oil reception " + delivery.getLotNumber() + " is already in stock; its quality control cannot be recorded again");
         }
 
         // 3) Load & validate rules
@@ -254,7 +249,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
 
         List<QualityControlRule> rules = ruleRepository.findAllById(ruleIds).stream()
                 .filter(TenantAccess::isAccessible)
-                .filter(rule -> Boolean.valueOf(oilQc).equals(rule.getOilQc()))
+                .filter(rule -> Boolean.TRUE.equals(rule.getOilQc()) == oilQc)
                 .toList();
         if (rules.size() != ruleIds.size()) {
             throw new IllegalArgumentException("One or more provided Rule IDs were not found");
@@ -271,9 +266,6 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     private void validateMeasuredValue(String measuredValue, QualityControlRule rule) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "validateMeasuredValue", measuredValue, rule);
-        if (measuredValue == null || measuredValue.isBlank()) {
-            throw new IllegalArgumentException("Measured value is required for rule ID: " + rule.getId());
-        }
         RuleType ruleType = rule.getRuleType();
         if (ruleType == null) {
             throw new IllegalArgumentException("Rule type is required for rule ID: " + rule.getId());
@@ -282,7 +274,13 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         switch (ruleType) {
             case NUMERIC:
                 try {
-                    Double.parseDouble(measuredValue);
+                    Double value = Double.parseDouble(measuredValue);
+                    if (rule.getMinValue() != null && value < rule.getMinValue() - NUMERIC_EPSILON) {
+                        throw new IllegalArgumentException("Measured value below minValue for rule ID: " + rule.getId());
+                    }
+                    if (rule.getMaxValue() != null && value > rule.getMaxValue() + NUMERIC_EPSILON) {
+                        throw new IllegalArgumentException("Measured value above maxValue for rule ID: " + rule.getId());
+                    }
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
                             "Invalid numeric value '" + measuredValue + "' for rule '"
@@ -326,8 +324,6 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             throw new IllegalArgumentException("Delivery ID is required");
         }
 
-        deliveryRepo.findOwned(deliveryId)
-                .orElseThrow(() -> new IllegalArgumentException("Delivery not found for ID " + deliveryId));
         List<QualityControlResult> results = repository.findByDeliveryId(deliveryId).stream()
                 .filter(TenantAccess::isAccessible)
                 .toList();
@@ -406,19 +402,18 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         return TunisiaOilGradeUtil.suggestOilGrade(acidity, k232, k270, deltaK, peroxide);
     }
 
+    /** The grade chosen by the operator wins; measurements only suggest one when none was chosen. */
     private void applyMeasuredCategory(UnifiedDelivery delivery, List<QualityControlResult> results) {
-        Optional<String> measuredGrade = suggestCategoryFromMeasurements(results);
-        if (measuredGrade.isPresent()) {
-            delivery.setCategoryOliveOil(measuredGrade.get());
-            return;
-        }
-        results.stream()
+        Optional<String> chosen = results.stream()
                 .map(QualityControlResult::getMeasuredValue)
                 .filter(Objects::nonNull)
                 .filter(allowedSet::contains)
-                .findFirst()
-                .map(TunisiaOilGradeUtil::normalizeCategory)
-                .ifPresent(delivery::setCategoryOliveOil);
+                .findFirst();
+        if (chosen.isPresent()) {
+            delivery.setCategoryOliveOil(TunisiaOilGradeUtil.normalizeCategory(chosen.get()));
+        } else {
+            suggestCategoryFromMeasurements(results).ifPresent(delivery::setCategoryOliveOil);
+        }
     }
 
     private void publishQcCompletedNotification(UnifiedDelivery delivery) {
@@ -474,30 +469,10 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     }
 
     private boolean isFailedQcValue(QualityControlResult result) {
-        if (result == null || result.getMeasuredValue() == null || result.getRule() == null) {
+        if (result == null || result.getMeasuredValue() == null) {
             return false;
         }
-        QualityControlRule rule = result.getRule();
-        String measuredValue = result.getMeasuredValue().trim();
-        if (rule.getRuleType() == RuleType.NUMERIC) {
-            try {
-                double numeric = Double.parseDouble(measuredValue);
-                return (rule.getMinValue() != null && numeric < rule.getMinValue() - NUMERIC_EPSILON)
-                        || (rule.getMaxValue() != null && numeric > rule.getMaxValue() + NUMERIC_EPSILON);
-            } catch (NumberFormatException ignored) {
-                return true;
-            }
-        }
-        if (rule.getRuleType() == RuleType.BOOLEAN && rule.getBooleanValue() != null) {
-            return !Boolean.valueOf(measuredValue).equals(rule.getBooleanValue());
-        }
-        if ((rule.getRuleType() == RuleType.STRING || rule.getRuleType() == RuleType.RAW_STRING)
-                && rule.getRuleTextValue() != null && !rule.getRuleTextValue().isBlank()) {
-            return Arrays.stream(rule.getRuleTextValue().split(","))
-                    .map(String::trim)
-                    .noneMatch(measuredValue::equals);
-        }
-        String value = measuredValue.toLowerCase(Locale.ROOT);
+        String value = result.getMeasuredValue().trim().toLowerCase(Locale.ROOT);
         return value.contains("non conforme")
                 || value.equals("nonconforme")
                 || value.equals("fail")

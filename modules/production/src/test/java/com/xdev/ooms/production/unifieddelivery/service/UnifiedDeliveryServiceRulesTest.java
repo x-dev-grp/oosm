@@ -86,22 +86,13 @@ class UnifiedDeliveryServiceRulesTest {
 
     @ParameterizedTest
     @EnumSource(value = OliveLotStatus.class, names = {"COMPLETED", "IN_STOCK", "STOCK_READY"})
-    void lotAlreadyMilledOrStockedCannotBeCancelled(OliveLotStatus status) {
+    void anyStatusCanStillBeChanged(OliveLotStatus status) {
         UnifiedDelivery delivery = owned(olive(OperationType.SIMPLE_RECEPTION, status));
 
-        assertThrows(IllegalArgumentException.class,
-                () -> service.updateStatus(delivery.getId(), OliveLotStatus.CANCELLED, "trop tard"));
-        assertEquals(status, delivery.getStatus());
-        verify(deliveryRepository, never()).save(any());
-    }
+        service.updateStatus(delivery.getId(), OliveLotStatus.WAITING_FOR_PRICING, "Correction");
 
-    @Test
-    void endpointOnlyAcceptsCancellation() {
-        UnifiedDelivery delivery = owned(olive(OperationType.SIMPLE_RECEPTION, OliveLotStatus.NEW));
-
-        assertThrows(IllegalArgumentException.class,
-                () -> service.updateStatus(delivery.getId(), OliveLotStatus.COMPLETED, null));
-        assertEquals(OliveLotStatus.NEW, delivery.getStatus());
+        assertEquals(OliveLotStatus.WAITING_FOR_PRICING, delivery.getStatus());
+        assertTrue(delivery.getDescription().contains("Correction"));
     }
 
     @Test
@@ -127,12 +118,13 @@ class UnifiedDeliveryServiceRulesTest {
     }
 
     @Test
-    void olivePriceCannotBeSetBeforeQualityControl() {
+    void olivePriceCanStillBeSetBeforeQualityControl() {
         UnifiedDelivery delivery = owned(olive(OperationType.OLIVE_PURCHASE, OliveLotStatus.NEW));
         delivery.setPoidsNet(1000.0);
 
-        assertThrows(IllegalArgumentException.class, () -> service.updateprice(delivery.getId(), 1.5));
-        verify(deliveryRepository, never()).save(any());
+        service.updateprice(delivery.getId(), 1.5);
+
+        assertEquals(1500.0, delivery.getPrice());
     }
 
     @Test
@@ -157,14 +149,6 @@ class UnifiedDeliveryServiceRulesTest {
     }
 
     @Test
-    void oilReceivedAsPaymentCannotBePriced() {
-        UnifiedDelivery delivery = owned(oil(OperationType.PAYMENT, OliveLotStatus.OIL_CONTROLLED));
-        delivery.setOilQuantity(100.0);
-
-        assertThrows(IllegalArgumentException.class, () -> service.updateprice(delivery.getId(), 12.0));
-    }
-
-    @Test
     void priceMustBePositive() {
         assertThrows(IllegalArgumentException.class, () -> service.updateprice(UUID.randomUUID(), 0.0));
     }
@@ -182,35 +166,14 @@ class UnifiedDeliveryServiceRulesTest {
     }
 
     @Test
-    void milledReceptionCannotBeDeleted() {
+    void paidMilledReceptionCanStillBeDeletedAndItsFinanceReversed() {
         UnifiedDelivery delivery = owned(olive(OperationType.SIMPLE_RECEPTION, OliveLotStatus.COMPLETED));
-
-        assertThrows(IllegalStateException.class, () -> service.delete(delivery.getId()));
-        verify(financialTransactionPort, never()).reverseLinked(any(), any());
-    }
-
-    @Test
-    void partlyPaidReceptionCannotBeDeleted() {
-        UnifiedDelivery delivery = owned(olive(OperationType.OLIVE_PURCHASE, OliveLotStatus.OLIVE_CONTROLLED));
         delivery.setPaidAmount(10.0);
-
-        assertThrows(IllegalStateException.class, () -> service.delete(delivery.getId()));
-    }
-
-    @Test
-    void readyExchangeCannotBeDeletedBecauseOilAlreadyLeftStock() {
-        UnifiedDelivery delivery = owned(olive(OperationType.EXCHANGE, OliveLotStatus.PROD_READY));
-
-        assertThrows(IllegalStateException.class, () -> service.delete(delivery.getId()));
-    }
-
-    @Test
-    void readyPurchaseCanStillBeDeleted() {
-        UnifiedDelivery delivery = owned(olive(OperationType.OLIVE_PURCHASE, OliveLotStatus.PROD_READY));
 
         service.delete(delivery.getId());
 
         assertTrue(delivery.getDeleted());
+        verify(financialTransactionPort).reverseLinked(any(), any());
     }
 
     // --- helpers --------------------------------------------------------------
