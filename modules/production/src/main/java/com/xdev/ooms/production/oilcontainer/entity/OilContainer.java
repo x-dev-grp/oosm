@@ -10,6 +10,10 @@ import java.math.RoundingMode;
 
 @Entity
 public class OilContainer extends BaseEntity {
+    @jakarta.persistence.Version
+    @jakarta.persistence.Column(name = "balance_version", nullable = false, columnDefinition = "bigint default 0 not null")
+    private long balanceVersion;
+
 
     private String name;
     private String description;

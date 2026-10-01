@@ -68,7 +68,7 @@ spring:
   sql:
     init:
       mode: ${SPRING_SQL_INIT_MODE:always}
-      schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql,classpath:db/app-settings-schema.sql,classpath:db/tenant-enabled-module-schema.sql
+      schema-locations: classpath:db/oauth2-schema.sql,classpath:db/security-schema-patch.sql,classpath:db/app-settings-schema.sql,classpath:db/tenant-enabled-module-schema.sql,classpath:db/day-import-schema.sql
 
   data:
     jpa:

@@ -173,4 +173,6 @@ public interface DeliveryRepository extends BaseRepository<UnifiedDelivery> {
     List<String> findAllDeliveryNumbers();
 
     Optional<UnifiedDelivery> findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(String descriptionFragment);
+
+    Optional<UnifiedDelivery> findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String descriptionFragment);
 }

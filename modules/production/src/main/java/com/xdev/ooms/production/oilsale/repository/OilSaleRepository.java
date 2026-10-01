@@ -24,4 +24,7 @@ public interface OilSaleRepository extends BaseRepository<OilSale> {
     Optional<OilSale> findFirstByInvoiceNumberIgnoreCaseAndIsDeletedFalse(String invoiceNumber);
 
     Optional<OilSale> findFirstByDescriptionContainingIgnoreCaseAndIsDeletedFalse(String descriptionFragment);
-} 
+
+    Optional<OilSale> findFirstByTenantIdAndInvoiceNumberIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String invoiceNumber);
+    Optional<OilSale> findFirstByTenantIdAndDescriptionContainingIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String descriptionFragment);
+}

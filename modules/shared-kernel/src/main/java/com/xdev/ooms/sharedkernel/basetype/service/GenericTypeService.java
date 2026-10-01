@@ -54,7 +54,7 @@ public class GenericTypeService extends BaseServiceImpl<BaseType, BaseTypeDto, B
             return super.save(request);
         }
 
-        return repository.findFirstByTypeAndNameIgnoreCaseAndIsDeletedFalse(request.getType(), name)
+        return repository.findFirstByTenantIdAndTypeAndNameIgnoreCaseAndIsDeletedFalse(com.xdev.ooms.sharedkernel.config.TenantContext.getCurrentTenant(), request.getType(), name)
                 .map(existing -> modelMapper.map(existing, BaseTypeDto.class))
                 .orElseGet(() -> {
                     request.setName(name);
@@ -83,7 +83,14 @@ public class GenericTypeService extends BaseServiceImpl<BaseType, BaseTypeDto, B
     }
 
     public List<BaseType> getAllTypes(TypeCategory type) {
-        return repository.findAllByType(type);
+        UUID tenantId = com.xdev.ooms.sharedkernel.config.TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            return repository.findAllByType(type);
+        }
+        return repository.findAllByType(type).stream()
+                .filter(t -> !Boolean.TRUE.equals(t.getDeleted()))
+                .filter(t -> t.getTenantId() == null || tenantId.equals(t.getTenantId()))
+                .toList();
     }
 
     @Override
