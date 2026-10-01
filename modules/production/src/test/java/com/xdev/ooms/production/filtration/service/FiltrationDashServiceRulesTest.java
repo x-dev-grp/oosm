@@ -48,39 +48,44 @@ class FiltrationDashServiceRulesTest {
     }
 
     @Test
-    void completedFiltrationCannotBeDeleted() {
+    void completedFiltrationIsSoftDeleted() {
         FiltrationOperation op = operation(FiltrationStatus.COMPLETED);
-        when(repository.findByIdAndIsDeletedFalse(op.getId())).thenReturn(Optional.of(op));
-
-        assertThrows(IllegalStateException.class, () -> service.delete(op.getId()));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void createdFiltrationIsSoftDeleted() {
-        FiltrationOperation op = operation(FiltrationStatus.CREATED);
         when(repository.findByIdAndIsDeletedFalse(op.getId())).thenReturn(Optional.of(op));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.remove(op.getId());
+        service.delete(op.getId());
 
         assertTrue(op.getDeleted());
     }
 
     @Test
-    void genericCreateAndUpdateAreRefused() {
+    void removeIgnoresFiltrationOfAnotherTenant() {
         FiltrationOperation op = operation(FiltrationStatus.CREATED);
+        op.setTenantId(UUID.randomUUID());
+        when(repository.findById(op.getId())).thenReturn(Optional.of(op));
+
+        service.remove(op.getId());
+
+        verify(repository, never()).deleteById(any());
+    }
+
+    @Test
+    void genericUpdateIsRefused() {
+        FiltrationOperation op = operation(FiltrationStatus.COMPLETED);
         when(repository.findByIdAndIsDeletedFalse(op.getId())).thenReturn(Optional.of(op));
         FiltrationDashDto dto = new FiltrationDashDto();
         dto.setId(op.getId());
 
-        assertThrows(UnsupportedOperationException.class, () -> service.save(new FiltrationDashDto()));
         assertThrows(UnsupportedOperationException.class, () -> service.update(dto));
+        verify(repository, never()).save(any());
     }
 
     @Test
-    void completedFiltrationOnlyOffersRead() {
-        assertEquals(Set.of(Action.READ), service.actionsMapping(operation(FiltrationStatus.COMPLETED)));
+    void everyStatusOffersReadUpdateAndDelete() {
+        Set<Action> expected = Set.of(Action.READ, Action.UPDATE, Action.DELETE);
+        for (FiltrationStatus status : FiltrationStatus.values()) {
+            assertEquals(expected, service.actionsMapping(operation(status)));
+        }
     }
 
     private FiltrationOperation operation(FiltrationStatus status) {

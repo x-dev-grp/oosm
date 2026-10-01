@@ -25,6 +25,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -60,24 +61,20 @@ class FiltrationServiceRulesTest {
     }
 
     @Test
-    void createRefusesSameSourceAndTarget() {
-        UUID tank = UUID.randomUUID();
+    void createAllowsInPlaceFiltration() {
+        StorageUnit tank = tank(tenantId, 1000.0, 5.0);
+        when(storageUnitRepo.findById(tank.getId())).thenReturn(Optional.of(tank));
 
-        assertThrows(IllegalArgumentException.class, () -> service.createFiltration(request(tank, tank, 100.0)));
-        verify(filtrationRepo, never()).save(any());
-    }
+        var result = service.createFiltration(request(tank.getId(), tank.getId(), 100.0));
 
-    @Test
-    void createRefusesNonPositiveVolume() {
-        assertThrows(IllegalArgumentException.class,
-                () -> service.createFiltration(request(UUID.randomUUID(), UUID.randomUUID(), 0.0)));
+        assertEquals(FiltrationStatus.CREATED.name(), result.getStatus());
     }
 
     @Test
     void createRefusesTankOfAnotherTenant() {
         StorageUnit foreign = tank(UUID.randomUUID(), 1000.0, 5.0);
         StorageUnit target = tank(tenantId, 0.0, 0.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(foreign.getId())).thenReturn(Optional.of(foreign));
+        when(storageUnitRepo.findById(foreign.getId())).thenReturn(Optional.of(foreign));
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.createFiltration(request(foreign.getId(), target.getId(), 100.0)));
@@ -88,8 +85,8 @@ class FiltrationServiceRulesTest {
     void createRefusesMoreThanSourceHolds() {
         StorageUnit source = tank(tenantId, 50.0, 5.0);
         StorageUnit target = tank(tenantId, 0.0, 0.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(source.getId())).thenReturn(Optional.of(source));
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(target.getId())).thenReturn(Optional.of(target));
+        when(storageUnitRepo.findById(source.getId())).thenReturn(Optional.of(source));
+        when(storageUnitRepo.findById(target.getId())).thenReturn(Optional.of(target));
 
         assertThrows(IllegalArgumentException.class,
                 () -> service.createFiltration(request(source.getId(), target.getId(), 100.0)));
@@ -99,8 +96,8 @@ class FiltrationServiceRulesTest {
     void createSavesOperationInCreatedState() {
         StorageUnit source = tank(tenantId, 1000.0, 5.0);
         StorageUnit target = tank(tenantId, 0.0, 0.0);
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(source.getId())).thenReturn(Optional.of(source));
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(target.getId())).thenReturn(Optional.of(target));
+        when(storageUnitRepo.findById(source.getId())).thenReturn(Optional.of(source));
+        when(storageUnitRepo.findById(target.getId())).thenReturn(Optional.of(target));
 
         var result = service.createFiltration(request(source.getId(), target.getId(), 100.0));
 
@@ -109,12 +106,18 @@ class FiltrationServiceRulesTest {
     }
 
     @Test
-    void completedFiltrationCannotBeDeleted() {
-        FiltrationOperation op = operation(FiltrationStatus.COMPLETED, tank(tenantId, 0, 0), tank(tenantId, 0, 0), 100.0);
+    void completedFiltrationIsSoftDeletedWithoutMovingStock() {
+        StorageUnit source = tank(tenantId, 900.0, 5.0);
+        StorageUnit target = tank(tenantId, 90.0, 5.0);
+        FiltrationOperation op = operation(FiltrationStatus.COMPLETED, source, target, 100.0);
         when(filtrationRepo.findByIdAndIsDeletedFalse(op.getId())).thenReturn(Optional.of(op));
 
-        assertThrows(IllegalStateException.class, () -> service.deleteFiltration(op.getId()));
-        verify(filtrationRepo, never()).save(any());
+        service.deleteFiltration(op.getId());
+
+        assertTrue(op.getDeleted());
+        assertEquals(900.0, source.getCurrentVolume());
+        assertEquals(90.0, target.getCurrentVolume());
+        verify(storageUnitRepo, never()).save(any());
     }
 
     @Test
@@ -127,13 +130,13 @@ class FiltrationServiceRulesTest {
     }
 
     @Test
-    void completionKeepsCostOfLostOilInFilteredTank() {
+    void completionValuesFilteredOilAtSourceAverageCost() {
         StorageUnit source = tank(tenantId, 1000.0, 5.0);
         StorageUnit target = tank(tenantId, 0.0, 0.0);
         FiltrationOperation op = operation(FiltrationStatus.IN_PROGRESS, source, target, 100.0);
         when(filtrationRepo.findByIdAndIsDeletedFalse(op.getId())).thenReturn(Optional.of(op));
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(source.getId())).thenReturn(Optional.of(source));
-        when(storageUnitRepo.findByIdAndIsDeletedFalse(target.getId())).thenReturn(Optional.of(target));
+        when(storageUnitRepo.findById(source.getId())).thenReturn(Optional.of(source));
+        when(storageUnitRepo.findById(target.getId())).thenReturn(Optional.of(target));
         when(businessCodeGenerator.generate(eq(FiltrationOperation.class), anyString(), anyString())).thenReturn("FI0001");
         when(oilTransactionService.findByStorageUnitId(source.getId())).thenReturn(List.of());
 
@@ -144,7 +147,8 @@ class FiltrationServiceRulesTest {
         assertEquals(900.0, source.getCurrentVolume());
         assertEquals(4500.0, source.getTotalCost());
         assertEquals(90.0, target.getCurrentVolume());
-        assertEquals(500.0, target.getTotalCost(), 0.01);
+        assertEquals(450.0, target.getTotalCost(), 0.01);
+        assertEquals(5.0, target.getAvgCost(), 0.01);
         assertEquals(10.0, op.getLossVolume());
         assertEquals(FiltrationStatus.COMPLETED, op.getStatus());
     }
