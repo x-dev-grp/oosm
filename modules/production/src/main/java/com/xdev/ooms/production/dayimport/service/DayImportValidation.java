@@ -25,20 +25,9 @@ final class DayImportValidation {
         unique(wb.getQcResults(), r -> r.receptionExternalRef + "|" + r.ruleKey + "|" + r.oilQc, "QcResults", out);
         for (var r : wb.getReceptions()) {
             numeric(r, "Receptions", out);
-            if ("OIL".equalsIgnoreCase(r.deliveryType) && !blank(r.operationType) && !Set.of("OIL_PURCHASE", "INTERNAL_RECEPTION").contains(r.operationType.trim().toUpperCase(Locale.ROOT)))
-                error(out, "Receptions", r.rowNumber, "operationType", "Oil receipts require OIL_PURCHASE or INTERNAL_RECEPTION");
-            if ("OLIVE".equalsIgnoreCase(r.deliveryType) && !blank(r.operationType) && !Set.of("BASE", "OLIVE_PURCHASE", "SIMPLE_RECEPTION", "EXCHANGE", "PAYMENT").contains(r.operationType.trim().toUpperCase(Locale.ROOT)))
-                error(out, "Receptions", r.rowNumber, "operationType", "Invalid olive reception operation");
-            enumValue(r.operationType, OperationType.class, "Receptions", r.rowNumber, "operationType", out);
-            if ("OIL".equalsIgnoreCase(r.deliveryType) && (blank(r.storageUnitKey) || r.oilQuantity == null || r.oilQuantity <= 0 || r.unitPrice == null || r.unitPrice <= 0))
-                error(out, "Receptions", r.rowNumber, r.externalRef, "Oil reception requires a tank, positive quantity and unit price");
-            if ("OLIVE".equalsIgnoreCase(r.deliveryType) && (r.poidsNet == null || r.poidsNet <= 0))
-                error(out, "Receptions", r.rowNumber, r.externalRef, "Positive olive weight required");
         }
         for (var r : wb.getPayments()) {
             numeric(r, "Payments", out);
-            if (wb.getTemplateVersion() < 2 || blank(r.externalRef)) error(out, "Payments", r.rowNumber, "externalRef", "Use template version 2 with a unique payment externalRef; legacy payments require reconciliation");
-            enumValue(r.paymentMethod, PaymentMethod.class, "Payments", r.rowNumber, "paymentMethod", out);
             if (r.paymentDate != null && r.paymentDate.isAfter(java.time.LocalDate.now()))
                 error(out, "Payments", r.rowNumber, "paymentDate", "Payment date cannot be in the future");
         }

@@ -83,7 +83,14 @@ public class GenericTypeService extends BaseServiceImpl<BaseType, BaseTypeDto, B
     }
 
     public List<BaseType> getAllTypes(TypeCategory type) {
-        return repository.findAllByTenantIdAndTypeAndIsDeletedFalse(com.xdev.ooms.sharedkernel.config.TenantContext.getCurrentTenant(), type);
+        UUID tenantId = com.xdev.ooms.sharedkernel.config.TenantContext.getCurrentTenant();
+        if (tenantId == null) {
+            return repository.findAllByType(type);
+        }
+        return repository.findAllByType(type).stream()
+                .filter(t -> !Boolean.TRUE.equals(t.getDeleted()))
+                .filter(t -> t.getTenantId() == null || tenantId.equals(t.getTenantId()))
+                .toList();
     }
 
     @Override
