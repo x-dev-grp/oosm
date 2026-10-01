@@ -1296,6 +1296,8 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, OperationType.BASE);
             case SIMPLE_RECEPTION ->
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.SIMPLE_RECEPTION);
+            case EXCHANGE ->
+                    prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.EXCHANGE);
             case PAYMENT ->
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, OperationType.PAYMENT);
             default ->

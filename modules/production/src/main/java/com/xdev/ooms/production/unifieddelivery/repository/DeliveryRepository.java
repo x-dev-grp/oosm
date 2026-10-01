@@ -15,6 +15,8 @@ import java.util.UUID;
 
 public interface DeliveryRepository extends BaseRepository<UnifiedDelivery> {
 
+    Optional<UnifiedDelivery> findByIdAndTenantIdAndIsDeletedFalse(UUID id, UUID tenantId);
+
 
     @Query("""
             SELECT DISTINCT d FROM UnifiedDelivery d
