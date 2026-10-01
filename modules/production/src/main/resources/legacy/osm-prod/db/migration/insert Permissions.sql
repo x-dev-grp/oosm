@@ -14,6 +14,8 @@
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
+-- NOTE: seed JSON block below is regenerated from permissions-spec.json via: node oosm/scripts/sync-permissions.cjs
 -- ====== 0) Pré-requis & idempotence ======
 CREATE EXTENSION IF NOT EXISTS pgcrypto; -- pour gen_random_uuid()
 
@@ -578,7 +580,7 @@ SELECT public.seed_permissions_from_json($${
     },
     "OILCREDIT": {
       "description": "Oil credit management",
-      "module": "PRODUCTION",
+      "module": "FINANCE",
       "permissions": [
         "APPROVE",
         "COMPLETE",

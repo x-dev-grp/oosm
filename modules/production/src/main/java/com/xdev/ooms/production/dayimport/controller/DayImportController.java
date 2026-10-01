@@ -21,9 +21,9 @@ public class DayImportController {
     }
 
     @GetMapping("/template")
-    public ResponseEntity<byte[]> template(@RequestParam(required=false) String lang) throws Exception { return download(engine.blankTemplate(lang), "oosm-day-import-template.xlsx", false); }
+    public ResponseEntity<byte[]> template(@RequestParam(required=false) String lang) throws Exception { DayImportAccess.requireImport(); return download(engine.blankTemplate(lang), "oosm-day-import-template.xlsx", false); }
     @GetMapping("/sample")
-    public ResponseEntity<byte[]> sample(@RequestParam(required=false) String lang) throws Exception { return download(engine.sampleTemplate(lang), "oosm-day-import-sample.xlsx", false); }
+    public ResponseEntity<byte[]> sample(@RequestParam(required=false) String lang) throws Exception { DayImportAccess.requireImport(); return download(engine.sampleTemplate(lang), "oosm-day-import-sample.xlsx", false); }
 
     @PostMapping(value="/dry-run", consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<DayImportReportDto>> dryRun(@RequestPart("file") MultipartFile file) throws Exception {
@@ -39,11 +39,13 @@ public class DayImportController {
 
     @GetMapping("/runs/{id}")
     public ResponseEntity<ApiResponse<DayImportReportDto>> run(@PathVariable UUID id) {
+        DayImportAccess.requireImport();
         return ResponseEntity.ok(new ApiResponse<>(true, "Import result", workflow.report(id)));
     }
 
     @GetMapping("/runs/{id}/report")
     public ResponseEntity<byte[]> savedReport(@PathVariable UUID id, @RequestParam(defaultValue="xlsx") String format) throws Exception {
+        DayImportAccess.requireImport();
         return export(workflow.report(id), format);
     }
 

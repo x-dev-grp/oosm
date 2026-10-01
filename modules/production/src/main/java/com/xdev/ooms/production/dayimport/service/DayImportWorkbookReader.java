@@ -22,20 +22,26 @@ public class DayImportWorkbookReader {
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "read");
         DayImportWorkbook wb = new DayImportWorkbook();
-        try (Workbook workbook = new XSSFWorkbook(in)) {
-            readImportMeta(workbook.getSheet("ImportMeta"), wb);
-            readNamed(workbook.getSheet("Regions"), wb.getRegions());
-            readNamed(workbook.getSheet("Parcels"), wb.getParcels());
-            readNamed(workbook.getSheet("SupplierTypes"), wb.getSupplierTypes());
-            readSuppliers(workbook.getSheet("Suppliers"), wb);
-            readContainers(workbook.getSheet("OilContainers"), wb);
-            readQcRules(workbook.getSheet("QcRules"), wb);
-            readReceptions(workbook.getSheet("Receptions"), wb);
-            readQc(workbook.getSheet("QcResults"), wb);
-            readPayments(workbook.getSheet("Payments"), wb);
-            readOilSales(workbook.getSheet("OilSales"), wb);
-            readOilSaleContainers(workbook.getSheet("OilSaleContainers"), wb);
-            readExpenses(workbook.getSheet("Expenses"), wb);
+        try (XSSFWorkbook workbook = new XSSFWorkbook(in)) {
+            Map<String, Sheet> sheets = new HashMap<>();
+            for (Sheet sheet : workbook) {
+                sheets.putIfAbsent(DayImportColumnLabels.canonicalSheet(sheet.getSheetName()), sheet);
+            }
+            recalculate(workbook);
+            wb.setTemplateVersion(propertyVersion(workbook));
+            readImportMeta(sheets.get("ImportMeta"), wb);
+            readNamed(sheets.get("Regions"), wb.getRegions());
+            readNamed(sheets.get("Parcels"), wb.getParcels());
+            readNamed(sheets.get("SupplierTypes"), wb.getSupplierTypes());
+            readSuppliers(sheets.get("Suppliers"), wb);
+            readContainers(sheets.get("OilContainers"), wb);
+            readQcRules(sheets.get("QcRules"), wb);
+            readReceptions(sheets.get("Receptions"), wb);
+            readQc(sheets.get("QcResults"), wb);
+            readPayments(sheets.get("Payments"), wb);
+            readOilSales(sheets.get("OilSales"), wb);
+            readOilSaleContainers(sheets.get("OilSaleContainers"), wb);
+            readExpenses(sheets.get("Expenses"), wb);
         }
         OOSMLogger.info(getClass(),
                 "[read] businessDate={} regions={} parcels={} suppliers={} receptions={} sales={} expenses={}",
@@ -68,8 +74,39 @@ public class DayImportWorkbookReader {
         if (!date.isBlank()) {
             wb.setBusinessDate(LocalDate.parse(date));
         }
-        wb.setTemplateVersion(Integer.parseInt(map.getOrDefault("templateversion", "1")));
-        wb.setTimezone(map.getOrDefault("timezone", "Africa/Tunis"));
+        String version = map.getOrDefault("templateversion", "").trim();
+        if (!version.isBlank()) {
+            wb.setTemplateVersion(Integer.parseInt(version));
+        }
+        String timezone = map.getOrDefault("timezone", "").trim();
+        wb.setTimezone(timezone.isBlank() ? "Africa/Tunis" : timezone);
+    }
+
+    /** Generated references and lots are formulas; files saved by tools that skip recalculation carry no cached values. */
+    private void recalculate(XSSFWorkbook workbook) {
+        FormulaEvaluator evaluator = workbook.getCreationHelper().createFormulaEvaluator();
+        for (Sheet sheet : workbook) {
+            for (Row row : sheet) {
+                for (Cell cell : row) {
+                    if (cell.getCellType() != CellType.FORMULA) continue;
+                    try {
+                        evaluator.evaluateFormulaCell(cell);
+                    } catch (RuntimeException ignored) {
+                        // keep the value Excel cached
+                    }
+                }
+            }
+        }
+    }
+
+    /** Current templates keep the version out of the visible sheets; older files carry it in ImportMeta. */
+    private int propertyVersion(XSSFWorkbook workbook) {
+        var property = workbook.getProperties().getCustomProperties()
+                .getProperty(DayImportTemplateFactory.TEMPLATE_VERSION_PROPERTY);
+        if (property == null) return 1;
+        if (property.isSetI4()) return property.getI4();
+        if (property.isSetLpwstr()) return Integer.parseInt(property.getLpwstr().trim());
+        return 1;
     }
 
     private void readNamed(Sheet sheet, java.util.List<NamedRow> target) {
@@ -274,7 +311,8 @@ public class DayImportWorkbookReader {
             Cell cell = it.next();
             String name = cell.getStringCellValue();
             if (name != null) {
-                map.put(DayImportColumnLabels.key(header.getSheet().getSheetName(), name), cell.getColumnIndex());
+                map.put(DayImportColumnLabels.key(
+                        DayImportColumnLabels.canonicalSheet(header.getSheet().getSheetName()), name), cell.getColumnIndex());
             }
         }
         return map;
@@ -313,13 +351,15 @@ public class DayImportWorkbookReader {
                 yield String.valueOf(v);
             }
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            case FORMULA -> {
-                try {
-                    yield cell.getStringCellValue().trim();
-                } catch (Exception e) {
-                    yield String.valueOf(cell.getNumericCellValue());
+            case FORMULA -> switch (cell.getCachedFormulaResultType()) {
+                case STRING -> cell.getStringCellValue().trim();
+                case NUMERIC -> {
+                    double v = cell.getNumericCellValue();
+                    yield Math.rint(v) == v ? String.valueOf((long) v) : String.valueOf(v);
                 }
-            }
+                case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+                default -> "";
+            };
             default -> "";
         };
     }

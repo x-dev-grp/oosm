@@ -31,6 +31,7 @@ import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.communicator.models.common.dtos.apiDTOs.models.SearchResponse;
 import com.xdev.ooms.sharedkernel.models.SearchData;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import jakarta.validation.ValidationException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -115,7 +116,10 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         if (paymentDTO.getIdOperation() == null) {
             throw new IllegalArgumentException("Payment operation id is required");
         }
-        OilSale oilSale = oilSaleRepository.findByIdAndIsDeletedFalse(paymentDTO.getIdOperation()).orElse(null);
+        OilSale oilSale = TenantAccess.require(
+                oilSaleRepository.findByIdAndIsDeletedFalse(paymentDTO.getIdOperation()),
+                "Vente d'huile",
+                paymentDTO.getIdOperation());
         if (oilSale == null) {
             throw new IllegalArgumentException("Oil Sale not found for ID: " + paymentDTO.getIdOperation());
         }
@@ -189,14 +193,13 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         // Supplier is optional
         Supplier supplier = null;
         if (req.getSupplier() != null && !req.getSupplier().isBlank()) {
-            supplier = supplierRepo.findByIdAndIsDeletedFalse(UUID.fromString(req.getSupplier())).orElse(null);
+            UUID supplierId = UUID.fromString(req.getSupplier());
+            supplier = TenantAccess.require(supplierRepo.findByIdAndIsDeletedFalse(supplierId), "Fournisseur", supplierId);
         }
 
         // ---- 1) Load storage unit & check existence
-        StorageUnit su = storageUnitRepo.findByIdAndIsDeletedFalse(UUID.fromString(req.getStorageUnit())).orElse(null);
-        if (su == null) {
-            throw new IllegalArgumentException("Storage unit not found: " + req.getStorageUnit());
-        }
+        UUID storageUnitId = UUID.fromString(req.getStorageUnit());
+        StorageUnit su = TenantAccess.require(storageUnitRepo.findByIdAndIsDeletedFalse(storageUnitId), "Cuve", storageUnitId);
 
         BigDecimal oilQty = req.getQuantity() != null ? req.getQuantity() : BigDecimal.ZERO;
 
@@ -213,7 +216,13 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         if (hasContainers) {
             // Compute total for containers only when list is provided
             for (var line : req.getContainerSales()) {
-                OilContainer c = containerRepo.findById(line.getId()).orElseThrow(() -> new IllegalArgumentException("Container not found: " + line.getId()));
+                OilContainer c = TenantAccess.require(containerRepo.findByIdAndIsDeletedFalse(line.getId()), "Contenant", line.getId());
+                if (line.getCount() == null || line.getCount() <= 0) {
+                    throw new IllegalArgumentException("Container quantity must be greater than zero: " + line.getId());
+                }
+                if (c.getStockQuantity() < line.getCount()) {
+                    throw new IllegalStateException("Insufficient container stock for " + c.getName());
+                }
                 BigDecimal lineTotal = c.getSellingPrice().multiply(BigDecimal.valueOf(line.getCount()));
                 containerTotal = containerTotal.add(lineTotal);
             }
@@ -261,7 +270,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         // ---- 6) Persist container lines (only if present)
         if (hasContainers) {
             for (OilContainerSale l : req.getContainerSales()) {
-                OilContainer c = oilContainerRepository.findByIdAndIsDeletedFalse(l.getId()).orElseThrow(() -> new IllegalArgumentException("Container not found: " + l.getId()));
+                OilContainer c = TenantAccess.require(oilContainerRepository.findByIdAndIsDeletedFalse(l.getId()), "Contenant", l.getId());
 
                 OilContainerSale line = new OilContainerSale();
                 line.setOilSale(sale);
@@ -344,7 +353,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     @Transactional
     public void cancelSale(UUID saleId) {
         // 1. Retrieve and validate the sale
-        OilSale sale = oilSaleRepository.findByIdAndIsDeletedFalse(saleId).orElseThrow(() -> new IllegalArgumentException("Oil Sale not found: " + saleId));
+        OilSale sale = TenantAccess.require(oilSaleRepository.findByIdAndIsDeletedFalse(saleId), "Vente d'huile", saleId);
 
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new IllegalStateException("Sale is already canceled: " + saleId);
@@ -365,7 +374,8 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         // 3. Restore container stock (if applicable)
         List<OilContainerSale> containerSales = lineRepo.findByOilSaleId(saleId);
         for (OilContainerSale containerSale : containerSales) {
-            OilContainer container = containerRepo.findByIdAndIsDeletedFalse(containerSale.getContainer().getId()).orElseThrow(() -> new IllegalArgumentException("Container not found: " + containerSale.getContainer().getId()));
+            UUID containerId = containerSale.getContainer().getId();
+            OilContainer container = TenantAccess.require(containerRepo.findByIdAndIsDeletedFalse(containerId), "Contenant", containerId);
             container.setStockQuantity(container.getStockQuantity() + containerSale.getCount());
             containerRepo.save(container);
         }
@@ -386,8 +396,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
 
     @Transactional
     public OilSaleDTO confirmSale(UUID saleId) {
-        OilSale sale = oilSaleRepository.findByIdAndIsDeletedFalse(saleId)
-                .orElseThrow(() -> new IllegalArgumentException("Oil Sale not found: " + saleId));
+        OilSale sale = TenantAccess.require(oilSaleRepository.findByIdAndIsDeletedFalse(saleId), "Vente d'huile", saleId);
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new IllegalStateException("Cannot confirm a cancelled sale: " + saleId);
         }
@@ -403,8 +412,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
 
     @Transactional
     public OilSaleDTO deliverSale(UUID saleId, OilSaleDeliveryRequest request) {
-        OilSale sale = oilSaleRepository.findByIdAndIsDeletedFalse(saleId)
-                .orElseThrow(() -> new IllegalArgumentException("Oil Sale not found: " + saleId));
+        OilSale sale = TenantAccess.require(oilSaleRepository.findByIdAndIsDeletedFalse(saleId), "Vente d'huile", saleId);
         if (sale.getStatus() == SaleStatus.CANCELLED) {
             throw new IllegalStateException("Cannot deliver a cancelled sale: " + saleId);
         }
@@ -435,9 +443,8 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     @Transactional
     public OilSaleDTO cancelSaleAndReturn(UUID saleId) {
         cancelSale(saleId);
-        return oilSaleRepository.findById(saleId)
-                .map(s -> modelMapper.map(s, OilSaleDTO.class))
-                .orElseThrow(() -> new IllegalArgumentException("Oil Sale not found after cancel: " + saleId));
+        OilSale sale = TenantAccess.require(oilSaleRepository.findByIdAndIsDeletedFalse(saleId), "Vente d'huile", saleId);
+        return modelMapper.map(sale, OilSaleDTO.class);
     }
 
     @Override

@@ -705,7 +705,7 @@
       ]
     },
     "OILCREDIT": {
-      "module": "PRODUCTION",
+      "module": "FINANCE",
       "description": "Oil credit management",
       "section": "entities",
       "profile": "OIL_CREDIT",
@@ -1123,6 +1123,12 @@
       "sourceEntity": "PRODUITFINAL",
       "targetModule": "CONDITIONING",
       "targetEntity": "PRODUITFINAL"
+    },
+    {
+      "sourceModule": "PRODUCTION",
+      "sourceEntity": "OILCREDIT",
+      "targetModule": "FINANCE",
+      "targetEntity": "OILCREDIT"
     }
   ],
   "rolePresets": [

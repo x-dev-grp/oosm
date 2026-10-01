@@ -6,6 +6,8 @@ import com.xdev.ooms.production.qualitycontrol.service.QualityControlProvisionin
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -32,6 +34,7 @@ public class QualityControlRuleController extends BaseControllerImpl<QualityCont
 
     @PostMapping("/provision-defaults")
     public ResponseEntity<Map<String, Object>> provisionDefaults() {
+        PermissionSupport.requireAction(getResourceName(), Action.CREATE);
         UUID tenantId = TenantContext.getCurrentTenant();
         if (tenantId == null) {
             return ResponseEntity.badRequest().body(Map.of(

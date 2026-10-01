@@ -16,6 +16,42 @@ public class AdminDashboardStatsDTO {
     private List<AdminTenantSummaryDTO> topTenantsByUsers = new ArrayList<>();
     private List<AdminTenantSummaryDTO> recentTenants = new ArrayList<>();
     private List<AdminUserSummaryDTO> recentUsers = new ArrayList<>();
+    private long activeUsersLast7Days;
+    private List<AdminCompanyOverviewDTO> companies = new ArrayList<>();
+    private List<AdminModuleAdoptionDTO> moduleAdoption = new ArrayList<>();
+    private AdminSupportSummaryDTO supportTickets = new AdminSupportSummaryDTO();
+
+    public long getActiveUsersLast7Days() {
+        return activeUsersLast7Days;
+    }
+
+    public void setActiveUsersLast7Days(long activeUsersLast7Days) {
+        this.activeUsersLast7Days = activeUsersLast7Days;
+    }
+
+    public List<AdminCompanyOverviewDTO> getCompanies() {
+        return companies;
+    }
+
+    public void setCompanies(List<AdminCompanyOverviewDTO> companies) {
+        this.companies = companies;
+    }
+
+    public List<AdminModuleAdoptionDTO> getModuleAdoption() {
+        return moduleAdoption;
+    }
+
+    public void setModuleAdoption(List<AdminModuleAdoptionDTO> moduleAdoption) {
+        this.moduleAdoption = moduleAdoption;
+    }
+
+    public AdminSupportSummaryDTO getSupportTickets() {
+        return supportTickets;
+    }
+
+    public void setSupportTickets(AdminSupportSummaryDTO supportTickets) {
+        this.supportTickets = supportTickets;
+    }
 
     public long getTotalTenants() {
         return totalTenants;

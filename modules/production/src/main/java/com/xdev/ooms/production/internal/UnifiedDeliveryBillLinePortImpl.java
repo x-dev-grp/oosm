@@ -81,7 +81,7 @@ public class UnifiedDeliveryBillLinePortImpl implements UnifiedDeliveryBillLineP
         }
         try {
             UUID uuid = UUID.fromString(externalTransactionId.trim());
-            return deliveryRepository.findByIdAndIsDeletedFalse(uuid);
+            return deliveryRepository.findOwned(uuid);
         } catch (IllegalArgumentException ignored) {
             return Optional.empty();
         }

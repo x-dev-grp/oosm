@@ -15,6 +15,7 @@ import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.ExceptionHandler;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -47,6 +48,21 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
         this.modelMapper = modelMapper;
     }
 
+    /** Other actions on this resource that also grant the generic {@code action}. */
+    protected Set<Action> alternativeActions(Action action) {
+        return Set.of();
+    }
+
+    protected void authorize(Action action) {
+        String resource = getResourceName();
+        for (Action alternative : alternativeActions(action)) {
+            if (PermissionSupport.hasAction(resource, alternative)) {
+                return;
+            }
+        }
+        PermissionSupport.requireAction(resource, action);
+    }
+
     @Override
     public ModelMapper getModelMapper() {
         return modelMapper;
@@ -59,6 +75,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<ApiSingleResponse<E, OUTDTO>> findDtoByUuid(@PathVariable UUID id) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "findDtoByUuid", id);
 
@@ -77,6 +94,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Transactional(readOnly = true)
     @Override
     public ResponseEntity<ApiResponse<E, OUTDTO>> fetchAll() {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "fetchAll");
 
@@ -97,6 +115,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public ResponseEntity<ApiResponse<E, OUTDTO>> fetchAllPageable(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size, @RequestParam(required = false, defaultValue = "createdDate") String sort, @RequestParam(required = false, defaultValue = "DESC") String direction
 
     ) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "fetchAllPageable", page, size, sort, direction);
 
@@ -117,6 +136,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public ResponseEntity<ApiSingleResponse<E, OUTDTO>> create(
             @RequestBody INDTO dto
     ) {
+        authorize(Action.CREATE);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "create", dto);
 
@@ -137,6 +157,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public ResponseEntity<ApiSingleResponse<E, OUTDTO>> update(
             @RequestBody INDTO dto
     ) {
+        authorize(Action.UPDATE);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "update", dto);
 
@@ -158,6 +179,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     public ResponseEntity<?> remove(
             @PathVariable UUID id
     ) {
+        authorize(Action.DELETE);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "remove", id);
 
@@ -176,6 +198,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<?> delete(UUID id) {
+        authorize(Action.DELETE);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "delete", id);
 
@@ -197,6 +220,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     @Transactional(readOnly = true)
     @Override
     public ResponseEntity<SearchResponse<E, OUTDTO>> advancedSearch(@RequestBody SearchData searchData, Authentication authentication) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "advancedSearch", searchData, authentication != null ? authentication.getName() : "anonymous");
 
@@ -426,6 +450,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<byte[]> exportPdf(@RequestBody ExportDetails exportDetails) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "exportPdf", exportDetails);
 
@@ -466,6 +491,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<byte[]> exportCsv(@RequestBody ExportDetails exportDetails) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "exportCsv", exportDetails);
 
@@ -511,6 +537,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<byte[]> exportExcel(@RequestBody ExportDetails exportDetails) {
+        authorize(Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "exportExcel", exportDetails);
 
@@ -563,6 +590,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
     //----------------QRCode-----------------//
     @Override
     public ResponseEntity<QrCodeInfo> genQr(String entityType, UUID entityId) {
+        authorize(Action.READ);
 
         try {
             OUTDTO current = baseService.findById(entityId);
@@ -587,6 +615,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<?> resolve( String publicCode) {
+        authorize(Action.READ);
         // entityType is not needed because the service knows its own type
         try {
             QrResolveResponse response = baseService.resolve(publicCode);
@@ -602,6 +631,7 @@ public abstract class BaseControllerImpl<E extends BaseEntity, INDTO extends Bas
 
     @Override
     public ResponseEntity<?> searchByCode(String code) {
+        authorize(Action.READ);
         try {
             if (code == null || code.isBlank()) {
                 return ResponseEntity.badRequest().body("code is required");
