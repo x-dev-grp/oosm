@@ -862,8 +862,8 @@
       "profile": "OIL_CONTAINER"
     },
     "FILTRATIONOPERATION": {
-      "module": "PRODUCTION",
-      "description": "Oil filtration operations",
+      "module": "CONDITIONING",
+      "description": "Oil filtration operations for conditioning",
       "section": "entities",
       "profile": "OIL_CONTAINER"
     },
@@ -898,7 +898,7 @@
       "profile": "CRUD"
     },
     "ARTICLESEC": {
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "description": "Article management (frontend routes and menus)",
       "section": "security_entities",
       "profile": "ARTICLE",
@@ -907,13 +907,13 @@
       ]
     },
     "ARTICLE": {
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "description": "Article management API resource (ArticleSecController — alias synced with ARTICLESEC)",
       "section": "security_entities",
       "profile": "ARTICLE"
     },
     "BOM": {
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "description": "Bill of materials",
       "section": "security_entities",
       "profile": "CRUD",
@@ -931,8 +931,8 @@
       ]
     },
     "EMPLACEMENTSTOCK": {
-      "module": "INVENTAIR",
-      "description": "Stock location",
+      "module": "CONDITIONING",
+      "description": "Conditioning stock location",
       "section": "security_entities",
       "profile": "STOCK_LOCATION",
       "addActions": [
@@ -958,7 +958,7 @@
       "profile": "CRUD"
     },
     "LIGNECONDITIONNEMENT": {
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "description": "Packaging line",
       "section": "security_entities",
       "profile": "CRUD",
@@ -967,20 +967,20 @@
       ]
     },
     "MOUVEMENTSTOCKSEC": {
-      "module": "INVENTAIR",
-      "description": "Stock movement",
+      "module": "CONDITIONING",
+      "description": "Conditioning stock movement",
       "section": "security_entities",
       "profile": "CRUD"
     },
     "PRODUITFINAL": {
-      "module": "INVENTAIR",
+      "module": "CONDITIONING",
       "description": "Finished product",
       "section": "security_entities",
       "profile": "CRUD"
     },
     "STOCKSEC": {
-      "module": "INVENTAIR",
-      "description": "Stock management",
+      "module": "CONDITIONING",
+      "description": "Conditioning stock management",
       "section": "security_entities",
       "profile": "STOCK_FULL"
     },
@@ -1069,6 +1069,60 @@
       "sourceEntity": "STORAGEUNIT",
       "targetModule": "PRODUCTION",
       "targetEntity": "OILCONTAINER"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "STOCKSEC",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "STOCKSEC"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "EMPLACEMENTSTOCK",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "EMPLACEMENTSTOCK"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "MOUVEMENTSTOCKSEC",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "MOUVEMENTSTOCKSEC"
+    },
+    {
+      "sourceModule": "PRODUCTION",
+      "sourceEntity": "FILTRATIONOPERATION",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "FILTRATIONOPERATION"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "ARTICLESEC",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "ARTICLESEC"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "ARTICLE",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "ARTICLE"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "BOM",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "BOM"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "LIGNECONDITIONNEMENT",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "LIGNECONDITIONNEMENT"
+    },
+    {
+      "sourceModule": "INVENTAIR",
+      "sourceEntity": "PRODUITFINAL",
+      "targetModule": "CONDITIONING",
+      "targetEntity": "PRODUITFINAL"
     }
   ],
   "rolePresets": [
