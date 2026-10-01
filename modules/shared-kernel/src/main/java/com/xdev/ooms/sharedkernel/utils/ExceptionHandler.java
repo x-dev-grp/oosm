@@ -132,6 +132,8 @@ public class ExceptionHandler {
                 exception instanceof BindException ||
                 exception instanceof ConstraintViolationException) {
             return HttpStatus.BAD_REQUEST;
+        } else if (exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return HttpStatus.CONFLICT;
         } else if (exception instanceof SQLException) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         } else {
@@ -153,6 +155,8 @@ public class ExceptionHandler {
             return "Access denied: insufficient permissions";
         } else if (exception instanceof IllegalArgumentException) {
             return "Invalid argument provided: " + exception.getMessage();
+        } else if (exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return exception.getMessage();
         } else if (exception instanceof MethodArgumentTypeMismatchException ex) {
             return String.format("Invalid parameter type for '%s': expected %s, got %s",
                     ex.getName(), ex.getRequiredType().getSimpleName(),

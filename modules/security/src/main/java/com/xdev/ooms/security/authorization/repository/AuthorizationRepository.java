@@ -8,7 +8,9 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -19,6 +21,22 @@ public interface AuthorizationRepository extends JpaRepository<Authorization, St
     @Query("DELETE FROM Authorization a WHERE a.principalName IN :principalNames")
     void deleteByPrincipalNameIn(@Param("principalNames") Collection<String> principalNames);
     Optional<Authorization> findByState(String state);
+
+    @Query("""
+            SELECT u.tenantId, MAX(a.accessTokenIssuedAt)
+            FROM Authorization a JOIN OOSMUser u ON u.username = a.principalName
+            WHERE a.accessTokenIssuedAt IS NOT NULL AND COALESCE(u.isDeleted, FALSE) = FALSE
+            GROUP BY u.tenantId
+            """)
+    List<Object[]> findLastActivityGroupedByTenantId();
+
+    @Query("""
+            SELECT u.tenantId, COUNT(DISTINCT u.id)
+            FROM Authorization a JOIN OOSMUser u ON u.username = a.principalName
+            WHERE a.accessTokenIssuedAt >= :since AND COALESCE(u.isDeleted, FALSE) = FALSE
+            GROUP BY u.tenantId
+            """)
+    List<Object[]> countActiveUsersGroupedByTenantIdSince(@Param("since") Instant since);
 
     Optional<Authorization> findByAuthorizationCodeValue(String authorizationCode);
 
