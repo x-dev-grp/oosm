@@ -193,8 +193,9 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         // Supplier is optional
         Supplier supplier = null;
         if (req.getSupplier() != null && !req.getSupplier().isBlank()) {
-            UUID supplierId = UUID.fromString(req.getSupplier());
-            supplier = TenantAccess.require(supplierRepo.findByIdAndIsDeletedFalse(supplierId), "Fournisseur", supplierId);
+            supplier = supplierRepo.findByIdAndIsDeletedFalse(UUID.fromString(req.getSupplier()))
+                    .filter(TenantAccess::isAccessible)
+                    .orElse(null);
         }
 
         // ---- 1) Load storage unit & check existence
@@ -216,7 +217,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
         if (hasContainers) {
             // Compute total for containers only when list is provided
             for (var line : req.getContainerSales()) {
-                OilContainer c = TenantAccess.require(containerRepo.findByIdAndIsDeletedFalse(line.getId()), "Contenant", line.getId());
+                OilContainer c = TenantAccess.require(containerRepo.findById(line.getId()), "Contenant", line.getId());
                 if (line.getCount() == null || line.getCount() <= 0) {
                     throw new IllegalArgumentException("Container quantity must be greater than zero: " + line.getId());
                 }
@@ -443,7 +444,7 @@ public class OilSaleService extends BaseServiceImpl<OilSale, OilSaleDTO, OilSale
     @Transactional
     public OilSaleDTO cancelSaleAndReturn(UUID saleId) {
         cancelSale(saleId);
-        OilSale sale = TenantAccess.require(oilSaleRepository.findByIdAndIsDeletedFalse(saleId), "Vente d'huile", saleId);
+        OilSale sale = TenantAccess.require(oilSaleRepository.findById(saleId), "Vente d'huile", saleId);
         return modelMapper.map(sale, OilSaleDTO.class);
     }
 
