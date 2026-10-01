@@ -203,12 +203,14 @@ public class StorageUnit extends BaseEntity {
                 v -> BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
         if (volume != null) {
+            normalizeStockFields();
+            double price = unitPrice != null ? unitPrice : this.avgCost;
             if (direction == 0) { // SORTIE (soustraction)
                 this.currentVolume = rd.apply(this.currentVolume - volume);
                 this.totalCost = rd.apply(this.totalCost - (volume * this.avgCost));
             } else { // ENTREE (addition)
                 this.currentVolume = rd.apply(this.currentVolume + volume);
-                this.totalCost = rd.apply(this.totalCost + (volume * unitPrice));
+                this.totalCost = rd.apply(this.totalCost + (volume * price));
             }
 
             // recalcul du coût moyen
@@ -220,15 +222,23 @@ public class StorageUnit extends BaseEntity {
         }
     }
 
+    private void normalizeStockFields() {
+        if (this.currentVolume == null) this.currentVolume = 0.0;
+        if (this.totalCost == null) this.totalCost = 0.0;
+        if (this.avgCost == null) this.avgCost = 0.0;
+    }
+
     // Annule une opération supprimée et corrige automatiquement le volume et les coûts de la cuve.
     public void updateDeletedCurrentVolume(Double volume, int direction, Double unitPrice) {
         java.util.function.Function<Double, Double> rd =
                 v -> BigDecimal.valueOf(v).setScale(2, RoundingMode.HALF_UP).doubleValue();
 
         if (volume != null) {
+            normalizeStockFields();
+            double price = unitPrice != null ? unitPrice : this.avgCost;
             if (direction == 0) { // annule SORTIE -> on rajoute
                 this.currentVolume = rd.apply(this.currentVolume + volume);
-                this.totalCost = rd.apply(this.totalCost + (volume * unitPrice));
+                this.totalCost = rd.apply(this.totalCost + (volume * price));
             } else { // annule ENTREE -> on retire
                 this.currentVolume = rd.apply(this.currentVolume - volume);
                 this.totalCost = rd.apply(this.totalCost - (volume * this.avgCost));

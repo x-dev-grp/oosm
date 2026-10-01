@@ -11,6 +11,8 @@ import com.xdev.ooms.production.waste.entity.Waste;
 import com.xdev.ooms.production.waste.service.WasteService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +32,9 @@ public class WasteController extends BaseControllerImpl<Waste, WasteDTO, WasteDT
     }
     @PostMapping("/payment")
     public ResponseEntity<?> processPayment(@RequestBody PaymentDTO paymentDTO) {
+        if (!PermissionSupport.hasAction(getResourceName(), Action.PAY)) {
+            PermissionSupport.requireAction(getResourceName(), Action.UPDATE);
+        }
         try {
             wasteService.processPayment(paymentDTO);
             return ResponseEntity.ok().build();

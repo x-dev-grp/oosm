@@ -23,6 +23,7 @@ import com.xdev.ooms.production.storageunit.repository.StorageUnitRepo;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionState;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 
 import com.xdev.ooms.sharedkernel.utils.BusinessCodeGenerator;
 import org.modelmapper.ModelMapper;
@@ -65,11 +66,14 @@ public class FiltrationService {
         try {
 
             FiltrationOperation operation = findFiltrationOperationById(operationId);
+            if (operation.getStatus() == FiltrationStatus.COMPLETED) {
+                throw new IllegalStateException("Une filtration terminee ne peut pas etre supprimee : le stock a deja ete deplace.");
+            }
 
             operation.setDeleted(true);
             filtrationRepo.save(operation);
 
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la suppression", e);
@@ -80,6 +84,7 @@ public class FiltrationService {
     public FiltrationResultDto createFiltration(FiltrationRequestDto req) {
 
         try {
+            validateRequest(req);
 
             StorageUnit sourceUnit = findStorageUnitById(req.getSource(), "Source");
             StorageUnit targetUnit = findStorageUnitById(req.getTarget(), "Target");
@@ -197,8 +202,9 @@ public class FiltrationService {
             // 5. Retirer le volume de la source
             sourceUnit.updateCurrentVolume(volumeInitial, 0, sourceAvgCost);
 
-            // 6. Ajouter le volume filtré à la cible
-            targetUnit.updateCurrentVolume(volumeAfter, 1, sourceAvgCost);
+            // 6. Ajouter le volume filtré à la cible ; le coût de l'huile perdue reste dans le lot filtré
+            double filteredUnitCost = volumeAfter > 0 ? sourceAvgCost * volumeInitial / volumeAfter : sourceAvgCost;
+            targetUnit.updateCurrentVolume(volumeAfter, 1, filteredUnitCost);
 
             // Sauvegarde des unités
             storageUnitRepo.save(sourceUnit);
@@ -445,7 +451,9 @@ public class FiltrationService {
         try {
 
             // [NOUVEAU] Appel à la nouvelle méthode du repository
-            List<FiltrationOperation> operations = filtrationRepo.findByStatusAndIsDeletedFalse(status.toString());
+            List<FiltrationOperation> operations = filtrationRepo.findByStatusAndIsDeletedFalse(status.toString()).stream()
+                    .filter(TenantAccess::isAccessible)
+                    .toList();
 
             return operations.stream().map(this::mapToDto).collect(Collectors.toList());
 
@@ -475,7 +483,9 @@ public class FiltrationService {
 
     // Recherche une unité
     private StorageUnit findStorageUnitById(UUID id, String type) {
-        return storageUnitRepo.findById(id).orElseThrow(
+        return storageUnitRepo.findByIdAndIsDeletedFalse(id)
+                .filter(TenantAccess::isAccessible)
+                .orElseThrow(
                 () -> new IllegalArgumentException(String.format("%s non trouvée avec l'ID: %s", type, id)));
     }
 
@@ -523,6 +533,7 @@ public class FiltrationService {
 
     private FiltrationOperation findFiltrationOperationById(UUID id) {
         FiltrationOperation op = filtrationRepo.findByIdAndIsDeletedFalse(id)
+                .filter(TenantAccess::isAccessible)
                 .orElseThrow(() -> new IllegalArgumentException(
                         String.format("Opération non trouvée avec l'ID: %s", id)));
 

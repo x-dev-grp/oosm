@@ -9,6 +9,9 @@ import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
+import com.xdev.ooms.production.filtration.dto.FiltrationStatus;
+
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -25,7 +28,35 @@ public class FiltrationDashService
 
     @Override
     public Set<Action> actionsMapping(FiltrationOperation entity) {
+        if (entity != null && entity.getStatus() == FiltrationStatus.COMPLETED) {
+            return Set.of(Action.READ);
+        }
+        if (entity != null && entity.getStatus() == FiltrationStatus.IN_PROGRESS) {
+            return Set.of(Action.READ, Action.DELETE);
+        }
         return Set.of(Action.READ, Action.UPDATE, Action.DELETE);
+    }
+
+    @Override
+    public FiltrationDashDto save(FiltrationDashDto request) {
+        throw new UnsupportedOperationException("Creation via /api/production/filtration uniquement.");
+    }
+
+    @Override
+    public List<FiltrationDashDto> save(List<FiltrationDashDto> request) {
+        throw new UnsupportedOperationException("Creation via /api/production/filtration uniquement.");
+    }
+
+    @Override
+    protected void checkUpdatable(FiltrationOperation existing, FiltrationDashDto request) {
+        throw new UnsupportedOperationException("Modification via /api/production/filtration uniquement.");
+    }
+
+    @Override
+    protected void checkDeletable(FiltrationOperation existing) {
+        if (existing.getStatus() == FiltrationStatus.COMPLETED) {
+            throw new IllegalStateException("Une filtration terminee ne peut pas etre supprimee : le stock a deja ete deplace.");
+        }
     }
 
     @Override

@@ -19,7 +19,10 @@ import  com.xdev.ooms.sharedkernel.Enum.Olive_Oil_Type;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
+import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +30,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @RestController
@@ -42,13 +46,41 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
         this.UnifiedDeliveryService = UnifiedDeliveryService;
         this.unifiedDeliveryService = unifiedDeliveryService;
     }
+    private void requireAny(Action... actions) {
+        for (Action action : actions) {
+            if (PermissionSupport.hasAction(getResourceName(), action)) {
+                return;
+            }
+        }
+        PermissionSupport.requireAction(getResourceName(), actions[0]);
+    }
+
+    private static ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> rejected(Exception e) {
+        return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage(), null));
+    }
+
+    private static boolean isBusinessRejection(Exception e) {
+        return e instanceof IllegalArgumentException || e instanceof IllegalStateException || e instanceof EntityNotFoundException;
+    }
+
+    /** The quality-control and planning screens read receptions and save variety and tank through PUT. */
+    @Override
+    protected Set<Action> alternativeActions(Action action) {
+        return switch (action) {
+            case READ -> Set.of(Action.OLIVE_QUALITY, Action.OIL_QUALITY, Action.PLANNING);
+            case UPDATE -> Set.of(Action.OLIVE_QUALITY, Action.OIL_QUALITY);
+            default -> Set.of();
+        };
+    }
+
     @PostMapping("/payment")
     public ResponseEntity<?> processPayment(@RequestBody PaymentDTO paymentDTO) {
-
+        authorize(Action.PAY);
         try{
             this.UnifiedDeliveryService.processPayment(paymentDTO);
             return ResponseEntity.ok(new ApiResponse<>(true, "Pricing updated successfully", null));
         }catch (Exception e) {
+            if (isBusinessRejection(e)) return rejected(e);
             throw new RuntimeException(e);
         }
     }
@@ -113,32 +145,30 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/updateStatue/{id}/{status}")
+    @PostMapping("/updateStatue/{id}/{status}")
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updateStatue(@PathVariable("id") UUID id, @PathVariable("status") OliveLotStatus status, @RequestParam(value = "cause", required = false) String cause) {
-        // delegate to your service
+        requireAny(Action.UPDATE, Action.PLANNING);
        try{
            this.UnifiedDeliveryService.updateStatus(id, status, cause);
            ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO> response = new ApiResponse<>(true, "Status updated successfully", null);
            return ResponseEntity.ok(response);
        } catch (Exception e) {
-
+           if (isBusinessRejection(e)) return rejected(e);
            throw new RuntimeException(e);
        }
+    }
 
-
-    }@GetMapping("/updateprice/{id}/{updateprice}")
+    @PostMapping("/updateprice/{id}/{updateprice}")
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updatePrice(@PathVariable("id") UUID id, @PathVariable("updateprice") Double unitPrice) {
-        // delegate to your service
+        authorize(Action.SET_PRICE);
        try{
            this.UnifiedDeliveryService.updateprice(id, unitPrice);
            ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO> response = new ApiResponse<>(true, "price  updated successfully", null);
            return ResponseEntity.ok(response);
        } catch (Exception e) {
-
+           if (isBusinessRejection(e)) return rejected(e);
            throw new RuntimeException(e);
        }
-
-
     }
     // Get unpaid deliveries by supplier ID
     @GetMapping("/supplier/{supplierId}/unpaid")
@@ -151,10 +181,12 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
     @PostMapping("/update-exchange-pricing")
     public ResponseEntity<?> updateExchangePricingAndCreateOilTransactionOut(
             @RequestBody ExchangePricingDto dto) {
+      authorize(Action.SET_PRICE);
       try{
           this.UnifiedDeliveryService.updateExchangePricingAndCreateOilTransactionOut(dto)   ;
           return ResponseEntity.ok(new ApiResponse<>(true, "Pricing updated successfully", null));
       }catch (Exception e) {
+          if (isBusinessRejection(e)) return rejected(e);
           throw new RuntimeException(e);
       }
 
@@ -162,18 +194,21 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
     @PostMapping("/update-payment-pricing")
     public ResponseEntity<?> updatePrincingForPaymentreception(
             @RequestBody ExchangePricingDto dto) {
+      authorize(Action.COMPLETE_PAYMENT_DETAILS);
       try{
           this.UnifiedDeliveryService.updatePrincingForPaymentreception(dto)   ;
           return ResponseEntity.ok(new ApiResponse<>(true, "Pricing updated successfully", null));
       }catch (Exception e) {
+          if (isBusinessRejection(e)) return rejected(e);
           throw new RuntimeException(e);
       }
 
     }
 
-    @GetMapping("/createOilRecFromOliveRec/{uuid}")
+    @PostMapping("/createOilRecFromOliveRec/{uuid}")
     public ResponseEntity<ApiSingleResponse<UnifiedDelivery, UnifiedDeliveryDTO>> createOilRecFromOliveRec(
             @PathVariable UUID uuid) {
+        authorize(Action.OIL_RECEPTION);
         try {
             UnifiedDelivery oilDelivery = UnifiedDeliveryService.createOilRecFromOliveRecImpl(uuid, false, null);
             UnifiedDeliveryDTO dto = modelMapper.map(oilDelivery, UnifiedDeliveryDTO.class);

@@ -18,7 +18,9 @@ import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.hibernate.Hibernate;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +49,7 @@ public class OilTransactionController extends BaseControllerImpl<OilTransaction,
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<OilTransaction, OilTransactionDTO>> getByStorageUnit(
             @PathVariable UUID storageUnitId) {
-
+        PermissionSupport.requireAction(getResourceName(), Action.READ);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getByStorageUnit", storageUnitId);
         try {
@@ -77,6 +79,9 @@ public class OilTransactionController extends BaseControllerImpl<OilTransaction,
      */
     @PostMapping("/create-for-sale")
     public ResponseEntity<ApiSingleResponse<OilTransaction, OilTransactionDTO>> createOilTransactionForSale(@RequestBody OilTransactionDTO oilTransactionDTO) {
+        if (!PermissionSupport.hasAction("OILSALE", Action.CREATE)) {
+            PermissionSupport.requireAction(getResourceName(), Action.CREATE);
+        }
         OOSMLogger.logMethodEntry(this.getClass(), "createOilTransactionForSale", oilTransactionDTO);
 
         try {
@@ -99,6 +104,7 @@ public class OilTransactionController extends BaseControllerImpl<OilTransaction,
 
     @PutMapping("/approve")
     public ResponseEntity<ApiSingleResponse<OilTransaction, OilTransactionDTO>> approveOilTransaction(@RequestBody OilTransactionDTO dto) {
+        PermissionSupport.requireAction(getResourceName(), Action.VALIDATE);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "approveOilTransaction", dto);
         try {

@@ -23,6 +23,7 @@ import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
 import org.modelmapper.ModelMapper;
@@ -108,7 +109,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             throw new ValidationException("Maintenance work order id is required");
         }
 
-        MaintenanceWorkOrder existing = maintenanceWorkOrderRepository.findById(request.getId())
+        MaintenanceWorkOrder existing = findOwnedEntity(request.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Maintenance work order not found"));
 
         validateRequest(request);
@@ -158,7 +159,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
     }
 
     private MaintenanceWorkOrderDto toResponseDto(java.util.UUID id) {
-        MaintenanceWorkOrder fresh = maintenanceWorkOrderRepository.findById(id)
+        MaintenanceWorkOrder fresh = findOwnedEntity(id)
                 .orElseThrow(() -> new EntityNotFoundException("Maintenance work order not found"));
         return modelMapper.map(fresh, MaintenanceWorkOrderDto.class);
     }
@@ -228,18 +229,24 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
     private void resolveAssetName(MaintenanceWorkOrderDto request) {
         switch (request.getAssetType()) {
             case MILL_MACHINE -> {
-                MillMachine machine = millMachineRepository.findById(request.getAssetId())
-                        .orElseThrow(() -> new EntityNotFoundException("Mill machine not found"));
+                MillMachine machine = TenantAccess.require(
+                        millMachineRepository.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        "Machine de trituration",
+                        request.getAssetId());
                 request.setAssetName(machine.getName());
             }
             case STORAGE_UNIT -> {
-                StorageUnit unit = storageUnitRepo.findById(request.getAssetId())
-                        .orElseThrow(() -> new EntityNotFoundException("Storage unit not found"));
+                StorageUnit unit = TenantAccess.require(
+                        storageUnitRepo.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        "Cuve",
+                        request.getAssetId());
                 request.setAssetName(unit.getName());
             }
             case LIGNE_CONDITIONNEMENT -> {
-                LigneConditionnement ligne = ligneConditionnementRepository.findById(request.getAssetId())
-                        .orElseThrow(() -> new EntityNotFoundException("Packaging line not found"));
+                LigneConditionnement ligne = TenantAccess.require(
+                        ligneConditionnementRepository.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        "Ligne de conditionnement",
+                        request.getAssetId());
                 request.setAssetName(ligne.getNom());
             }
             default -> throw new ValidationException("Unsupported asset type");
@@ -277,8 +284,10 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             LocalDateTime nextMaintenance,
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
-        MillMachine machine = millMachineRepository.findById(assetId)
-                .orElseThrow(() -> new EntityNotFoundException("Mill machine not found"));
+        MillMachine machine = TenantAccess.require(
+                millMachineRepository.findByIdAndIsDeletedFalse(assetId),
+                "Machine de trituration",
+                assetId);
         machine.setLastMaintenanceDate(lastMaintenance);
         machine.setNextMaintenanceDate(nextMaintenance);
         if (status == MaintenanceWorkOrderStatus.COMPLETED || status == MaintenanceWorkOrderStatus.CANCELLED) {
@@ -298,8 +307,10 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             LocalDateTime nextMaintenance,
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
-        StorageUnit unit = storageUnitRepo.findById(assetId)
-                .orElseThrow(() -> new EntityNotFoundException("Storage unit not found"));
+        StorageUnit unit = TenantAccess.require(
+                storageUnitRepo.findByIdAndIsDeletedFalse(assetId),
+                "Cuve",
+                assetId);
         unit.setNextMaintenanceDate(nextMaintenance);
         if (status == MaintenanceWorkOrderStatus.COMPLETED || status == MaintenanceWorkOrderStatus.CANCELLED) {
             if (unit.getStatus() == StorageStatus.MAINTENANCE) {
@@ -317,8 +328,10 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             LocalDateTime nextMaintenance,
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
-        LigneConditionnement ligne = ligneConditionnementRepository.findById(assetId)
-                .orElseThrow(() -> new EntityNotFoundException("Packaging line not found"));
+        LigneConditionnement ligne = TenantAccess.require(
+                ligneConditionnementRepository.findByIdAndIsDeletedFalse(assetId),
+                "Ligne de conditionnement",
+                assetId);
         ligne.setDateDerniereMaintenance(toDate(lastMaintenance));
         ligne.setDateProchaineMaintenance(toDate(nextMaintenance));
         if (status == MaintenanceWorkOrderStatus.COMPLETED || status == MaintenanceWorkOrderStatus.CANCELLED) {

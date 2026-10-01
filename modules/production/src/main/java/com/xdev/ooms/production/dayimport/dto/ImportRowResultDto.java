@@ -10,6 +10,8 @@ public class ImportRowResultDto {
     private ImportRowStatus status;
     private String message;
     private Double stockDelta;
+    /** Receptions only: the projected lot during validation, the assigned lot once committed. */
+    private String lotNumber;
     private List<ImportFieldErrorDto> fieldErrors = new ArrayList<>();
 
     public static ImportRowResultDto of(String sheet, int rowNumber, String businessKey,
@@ -69,6 +71,14 @@ public class ImportRowResultDto {
 
     public void setStockDelta(Double stockDelta) {
         this.stockDelta = stockDelta;
+    }
+
+    public String getLotNumber() {
+        return lotNumber;
+    }
+
+    public void setLotNumber(String lotNumber) {
+        this.lotNumber = lotNumber;
     }
 
     public List<ImportFieldErrorDto> getFieldErrors() {

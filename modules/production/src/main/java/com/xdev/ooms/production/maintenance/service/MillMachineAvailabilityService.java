@@ -5,8 +5,8 @@ import com.xdev.ooms.production.maintenance.enums.MaintenanceWorkOrderStatus;
 import com.xdev.ooms.production.maintenance.repository.MaintenanceWorkOrderRepository;
 import com.xdev.ooms.production.millmachine.entity.MillMachine;
 import com.xdev.ooms.production.millmachine.repository.MillMachineRepository;
-import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ValidationException;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -44,8 +44,10 @@ public class MillMachineAvailabilityService {
     }
 
     public Optional<String> getBlockingReason(UUID millId) {
-        MillMachine machine = millMachineRepository.findById(millId)
-                .orElseThrow(() -> new EntityNotFoundException("Mill machine not found"));
+        MillMachine machine = TenantAccess.require(
+                millMachineRepository.findByIdAndIsDeletedFalse(millId),
+                "Machine de trituration",
+                millId);
 
         String operatingStatus = normalize(machine.getOperatingStatus());
         if (operatingStatus != null && BLOCKED_OPERATING_STATUSES.contains(operatingStatus)) {
@@ -70,8 +72,10 @@ public class MillMachineAvailabilityService {
     }
 
     public void refreshMillOperatingStatus(UUID millId) {
-        MillMachine machine = millMachineRepository.findById(millId)
-                .orElseThrow(() -> new EntityNotFoundException("Mill machine not found"));
+        MillMachine machine = TenantAccess.require(
+                millMachineRepository.findByIdAndIsDeletedFalse(millId),
+                "Machine de trituration",
+                millId);
 
         boolean hasActiveMaintenance = maintenanceWorkOrderRepository.existsByAssetTypeAndAssetIdAndStatusIn(
                 MaintenanceAssetType.MILL_MACHINE,
@@ -81,7 +85,7 @@ public class MillMachineAvailabilityService {
         if (hasActiveMaintenance) {
             machine.setOperatingStatus("MAINTENANCE");
         } else if (machine.getOperatingStatus() == null
-                || BLOCKED_OPERATING_STATUSES.contains(normalize(machine.getOperatingStatus()))) {
+                || "MAINTENANCE".equals(normalize(machine.getOperatingStatus()))) {
             machine.setOperatingStatus("OPERATIONAL");
         }
 
