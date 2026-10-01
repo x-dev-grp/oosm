@@ -145,7 +145,7 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
         return ResponseEntity.ok(response);
     }
 
-    @PostMapping("/updateStatue/{id}/{status}")
+    @RequestMapping(value = "/updateStatue/{id}/{status}", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updateStatue(@PathVariable("id") UUID id, @PathVariable("status") OliveLotStatus status, @RequestParam(value = "cause", required = false) String cause) {
         requireAny(Action.UPDATE, Action.PLANNING);
        try{
@@ -158,7 +158,7 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
        }
     }
 
-    @PostMapping("/updateprice/{id}/{updateprice}")
+    @RequestMapping(value = "/updateprice/{id}/{updateprice}", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiResponse<UnifiedDelivery, UnifiedDeliveryDTO>> updatePrice(@PathVariable("id") UUID id, @PathVariable("updateprice") Double unitPrice) {
         authorize(Action.SET_PRICE);
        try{
@@ -205,10 +205,9 @@ public class UnifiedDeliveryController extends BaseControllerImpl<UnifiedDeliver
 
     }
 
-    @PostMapping("/createOilRecFromOliveRec/{uuid}")
+    @RequestMapping(value = "/createOilRecFromOliveRec/{uuid}", method = {RequestMethod.GET, RequestMethod.POST})
     public ResponseEntity<ApiSingleResponse<UnifiedDelivery, UnifiedDeliveryDTO>> createOilRecFromOliveRec(
             @PathVariable UUID uuid) {
-        authorize(Action.OIL_RECEPTION);
         try {
             UnifiedDelivery oilDelivery = UnifiedDeliveryService.createOilRecFromOliveRecImpl(uuid, false, null);
             UnifiedDeliveryDTO dto = modelMapper.map(oilDelivery, UnifiedDeliveryDTO.class);

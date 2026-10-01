@@ -70,7 +70,7 @@ public class GenealogyService {
         }
 
         StorageUnit unit = TenantAccess.require(
-                storageUnitRepo.findByIdAndIsDeletedFalse(lotOrStorageId),
+                storageUnitRepo.findById(lotOrStorageId),
                 "Cuve ou lot de tracabilite",
                 lotOrStorageId);
 
@@ -94,7 +94,7 @@ public class GenealogyService {
         dto.setLotNumber(traceabilityLot.getLotNumber());
 
         if (traceabilityLot.getStorageUnitId() != null) {
-            storageUnitRepo.findByIdAndIsDeletedFalse(traceabilityLot.getStorageUnitId())
+            storageUnitRepo.findById(traceabilityLot.getStorageUnitId())
                     .filter(TenantAccess::isAccessible)
                     .ifPresent(storageUnit -> dto.setStorageUnitName(storageUnit.getName()));
         }
@@ -143,7 +143,7 @@ public class GenealogyService {
             return;
         }
 
-        deliveryRepo.findOwned(rootSourceId).ifPresent(delivery ->
+        deliveryRepo.findById(rootSourceId).filter(TenantAccess::isAccessible).ifPresent(delivery ->
                 appendRootSourceFromDelivery(delivery, traceabilityLot.getSourceType(), dto));
         mergeOilReceptionsForStorageUnit(traceabilityLot.getStorageUnitId(), traceabilityLot.getLotNumber(), dto);
     }
@@ -253,7 +253,8 @@ public class GenealogyService {
             if (!seenDeliveryIds.add(step.getDeliveryId())) {
                 continue;
             }
-            deliveryRepo.findOwned(step.getDeliveryId())
+            deliveryRepo.findById(step.getDeliveryId())
+                    .filter(TenantAccess::isAccessible)
                     .ifPresent(delivery -> appendRootSourceFromDelivery(delivery, null, dto));
         }
     }
@@ -345,7 +346,7 @@ public class GenealogyService {
             return List.of();
         }
 
-        StorageUnit storageUnit = storageUnitRepo.findByIdAndIsDeletedFalse(storageUnitId)
+        StorageUnit storageUnit = storageUnitRepo.findById(storageUnitId)
                 .filter(TenantAccess::isAccessible)
                 .orElse(null);
         List<IntakeStepDto> chain = new ArrayList<>();
@@ -387,7 +388,7 @@ public class GenealogyService {
         if (receptionId == null) {
             return receptionTx.getReception();
         }
-        return deliveryRepo.findOwned(receptionId).orElse(receptionTx.getReception());
+        return deliveryRepo.findById(receptionId).filter(TenantAccess::isAccessible).orElse(receptionTx.getReception());
     }
 
     private IntakeStepDto toIntakeStepFromDelivery(UnifiedDelivery delivery, String type) {

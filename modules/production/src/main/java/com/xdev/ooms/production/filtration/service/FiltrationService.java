@@ -66,14 +66,11 @@ public class FiltrationService {
         try {
 
             FiltrationOperation operation = findFiltrationOperationById(operationId);
-            if (operation.getStatus() == FiltrationStatus.COMPLETED) {
-                throw new IllegalStateException("Une filtration terminee ne peut pas etre supprimee : le stock a deja ete deplace.");
-            }
 
             operation.setDeleted(true);
             filtrationRepo.save(operation);
 
-        } catch (IllegalArgumentException | IllegalStateException e) {
+        } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
             throw new RuntimeException("Erreur lors de la suppression", e);
@@ -84,7 +81,6 @@ public class FiltrationService {
     public FiltrationResultDto createFiltration(FiltrationRequestDto req) {
 
         try {
-            validateRequest(req);
 
             StorageUnit sourceUnit = findStorageUnitById(req.getSource(), "Source");
             StorageUnit targetUnit = findStorageUnitById(req.getTarget(), "Target");
@@ -202,9 +198,8 @@ public class FiltrationService {
             // 5. Retirer le volume de la source
             sourceUnit.updateCurrentVolume(volumeInitial, 0, sourceAvgCost);
 
-            // 6. Ajouter le volume filtré à la cible ; le coût de l'huile perdue reste dans le lot filtré
-            double filteredUnitCost = volumeAfter > 0 ? sourceAvgCost * volumeInitial / volumeAfter : sourceAvgCost;
-            targetUnit.updateCurrentVolume(volumeAfter, 1, filteredUnitCost);
+            // 6. Ajouter le volume filtré à la cible
+            targetUnit.updateCurrentVolume(volumeAfter, 1, sourceAvgCost);
 
             // Sauvegarde des unités
             storageUnitRepo.save(sourceUnit);
@@ -483,7 +478,7 @@ public class FiltrationService {
 
     // Recherche une unité
     private StorageUnit findStorageUnitById(UUID id, String type) {
-        return storageUnitRepo.findByIdAndIsDeletedFalse(id)
+        return storageUnitRepo.findById(id)
                 .filter(TenantAccess::isAccessible)
                 .orElseThrow(
                 () -> new IllegalArgumentException(String.format("%s non trouvée avec l'ID: %s", type, id)));

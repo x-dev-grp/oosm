@@ -22,7 +22,6 @@ import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import com.xdev.ooms.sharedkernel.ports.OilCreditPort;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
-import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -170,7 +169,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         boolean isTransfertIN = oilTransaction.getTransactionType() == TransactionType.TRANSFER_IN;
         if (request.getStorageUnitSource() != null && request.getStorageUnitSource().getId() != null) {
 
-            StorageUnit src = ownedStorageUnit(request.getStorageUnitSource().getId());
+            StorageUnit src = accessibleStorageUnitOrNull(request.getStorageUnitSource().getId());
             oilTransaction.setStorageUnitSource(src);
             if (isTransfertIN) {
                 oilTransaction.setUnitPrice(src.getAvgCost());
@@ -179,12 +178,12 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
         // Always fetch and set StorageUnit entities by ID to avoid natural identifier errors
         if (request.getStorageUnitDestination() != null && request.getStorageUnitDestination().getId() != null) {
-            StorageUnit dest = ownedStorageUnit(request.getStorageUnitDestination().getId());
+            StorageUnit dest = accessibleStorageUnitOrNull(request.getStorageUnitDestination().getId());
             oilTransaction.setStorageUnitDestination(dest);
         }
 
         if (request.getReception() != null && request.getReception().getId() != null) {
-            UnifiedDelivery reception = deliveryRepository.findOwned(request.getReception().getId()).orElse(null);
+            UnifiedDelivery reception = accessibleDeliveryOrNull(request.getReception().getId());
             oilTransaction.setReception(reception);
         }
 
@@ -231,11 +230,11 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         OilTransaction oilTransaction = modelMapper.map(request, OilTransaction.class);
 
         if (request.getStorageUnitSource() != null && request.getStorageUnitSource().getId() != null) {
-            oilTransaction.setStorageUnitSource(ownedStorageUnit(request.getStorageUnitSource().getId()));
+            oilTransaction.setStorageUnitSource(accessibleStorageUnitOrNull(request.getStorageUnitSource().getId()));
         }
 
         if (request.getStorageUnitDestination() != null && request.getStorageUnitDestination().getId() != null) {
-            oilTransaction.setStorageUnitDestination(ownedStorageUnit(request.getStorageUnitDestination().getId()));
+            oilTransaction.setStorageUnitDestination(accessibleStorageUnitOrNull(request.getStorageUnitDestination().getId()));
         }
 
         oilTransaction.setTotalPrice();
@@ -326,8 +325,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             OOSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
             return null;
         }
-        OilTransaction oilTransaction = findOwnedEntity(dto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("Oil transaction not found"));
+        OilTransaction oilTransaction = TenantAccess.require(oilTransactionRepository.findById(dto.getId()), "Oil transaction", dto.getId());
         if (oilTransaction.getTransactionState() != TransactionState.PENDING) {
             throw new IllegalStateException("Seule une operation en attente peut etre validee.");
         }
@@ -376,7 +374,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
         if (oilTransaction.getReception() != null && oilTransaction.getReception().getId() != null) {
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = accessibleDeliveryOrNull(reception);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setStatus(OliveLotStatus.IN_STOCK);
                 unifiedDeliveryRepo.save(unifiedDelivery);
@@ -452,7 +450,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
 //            oilTransaction.setTotalPrice();
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = accessibleDeliveryOrNull(reception);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setPaid(true);
                 unifiedDelivery.setUnpaidAmount(0.0);
@@ -461,7 +459,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
         if (oilTransaction.getReception() != null && oilTransaction.getReception().getId() != null) {
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = accessibleDeliveryOrNull(reception);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setStatus(OliveLotStatus.PROD_READY);
                 unifiedDeliveryRepo.save(unifiedDelivery);
@@ -680,7 +678,15 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     }
 
     private StorageUnit ownedStorageUnit(UUID id) {
-        return TenantAccess.require(storageUnitRepo.findByIdAndIsDeletedFalse(id), "Cuve", id);
+        return TenantAccess.require(storageUnitRepo.findById(id), "Cuve", id);
+    }
+
+    private StorageUnit accessibleStorageUnitOrNull(UUID id) {
+        return storageUnitRepo.findById(id).filter(TenantAccess::isAccessible).orElse(null);
+    }
+
+    private UnifiedDelivery accessibleDeliveryOrNull(UUID id) {
+        return deliveryRepository.findById(id).filter(TenantAccess::isAccessible).orElse(null);
     }
 
     private void validateNonNegativeVolumeBeforeSave(StorageUnit source, StorageUnit destination, Double quantityKg) {

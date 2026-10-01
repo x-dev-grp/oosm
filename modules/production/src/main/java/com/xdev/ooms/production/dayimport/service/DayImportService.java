@@ -745,8 +745,8 @@ public class DayImportService {
                     : deliveryRepository.findByIdAndTenantIdAndIsDeletedFalse(importedId, tenant());
             if (importedId != null && existing.isEmpty()) { error(report, "Receptions", row.rowNumber, row.externalRef, "Imported reception is unavailable; reconcile before retrying"); continue; }
             if (existing.isPresent()) {
-                if (ledger.operation("RECEPTION", row.externalRef) == null) {
-                    error(report, "Receptions", row.rowNumber, row.externalRef, "Historical import reference requires reconciliation"); continue;
+                if (commit && ledger.operation("RECEPTION", row.externalRef) == null) {
+                    ledger.record("RECEPTION", row.externalRef, payload, existing.get().getId());
                 }
                 receptionCache.put(normalize(row.externalRef), existing.get().getId());
                 ImportRowResultDto skip = ImportRowResultDto.of("Receptions", row.rowNumber, row.externalRef,
@@ -933,27 +933,64 @@ public class DayImportService {
                 OOSMLogger.info(getClass(), "[finalize] corrected operationType={} for {}", op, row.externalRef);
             }
 
-            // QC and stock services own lifecycle transitions. Do not force COMPLETED/PROD_READY.
+            OliveLotStatus target;
+            if (deliveryType == DeliveryType.OIL) {
+                boolean hasStock = oilTransactionRepository
+                        .findFirstByReceptionIdAndTransactionTypeAndIsDeletedFalse(entity.getId(), TransactionType.RECEPTION_IN)
+                        .isPresent();
+                target = hasStock ? OliveLotStatus.IN_STOCK : OliveLotStatus.STOCK_READY;
+            } else if (op == OperationType.OLIVE_PURCHASE) {
+                target = OliveLotStatus.COMPLETED;
+            } else if (op == OperationType.BASE) {
+                target = OliveLotStatus.PROD_READY;
+            } else {
+                // SIMPLE_RECEPTION / EXCHANGE — history & supplier tabs filter COMPLETED
+                target = OliveLotStatus.COMPLETED;
+            }
 
+            if (entity.getStatus() != target) {
+                OliveLotStatus previous = entity.getStatus();
+                entity.setStatus(target);
+                deliveryRepository.save(entity);
+                OOSMLogger.info(getClass(), "[finalize] {} {} → {}", row.externalRef, previous, target);
+            }
         }
     }
 
     private OperationType resolveOperationType(DeliveryType deliveryType, String raw) {
-        if (!blank(raw)) return OperationType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
-        return deliveryType == DeliveryType.OIL ? OperationType.OIL_PURCHASE : OperationType.SIMPLE_RECEPTION;
+        OperationType parsed = null;
+        if (!blank(raw)) {
+            try {
+                parsed = OperationType.valueOf(raw.trim().toUpperCase(Locale.ROOT));
+            } catch (Exception ignored) {
+                // fall through to defaults
+            }
+        }
+        if (deliveryType == DeliveryType.OIL) {
+            // Common spreadsheet mistake: OIL + OLIVE_PURCHASE — coerce to oil purchase.
+            if (parsed == null || parsed == OperationType.OLIVE_PURCHASE || parsed == OperationType.SIMPLE_RECEPTION) {
+                return OperationType.OIL_PURCHASE;
+            }
+            return parsed;
+        }
+        if (parsed != null) {
+            return parsed;
+        }
+        return OperationType.SIMPLE_RECEPTION;
     }
 
     private void processPayments(DayImportWorkbook wb, DayImportReportDto report,
                                  Map<String, UUID> receptionCache, boolean commit) {
         Map<String, Double> remaining = new HashMap<>();
         for (PaymentRow row : wb.getPayments()) {
-            if (blank(row.externalRef) || blank(row.receptionExternalRef) || row.amount == null || !Double.isFinite(row.amount) || row.amount <= 0) {
-                error(report, "Payments", row.rowNumber, row.externalRef, "Payment reference, reception reference and positive amount required"); continue;
+            if (blank(row.receptionExternalRef) || row.amount == null || !Double.isFinite(row.amount) || row.amount <= 0) {
+                error(report, "Payments", row.rowNumber, row.externalRef, "Reception reference and positive amount required"); continue;
             }
+            String paymentRef = legacyPaymentRef(wb, row);
             String payload = ledger.payload(row, row.paymentDate == null ? wb.getBusinessDate() : row.paymentDate);
-            if (identityConflict("PAYMENT", row.externalRef, payload, "Payments", row.rowNumber, report)) continue;
-            if (ledger.operation("PAYMENT", row.externalRef) != null) {
-                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, row.externalRef, ImportRowStatus.SKIP_DUPLICATE, "Payment already imported")); continue;
+            if (identityConflict("PAYMENT", paymentRef, payload, "Payments", row.rowNumber, report)) continue;
+            if (ledger.operation("PAYMENT", paymentRef) != null) {
+                report.addRow(ImportRowResultDto.of("Payments", row.rowNumber, paymentRef, ImportRowStatus.SKIP_DUPLICATE, "Payment already imported")); continue;
             }
             String receptionKey = normalize(row.receptionExternalRef);
             UUID deliveryId = receptionCache.get(receptionKey);
@@ -964,9 +1001,6 @@ public class DayImportService {
             ReceptionRow planned = wb.getReceptions().stream().filter(r -> normalize(r.externalRef).equals(receptionKey)).findFirst().orElse(null);
             if (delivery == null && (commit || planned == null)) {
                 error(report, "Payments", row.rowNumber, row.externalRef, "Reception not found for payment"); continue;
-            }
-            if (delivery != null && !ledger.knownEntity("RECEPTION", delivery.getId())) {
-                error(report, "Payments", row.rowNumber, row.externalRef, "Historical reception requires payment reconciliation before importing installments"); continue;
             }
             double available;
             if (commit || !remaining.containsKey(receptionKey)) {
@@ -987,11 +1021,25 @@ public class DayImportService {
                 payment.setAmount(row.amount);
                 payment.setCurrency(Currency.TND);
                 payment.setPaymentDate(row.paymentDate == null ? wb.getBusinessDate() : row.paymentDate);
-                payment.setPaymentMethod(blank(row.paymentMethod) ? PaymentMethod.CASH : PaymentMethod.valueOf(row.paymentMethod.trim().toUpperCase(Locale.ROOT)));
+                payment.setPaymentMethod(paymentMethodOrCash(row.paymentMethod));
                 unifiedDeliveryService.processPayment(payment);
-                ledger.record("PAYMENT", row.externalRef, payload, delivery.getId());
+                ledger.record("PAYMENT", paymentRef, payload, delivery.getId());
             }
         }
+    }
+
+    private PaymentMethod paymentMethodOrCash(String raw) {
+        try {
+            return PaymentMethod.valueOf(safe(raw).toUpperCase(Locale.ROOT));
+        } catch (Exception e) {
+            return PaymentMethod.CASH;
+        }
+    }
+
+    /** Template v1 payments have no reference: key them by day, reception and row so a re-upload is skipped. */
+    private String legacyPaymentRef(DayImportWorkbook wb, PaymentRow row) {
+        if (!blank(row.externalRef)) return row.externalRef;
+        return "LEGACY|" + wb.getBusinessDate() + "|" + normalize(row.receptionExternalRef) + "|row" + row.rowNumber;
     }
 
     private void processOilSales(DayImportWorkbook wb, DayImportReportDto report,
@@ -1027,7 +1075,7 @@ public class DayImportService {
                         SALE_IMP_PREFIX + row.externalRef.trim() + "]");
             }
             if (existing.isPresent()) {
-                if (ledger.operation("SALE", ref) == null) { error(report, "OilSales", row.rowNumber, ref, "Historical import reference requires reconciliation"); continue; }
+                if (commit && ledger.operation("SALE", ref) == null) ledger.record("SALE", ref, payload, existing.get().getId());
                 report.addRow(ImportRowResultDto.of("OilSales", row.rowNumber, ref, ImportRowStatus.SKIP_DUPLICATE,
                         "Sale already imported — skipped"));
                 continue;
@@ -1191,7 +1239,10 @@ public class DayImportService {
             String payload = ledger.payload(row, wb.getBusinessDate());
             if (identityConflict("EXPENSE", row.externalRef, payload, "Expenses", row.rowNumber, report)) continue;
             if (ledger.operation("EXPENSE", row.externalRef) == null && expensePort.existsByExternalReference(row.externalRef.trim())) {
-                error(report, "Expenses", row.rowNumber, row.externalRef, "Historical import reference requires reconciliation"); continue;
+                if (commit) ledger.record("EXPENSE", row.externalRef, payload, null);
+                report.addRow(ImportRowResultDto.of("Expenses", row.rowNumber, row.externalRef, ImportRowStatus.SKIP_DUPLICATE,
+                        "Expense already imported"));
+                continue;
             }
             if (ledger.operation("EXPENSE", row.externalRef) != null) {
                 report.addRow(ImportRowResultDto.of("Expenses", row.rowNumber, row.externalRef, ImportRowStatus.SKIP_DUPLICATE,

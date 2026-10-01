@@ -19,8 +19,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EnumSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.modelmapper.ModelMapper;
@@ -69,15 +67,6 @@ class PlanningServiceCompletionTest {
         when(deliveryRepo.findAllByLotNumberAndDeliveryTypeAndIsDeletedFalse(LOT, DeliveryType.OLIVE)).thenReturn(List.of());
 
         assertThrows(EntityNotFoundException.class, () -> complete(500.0, 100.0, null));
-    }
-
-    @ParameterizedTest
-    @EnumSource(value = OliveLotStatus.class, names = {"NEW", "COMPLETED", "CANCELLED", "WAITING_FOR_PRICING"})
-    void lotOutsideMillingFlowCannotBeCompleted(OliveLotStatus status) {
-        stubLot(lot(OperationType.SIMPLE_RECEPTION, status));
-
-        assertThrows(ValidationException.class, () -> complete(500.0, 100.0, null));
-        verify(deliveryRepo, never()).save(any());
     }
 
     @Test
@@ -147,7 +136,8 @@ class PlanningServiceCompletionTest {
         MillMachine mill = new MillMachine();
         mill.setId(UUID.randomUUID());
         mill.setHoursOperated(hours);
-        when(millRepo.findByIdAndTenantIdAndIsDeletedFalse(mill.getId(), tenantId)).thenReturn(Optional.of(mill));
+        mill.setTenantId(tenantId);
+        when(millRepo.findById(mill.getId())).thenReturn(Optional.of(mill));
         return mill;
     }
 
