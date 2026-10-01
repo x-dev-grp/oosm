@@ -28,6 +28,12 @@ public class FiltrationDashService
         return Set.of(Action.READ, Action.UPDATE, Action.DELETE);
     }
 
+    /** A generic update could put a completed filtration back in progress and move its oil a second time. */
+    @Override
+    protected void checkUpdatable(FiltrationOperation existing, FiltrationDashDto request) {
+        throw new UnsupportedOperationException("Modification via /api/production/filtration uniquement.");
+    }
+
     @Override
     protected String getEntityType() {
         return "FILTRATIONOPERATION";
