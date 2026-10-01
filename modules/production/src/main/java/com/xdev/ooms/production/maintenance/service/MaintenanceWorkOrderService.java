@@ -230,21 +230,21 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
         switch (request.getAssetType()) {
             case MILL_MACHINE -> {
                 MillMachine machine = TenantAccess.require(
-                        millMachineRepository.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        millMachineRepository.findById(request.getAssetId()),
                         "Machine de trituration",
                         request.getAssetId());
                 request.setAssetName(machine.getName());
             }
             case STORAGE_UNIT -> {
                 StorageUnit unit = TenantAccess.require(
-                        storageUnitRepo.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        storageUnitRepo.findById(request.getAssetId()),
                         "Cuve",
                         request.getAssetId());
                 request.setAssetName(unit.getName());
             }
             case LIGNE_CONDITIONNEMENT -> {
                 LigneConditionnement ligne = TenantAccess.require(
-                        ligneConditionnementRepository.findByIdAndIsDeletedFalse(request.getAssetId()),
+                        ligneConditionnementRepository.findById(request.getAssetId()),
                         "Ligne de conditionnement",
                         request.getAssetId());
                 request.setAssetName(ligne.getNom());
@@ -285,7 +285,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
         MillMachine machine = TenantAccess.require(
-                millMachineRepository.findByIdAndIsDeletedFalse(assetId),
+                millMachineRepository.findById(assetId),
                 "Machine de trituration",
                 assetId);
         machine.setLastMaintenanceDate(lastMaintenance);
@@ -308,7 +308,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
         StorageUnit unit = TenantAccess.require(
-                storageUnitRepo.findByIdAndIsDeletedFalse(assetId),
+                storageUnitRepo.findById(assetId),
                 "Cuve",
                 assetId);
         unit.setNextMaintenanceDate(nextMaintenance);
@@ -329,7 +329,7 @@ public class MaintenanceWorkOrderService extends BaseServiceImpl<MaintenanceWork
             boolean underMaintenance,
             MaintenanceWorkOrderStatus status) {
         LigneConditionnement ligne = TenantAccess.require(
-                ligneConditionnementRepository.findByIdAndIsDeletedFalse(assetId),
+                ligneConditionnementRepository.findById(assetId),
                 "Ligne de conditionnement",
                 assetId);
         ligne.setDateDerniereMaintenance(toDate(lastMaintenance));
