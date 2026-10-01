@@ -38,7 +38,7 @@ import static org.apache.commons.math3.util.Precision.round;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UnifiedDelivery extends BaseEntity implements Serializable {
     @jakarta.persistence.Version
-    @jakarta.persistence.Column(name = "balance_version", nullable = false)
+    @jakarta.persistence.Column(name = "balance_version", nullable = false, columnDefinition = "bigint default 0 not null")
     private long balanceVersion;
 
 

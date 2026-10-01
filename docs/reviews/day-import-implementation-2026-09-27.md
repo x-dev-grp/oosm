@@ -19,7 +19,7 @@ Backend and frontend branch: `codex/day-import-hardening`.
 
 Deploy backend and frontend together: the commit endpoint now requires the `previewId` returned by dry-run. Old clients cannot commit without a valid preview ID.
 
-Flyway is disabled in this application. `app/src/main/resources/db/day-import-schema.sql` is registered in the existing Spring SQL startup list. If an environment disables SQL initialization, apply this script explicitly before starting the new backend. The database account needs the required DDL rights. The script is additive and repeatable; it also initializes version columns on existing balance tables.
+Flyway is disabled in this application. `modules/production/src/main/resources/db/day-import-schema.sql` is registered in the existing Spring SQL startup list and is also applied by `DayImportSchemaInitializer` on `ApplicationReadyEvent`, so environments with `SPRING_SQL_INIT_MODE=never` still get it (disable with `oosm.day-import.schema-init.enabled=false`). The database account needs the required DDL rights. The script is additive and repeatable; it also initializes version columns on existing balance tables.
 
 Use new version-2 templates for payments. A historical marker without a durable identity is blocked for reconciliation. Do not manufacture payment identity from a file name, row number, or amount, and do not replay historical workbooks to test the rollout.
 

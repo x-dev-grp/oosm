@@ -50,7 +50,7 @@ class DayImportPostgresTest {
             PGSimpleDataSource ds=new PGSimpleDataSource();ds.setURL(url);ds.setUser(System.getenv().getOrDefault("DAY_IMPORT_TEST_USER","postgres"));ds.setPassword(System.getenv().getOrDefault("DAY_IMPORT_TEST_PASSWORD",""));
             String schema="review_"+UUID.randomUUID().toString().replace("-", "");
             new JdbcTemplate(ds).execute("CREATE SCHEMA " + schema);ds.setCurrentSchema(schema);
-            var populator=new ResourceDatabasePopulator(new FileSystemResource(Path.of("../../app/src/main/resources/db/day-import-schema.sql")));
+            var populator=new ResourceDatabasePopulator(new FileSystemResource(Path.of("src/main/resources/db/day-import-schema.sql")));
             populator.execute(ds);
             // Re-running the additive schema must be safe.
             populator.execute(ds);

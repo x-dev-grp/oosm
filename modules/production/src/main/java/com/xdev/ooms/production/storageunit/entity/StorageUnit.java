@@ -27,7 +27,7 @@ import static org.apache.commons.math3.util.Precision.round;
 @Entity
 public class StorageUnit extends BaseEntity {
     @jakarta.persistence.Version
-    @jakarta.persistence.Column(name = "balance_version", nullable = false)
+    @jakarta.persistence.Column(name = "balance_version", nullable = false, columnDefinition = "bigint default 0 not null")
     private long balanceVersion;
 
 
