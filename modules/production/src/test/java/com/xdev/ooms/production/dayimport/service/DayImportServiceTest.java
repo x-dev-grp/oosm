@@ -76,6 +76,14 @@ class DayImportServiceTest {
         OilSaleRow sale=new OilSaleRow();sale.externalRef="S1";sale.quantity=80d;sale.unitPrice=2d;sale.storageUnitKey="A";workbook.getOilSales().add(sale);
         assertTrue(service.dryRun(new byte[0]).isCanCommit());
     }
+    @Test void dryRunShowsTheLotNumbersTheAppWillAssign() throws Exception {
+        tank(0d);
+        ReceptionRow olive=new ReceptionRow();olive.externalRef="R1";olive.deliveryType="OLIVE";olive.oliveOilType="OB";olive.regionName="Tunis";olive.poidsNet=500d;workbook.getReceptions().add(olive);
+        ReceptionRow oil=new ReceptionRow();oil.externalRef="R2";oil.deliveryType="OIL";oil.oliveOilType="HC";oil.regionName="Tunis";oil.oilQuantity=10d;oil.unitPrice=1d;oil.storageUnitKey="A";workbook.getReceptions().add(oil);
+        when(dep(UnifiedDeliveryService.class).nextFreeDeliverySequences(2)).thenReturn(List.of(7, 12));
+        var rows=service.dryRun(new byte[0]).getRows().stream().filter(r -> "Receptions".equals(r.getSheet())).toList();
+        assertEquals(List.of("0007OB26","0012OC26"), rows.stream().map(r -> r.getLotNumber()).toList());
+    }
     @Test void legacyPaymentWithoutReferenceIsSkippedOnReupload() throws Exception {
         workbook.setTemplateVersion(1);PaymentRow p=payment();p.externalRef=null;p.paymentMethod="TYPO";p.rowNumber=4;workbook.getPayments().add(p);
         when(dep(DayImportLedger.class).operation("PAYMENT", "LEGACY|2026-09-05|r1|row4")).thenReturn("payload");

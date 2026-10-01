@@ -24,6 +24,9 @@ import com.xdev.ooms.production.unifieddelivery.repository.DeliveryRepository;
 import com.xdev.ooms.production.millmachine.repository.MillMachineRepository;
 import  com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionDto;
+import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
+import org.springframework.security.access.AccessDeniedException;
 import com.xdev.ooms.sharedkernel.ports.NotificationEvent;
 import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 
@@ -127,8 +130,7 @@ public class PlanningService {
             Set<String> processedLotNumbers = new HashSet<>();
             req.getMills().forEach(millPlan -> {
                 if (millPlan.getItems() != null && !millPlan.getItems().isEmpty()) {
-                    MillMachine mill = millRepo.findById(millPlan.getMillMachineId())
-                            .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millPlan.getMillMachineId()));
+                    MillMachine mill = findMill(millPlan.getMillMachineId());
                     millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
 
                     // Process regular lots
@@ -259,7 +261,7 @@ public class PlanningService {
             log.info("Fetching current planning state at {}", new Date());
 
             // Get all mills
-            List<MillMachine> mills = millRepo.findAll();
+            List<MillMachine> mills = millRepo.findAllByTenantIdAndIsDeletedFalse(requireTenant());
             List<MillMachineDto> millMachineDtos = mills.stream().map((element) -> modelMapper.map(element, MillMachineDto.class)).toList();
             List<MillPlanDTO> millPlans = new ArrayList<>();
             Set<String> assignedLotNumbers = new HashSet<>();
@@ -313,13 +315,14 @@ public class PlanningService {
                 }).collect(Collectors.toList());
 
                 // Add GLOBAL_LOT to mill if assigned
-                deliveries.stream().filter(d -> d.getMillMachine() != null).findFirst().ifPresent(d -> {
-                    MillPlanDTO millPlan = millPlans.stream().filter(mp -> mp.getMillMachineId().equals(d.getMillMachine().getId())).findFirst().orElseThrow(() -> new IllegalStateException("Mill plan not found"));
-                    PlanItemDTO item = new PlanItemDTO();
-                    item.setType("GLOBAL_LOT");
-                    item.setId(globalLotNumber);
-                    millPlan.getItems().add(item);
-                });
+                deliveries.stream().filter(d -> d.getMillMachine() != null).findFirst()
+                        .flatMap(d -> millPlans.stream().filter(mp -> mp.getMillMachineId().equals(d.getMillMachine().getId())).findFirst())
+                        .ifPresent(millPlan -> {
+                            PlanItemDTO item = new PlanItemDTO();
+                            item.setType("GLOBAL_LOT");
+                            item.setId(globalLotNumber);
+                            millPlan.getItems().add(item);
+                        });
 
                 return new GlobalLotDto(globalLotNumber, totalWeight, deliveryDtos);
             }).collect(Collectors.toList());
@@ -356,43 +359,66 @@ public class PlanningService {
         if (millMachine == null || millMachine.getId() == null) {
             throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
         }
-        MillMachine machin = millRepo.findById(millMachine.getId()).orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachine.getId()));
-        if (machin != null) {
-            long currentWorkTime = machin.getHoursOperated() != null ? machin.getHoursOperated() : 0;
-            machin.setHoursOperated((currentWorkTime + (trtDuration != null ? trtDuration : 0)) / 60);
-            millRepo.save(machin);
-        }
+        MillMachine machin = findMill(millMachine.getId());
+        long currentHours = machin.getHoursOperated() != null ? machin.getHoursOperated() : 0;
+        int minutes = trtDuration != null && trtDuration > 0 ? trtDuration : 0;
+        machin.setHoursOperated(currentHours + Math.round(minutes / 60.0));
+        millRepo.save(machin);
     }
 
+    private static UUID requireTenant() {
+        UUID tenant = TenantContext.getCurrentTenant();
+        if (tenant == null) {
+            throw new AccessDeniedException("Tenant context is required");
+        }
+        return tenant;
+    }
+
+    private MillMachine findMill(UUID millId) {
+        return millRepo.findById(millId)
+                .filter(TenantAccess::isAccessible)
+                .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millId));
+    }
     @Transactional
     public void markLotCompleted(String lotNumber, String globalLotNumber, Double oilQuantity, Double rendement, Double unpaidPrice, boolean autoSetStorage, int duree, String trtDateIso, String finalObservation, UUID millMachineId) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "markLotCompleted", lotNumber, oilQuantity, rendement);
         try {
 
-            List<UnifiedDelivery> delivery = deliveryRepo.findByLotNumberIn(Set.of(lotNumber));
+            List<UnifiedDelivery> delivery = deliveryRepo.findAllByLotNumberAndDeliveryTypeAndIsDeletedFalse(lotNumber, DeliveryType.OLIVE);
             if (delivery.isEmpty()) {
                 throw new EntityNotFoundException("Lot not found: " + lotNumber);
             }
             UnifiedDelivery lot = delivery.getFirst();
+            if (oilQuantity == null || oilQuantity < 0) {
+                throw new ValidationException("Oil quantity is required to complete lot " + lotNumber);
+            }
+            boolean simpleReception = lot.getOperationType() == OperationType.SIMPLE_RECEPTION;
+            if (simpleReception && (unpaidPrice == null || unpaidPrice < 0)) {
+                throw new ValidationException("Service price is required to complete lot " + lotNumber);
+            }
 
             applyMillAssignment(lot, millMachineId);
             if (lot.getMillMachine() == null) {
                 throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
             }
 
-            lot.setOilQuantity((oilQuantity).doubleValue());
-            lot.setRendement(round(rendement, 3) );
+            lot.setOilQuantity(oilQuantity);
+            lot.setRendement(rendement != null ? round(rendement, 3) : null);
             lot.setTrtDuration(duree);
             applyCompletionMetadata(lot, trtDateIso, finalObservation);
 
             lot.setOilType(lot.getOilType());
             lot.setOilVariety(lot.getOliveVariety());
             lot.setStatus(OliveLotStatus.COMPLETED);
-            lot.setUnitPrice(unpaidPrice/lot.getPoidsNet());
+            // Only the milling service is priced here; purchase/exchange prices were set before milling.
+            if (simpleReception) {
+                double poidsNet = lot.getPoidsNet() != null ? lot.getPoidsNet() : 0d;
+                lot.setUnitPrice(poidsNet > 0 ? unpaidPrice / poidsNet : 0d);
+            }
 
             deliveryRepo.save(lot);
-            if (Objects.equals(globalLotNumber, "0") || globalLotNumber.isEmpty()) {
+            if (globalLotNumber == null || Objects.equals(globalLotNumber, "0") || globalLotNumber.isEmpty()) {
                 updateMachinWorkTime(lot.getMillMachine(), lot.getTrtDuration());
                 switch (lot.getOperationType()) {
                     case EXCHANGE, BASE, OLIVE_PURCHASE ->
@@ -403,8 +429,8 @@ public class PlanningService {
             }
             switch (lot.getOperationType()) {
                 case SIMPLE_RECEPTION -> {
-                    lot.setPrice((unpaidPrice).doubleValue());
-                    lot.setUnpaidAmount((unpaidPrice).doubleValue());
+                    lot.setPrice(unpaidPrice);
+                    lot.setUnpaidAmount(unpaidPrice);
                 }
                 case null, default -> {
                 }
@@ -441,8 +467,7 @@ public class PlanningService {
         if (millMachineId == null) {
             return;
         }
-        MillMachine mill = millRepo.findById(millMachineId)
-                .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachineId));
+        MillMachine mill = findMill(millMachineId);
         millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
         lot.setMillMachine(mill);
     }
@@ -470,8 +495,7 @@ public class PlanningService {
                 throw new EntityNotFoundException("Global lot not found: " + globalLotNumber);
             }
             if (millMachineId != null) {
-                MillMachine mill = millRepo.findById(millMachineId)
-                        .orElseThrow(() -> new IllegalArgumentException(MILL_NOT_FOUND + millMachineId));
+                MillMachine mill = findMill(millMachineId);
                 millMachineAvailabilityService.assertAvailableForPlanning(mill.getId(), mill.getName());
                 existing.forEach(d -> d.setMillMachine(mill));
                 deliveryRepo.saveAll(existing);
@@ -484,7 +508,7 @@ public class PlanningService {
             }
             MillMachine millForWorkTime = existing.getFirst().getMillMachine();
             if (millForWorkTime == null && millMachineId != null) {
-                millForWorkTime = millRepo.findById(millMachineId).orElse(null);
+                millForWorkTime = findMill(millMachineId);
             }
             if (millForWorkTime == null) {
                 throw new ValidationException(MILL_REQUIRED_TO_COMPLETE);
@@ -578,7 +602,8 @@ public class PlanningService {
                     .mapToDouble(Double::doubleValue)
                     .sum();
 
-            int totalDuration = existing.getFirst().getTrtDuration();
+            Integer firstDuration = existing.getFirst().getTrtDuration();
+            int totalDuration = firstDuration != null ? firstDuration : 0;
 
 
             // Common metadata: prefer unanimous value, else fallback to first item

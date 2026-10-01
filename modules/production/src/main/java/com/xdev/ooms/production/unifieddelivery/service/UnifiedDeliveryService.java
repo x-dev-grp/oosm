@@ -40,7 +40,10 @@ import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.xdev.ooms.sharedkernel.config.TenantContext;
 import org.springframework.beans.BeanUtils;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -70,9 +73,11 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     private final QualityControlResultRepository qualityControlResultRepository;
     private final NotificationPort notificationPort;
     private final ReceptionLimitsParameterReader receptionLimitsParameterReader;
+    private final JdbcTemplate jdbcTemplate;
 
-    public UnifiedDeliveryService(BaseRepository<UnifiedDelivery> repository, ModelMapper modelMapper, DeliveryRepository deliveryRepository, SupplierRepository supplierRepository, StorageUnitRepo storageUnitRepo, GenericRepository genericRepository, OilTransactionService oilTransactionService, FinancialTransactionPort financialTransactionPort, QualityControlResultRepository qualityControlResultRepository, NotificationPort notificationPort, ReceptionLimitsParameterReader receptionLimitsParameterReader) {
+    public UnifiedDeliveryService(BaseRepository<UnifiedDelivery> repository, ModelMapper modelMapper, DeliveryRepository deliveryRepository, SupplierRepository supplierRepository, StorageUnitRepo storageUnitRepo, GenericRepository genericRepository, OilTransactionService oilTransactionService, FinancialTransactionPort financialTransactionPort, QualityControlResultRepository qualityControlResultRepository, NotificationPort notificationPort, ReceptionLimitsParameterReader receptionLimitsParameterReader, JdbcTemplate jdbcTemplate) {
         super(repository, modelMapper);
+        this.jdbcTemplate = jdbcTemplate;
         this.deliveryRepository = deliveryRepository;
         this.supplierRepository = supplierRepository;
         this.storageUnitRepo = storageUnitRepo;
@@ -147,12 +152,12 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         }
 
         if (dto.getSupplier() != null) {
-            Supplier supplier = supplierRepository.findById(dto.getSupplier().getId()).orElseThrow(() -> new RuntimeException("Supplier not found with id: " + dto.getSupplier().getId()));
+            Supplier supplier = supplierRepository.findByIdAndTenantIdAndIsDeletedFalse(dto.getSupplier().getId(), requireTenant()).orElseThrow(() -> new RuntimeException("Supplier not found with id: " + dto.getSupplier().getId()));
             delivery.setSupplierType(supplier);
         }
 
         if (dto.getStorageUnit() != null && dto.getStorageUnit().getId() != null) {
-            StorageUnit stu = storageUnitRepo.findByIdAndIsDeletedFalse(dto.getStorageUnit().getId())
+            StorageUnit stu = storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(dto.getStorageUnit().getId(), requireTenant())
                     .orElseThrow(() -> new RuntimeException("StorageUnit not found with id: " + dto.getStorageUnit().getId()));
             delivery.setStorageUnit(stu);
         } else {
@@ -193,14 +198,14 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "update", dto);
         // 1. Load existing or fail
-        UnifiedDelivery existing = deliveryRepository.findByIdAndIsDeletedFalse(dto.getId()).orElseThrow(() -> new RuntimeException("UnifiedDelivery not found with id: " + dto.getId()));
+        UnifiedDelivery existing = deliveryRepository.findOwned(dto.getId()).orElseThrow(() -> new RuntimeException("UnifiedDelivery not found with id: " + dto.getId()));
 
         // 2. Copy simple fields (exclude those we manage manually, including status)
         BeanUtils.copyProperties(dto, existing, "id", "supplier", "storageUnit", "paid", "oliveVariety", "oilVariety", "parcel", "status");
 
         // 3. Resolve Supplier
         if (dto.getSupplier() != null && dto.getSupplier().getId() != null) {
-            Supplier supplier = supplierRepository.findByIdAndIsDeletedFalse(dto.getSupplier().getId())
+            Supplier supplier = supplierRepository.findByIdAndTenantIdAndIsDeletedFalse(dto.getSupplier().getId(), requireTenant())
                     .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + dto.getSupplier().getId()));
             existing.setSupplierType(supplier);
         } else {
@@ -209,7 +214,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         // 4. Resolve StorageUnit
         if (dto.getStorageUnit() != null && dto.getStorageUnit().getId() != null) {
-            StorageUnit stu = storageUnitRepo.findByIdAndIsDeletedFalse(dto.getStorageUnit().getId())
+            StorageUnit stu = storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(dto.getStorageUnit().getId(), requireTenant())
                     .orElseThrow(() -> new RuntimeException("StorageUnit not found with id: " + dto.getStorageUnit().getId()));
             existing.setStorageUnit(stu);
         } else {
@@ -441,7 +446,9 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     case BASE, OLIVE_PURCHASE -> {
                         OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[mapOliveDeliveryActions] Adding OIL_RECEPTION for %s operation delivery %s", delivery.getOperationType(), delivery.getLotNumber());
 
-                        actions.add(Action.OIL_RECEPTION);
+                        if (!hasActiveOilLeg(delivery)) {
+                            actions.add(Action.OIL_RECEPTION);
+                        }
                         actions.add(Action.GEN_PDF_QC_OIL);
                         actions.add(Action.GEN_PDF);
 
@@ -563,7 +570,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         try {
             // Find the original delivery
-            UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(uuid).orElseThrow(() -> {
+            UnifiedDelivery delivery = deliveryRepository.findOwned(uuid).orElseThrow(() -> {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[createOilRecFromOliveRecImpl] Original delivery not found with UUID: " + uuid);
                 return new EntityNotFoundException("Original delivery not found: " + uuid);
             });
@@ -638,6 +645,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         }
 
         OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[creatOilRecForOtherOPS] Creating oil reception for %s operation from olive delivery %s", delivery.getOperationType(), delivery.getLotNumber());
+
+        if (hasActiveOilLeg(delivery)) {
+            throw new IllegalArgumentException("Oil reception already exists for olive lot " + delivery.getLotNumber());
+        }
 
         try {
             UnifiedDelivery newDelivery = new UnifiedDelivery();
@@ -729,7 +740,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             UnifiedDelivery newDelivery = new UnifiedDelivery();
             if (std != null && !std.isEmpty()) {
-                Optional<StorageUnitDto> stdModel = storageUnitRepo.findById(UUID.fromString(std)).map((element) -> modelMapper.map(element, StorageUnitDto.class));
+                Optional<StorageUnitDto> stdModel = storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(UUID.fromString(std), requireTenant()).map((element) -> modelMapper.map(element, StorageUnitDto.class));
                 newDelivery.setStorageUnit(modelMapper.map(stdModel.get(), StorageUnit.class));
             }
             Optional<UnifiedDelivery> existingPaymentLeg = deliveryRepository
@@ -800,10 +811,20 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
         if (std == null || std.isEmpty()) {
             return;
         }
-        storageUnitRepo.findById(UUID.fromString(std))
+        storageUnitRepo.findByIdAndTenantIdAndIsDeletedFalse(UUID.fromString(std), requireTenant())
                 .map(unit -> modelMapper.map(unit, StorageUnit.class))
                 .ifPresent(oilDelivery::setStorageUnit);
         deliveryRepository.save(oilDelivery);
+    }
+
+    private boolean hasActiveOilLeg(UnifiedDelivery oliveDelivery) {
+        if (oliveDelivery == null || oliveDelivery.getLotNumber() == null) {
+            return false;
+        }
+        return deliveryRepository
+                .findAllByLotNumberAndDeliveryTypeAndIsDeletedFalse(oliveDelivery.getLotNumber(), DeliveryType.OIL)
+                .stream()
+                .anyMatch(d -> d.getStatus() != OliveLotStatus.CANCELLED);
     }
 
     private boolean hasActivePaymentOilLeg(UnifiedDelivery oliveDelivery) {
@@ -818,50 +839,64 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     }
 
 
-    private int parseDeliveryNumber(String deliveryNumber) {
-        if (deliveryNumber == null || deliveryNumber.isBlank()) {
-            return 0;
+    private static UUID requireTenant() {
+        UUID tenant = TenantContext.getCurrentTenant();
+        if (tenant == null) {
+            throw new AccessDeniedException("Tenant context is required");
         }
-        try {
-            return Integer.parseInt(deliveryNumber.trim());
-        } catch (NumberFormatException e) {
-            return 0;
-        }
+        return tenant;
     }
 
-    private int resolveNextDeliverySequence() {
-        Set<Integer> used = deliveryRepository.findAllDeliveryNumbers().stream()
-                .map(this::parseDeliveryNumber)
-                .filter(n -> n > 0)
-                .collect(Collectors.toSet());
-        int seq = 1;
-        while (used.contains(seq)) {
-            seq++;
+    private UnifiedDelivery findOwnedOrThrow(UUID id) {
+        return deliveryRepository.findOwned(id)
+                .orElseThrow(() -> new EntityNotFoundException("Delivery not found: " + id));
+    }
+
+    /** The sequences the next {@code count} receptions of the current year will receive. */
+    @Transactional(readOnly = true)
+    public List<Integer> nextFreeDeliverySequences(int count) {
+        return nextDeliverySequences(count, LocalDateTime.now().getYear());
+    }
+
+    private List<Integer> nextDeliverySequences(int count, int year) {
+        int max = deliveryRepository.findMaxDeliveryNumber(requireTenant(), year);
+        List<Integer> next = new ArrayList<>(count);
+        for (int i = 1; i <= count; i++) {
+            next.add(max + i);
         }
-        return seq;
+        return next;
+    }
+
+    /** Lot number as shown everywhere in the app, e.g. {@code 0001OC26}. */
+    public static String formatLotNumber(int seq, Olive_Oil_Type type, int year) {
+        if (type == null) {
+            return "";
+        }
+        return String.format("%04d", seq) + type.name() + String.format(D1, year % 100);
     }
 
     private String buildLotNumber(UnifiedDelivery delivery, int seq) {
         Olive_Oil_Type type = delivery.getDeliveryType() == DeliveryType.OIL
                 ? delivery.getOilType()
                 : delivery.getOliveType();
-        if (type == null) {
-            return "";
-        }
         LocalDateTime date = delivery.getDeliveryDate() != null ? delivery.getDeliveryDate() : LocalDateTime.now();
-        String yearPart = String.format(D1, date.getYear() % 100);
-        return String.format("%04d", seq) + type.name() + yearPart;
+        return formatLotNumber(seq, type, date.getYear());
     }
 
     private void assignNumbersOnCreate(UnifiedDelivery delivery) {
-        int seq = resolveNextDeliverySequence();
+        UUID tenant = requireTenant();
+        int year = (delivery.getDeliveryDate() != null ? delivery.getDeliveryDate() : LocalDateTime.now()).getYear();
+        // Held until commit: concurrent creations for the same tenant/year wait instead of sharing a number.
+        jdbcTemplate.query("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))", rs -> { },
+                "delivery-seq:" + tenant + ":" + year);
+        int seq = nextDeliverySequences(1, year).get(0);
         delivery.setDeliveryNumber(String.valueOf(seq));
         delivery.setLotNumber(buildLotNumber(delivery, seq));
     }
 
     @Transactional(readOnly = true)
     public NextDeliveryNumbersDto previewNextNumbers(DeliveryType deliveryType, Olive_Oil_Type oliveType, Olive_Oil_Type oilType) {
-        int seq = resolveNextDeliverySequence();
+        int seq = nextFreeDeliverySequences(1).get(0);
         UnifiedDelivery preview = new UnifiedDelivery();
         preview.setDeliveryType(deliveryType);
         preview.setDeliveryDate(LocalDateTime.now());
@@ -901,14 +936,16 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         try {
             // Find the delivery
-            UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> {
+            UnifiedDelivery delivery = deliveryRepository.findOwned(id).orElseThrow(() -> {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateStatus] Delivery not found with ID: " + id);
                 return new EntityNotFoundException("Delivery not found: " + id);
             });
-            if (cause != null) {
-                delivery.setDescription(cause);
-            }
             OliveLotStatus oldStatus = delivery.getStatus();
+            if (cause != null && !cause.isBlank() && oldStatus != status) {
+                String previous = delivery.getDescription();
+                String note = status == OliveLotStatus.CANCELLED ? "Annulation : " + cause.trim() : cause.trim();
+                delivery.setDescription(previous == null || previous.isBlank() ? note : previous + "\n" + note);
+            }
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateStatus] Found delivery %s (Type: %s, Old Status: %s, New Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), oldStatus, status);
 
             // Validate status transition
@@ -971,16 +1008,15 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         try {
             // Find the delivery
-            UnifiedDelivery delivery = repository.findByIdAndIsDeletedFalse(id).orElseThrow(() -> {
+            UnifiedDelivery delivery = deliveryRepository.findOwned(id).orElseThrow(() -> {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateprice] Delivery not found with ID: " + id);
                 return new EntityNotFoundException("Delivery not found: " + id);
             });
 
             OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.INFO, "[updateprice] Found delivery %s (Type: %s, Status: %s)", delivery.getLotNumber(), delivery.getDeliveryType(), delivery.getStatus());
 
-            // Validate delivery state
-            if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[updateprice] Updating price for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+            if (delivery.getDeliveryType() == DeliveryType.OIL && delivery.getStatus() == OliveLotStatus.IN_STOCK) {
+                throw new IllegalArgumentException("Oil reception " + delivery.getLotNumber() + " is already in stock; its price cannot be set again");
             }
 
             // Update unit price
@@ -1070,7 +1106,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         try {
             // Find the oilDelivery
-            UnifiedDelivery oilDelivery = deliveryRepository.findById(dto.getDeliveryId()).orElseThrow(() -> {
+            UnifiedDelivery oilDelivery = deliveryRepository.findOwned(dto.getDeliveryId()).orElseThrow(() -> {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updatePrincingForPaymentreception] Delivery not found with ID: " + dto.getDeliveryId());
                 return new EntityNotFoundException("Delivery not found: " + dto.getDeliveryId());
             });
@@ -1194,7 +1230,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
         try {
             // Find the delivery
-            UnifiedDelivery delivery = deliveryRepository.findById(dto.getDeliveryId()).orElseThrow(() -> {
+            UnifiedDelivery delivery = deliveryRepository.findOwned(dto.getDeliveryId()).orElseThrow(() -> {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.ERROR, "[updateExchangePricingAndCreateOilTransactionOut] Delivery not found with ID: " + dto.getDeliveryId());
                 return new EntityNotFoundException("Delivery not found: " + dto.getDeliveryId());
             });
@@ -1204,7 +1240,10 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
 
             // Validate operation type for exchange
             if (delivery.getOperationType() != OperationType.EXCHANGE) {
-                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[updateExchangePricingAndCreateOilTransactionOut] Processing exchange pricing for non-exchange operation: %s", delivery.getOperationType());
+                throw new IllegalArgumentException("Exchange pricing can only be processed for EXCHANGE deliveries");
+            }
+            if (delivery.getStatus() != OliveLotStatus.OLIVE_CONTROLLED && delivery.getStatus() != OliveLotStatus.WAITING_FOR_PRICING) {
+                throw new IllegalArgumentException("Exchange pricing requires status OLIVE_CONTROLLED, current: " + delivery.getStatus());
             }
 
             // Validate pricing data
@@ -1296,6 +1335,8 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, OperationType.BASE);
             case SIMPLE_RECEPTION ->
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.SIMPLE_RECEPTION);
+            case EXCHANGE ->
+                    prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.INBOUND, TransactionType.PAYMENT, OperationType.EXCHANGE);
             case PAYMENT ->
                     prepareFinanacalTransaction(paymentDTO, applied, delivery, TransactionDirection.OUTBOUND, TransactionType.PURCHASE, OperationType.PAYMENT);
             default ->
@@ -1387,7 +1428,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
-            UnifiedDelivery entity = repository.findByIdAndIsDeletedFalse(id).orElse(null);
+            UnifiedDelivery entity = deliveryRepository.findOwned(id).orElse(null);
             if (entity == null) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
@@ -1441,9 +1482,7 @@ public class UnifiedDeliveryService extends BaseServiceImpl<UnifiedDelivery, Uni
     @Override
     @Transactional(readOnly = true)
     public UnifiedDeliveryDTO findById(UUID id) {
-        UnifiedDelivery entity = repository.findByIdAndIsDeletedFalse(id)
-                .orElseThrow(() -> new EntityNotFoundException("Entity not found with this id " + id));
-        return mapToDto(entity);
+        return mapToDto(findOwnedOrThrow(id));
     }
 
     @Transactional(readOnly = true)
