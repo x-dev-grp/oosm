@@ -388,8 +388,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
         try {
             if (id != null) {
-                if (delete(id) == null) {
-                    throw new EntityNotFoundException("Entity not found with this id " + id);
+                if (repository.findById(id).map(this::isTenantAccessible).orElse(true)) {
+                    repository.deleteById(id);
                 }
                 OOSMLogger.logMethodExit(this.getClass(), "remove");
                 OOSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());

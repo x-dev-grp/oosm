@@ -11,8 +11,6 @@ import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
-import com.xdev.ooms.sharedkernel.models.Action;
-import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +34,6 @@ public class ParameterController extends BaseControllerImpl<Parameter, Parameter
             @PathVariable String code,
             @RequestHeader(value = X_TENANT_ID, required = false) UUID tenantId
     ) {
-        PermissionSupport.requireAction(getResourceName(), Action.READ);
         UUID currentTenant = TenantContext.getCurrentTenant();
         UUID resolvedTenantId = currentTenant != null ? currentTenant : tenantId;
         ApiResponse<Parameter, ParameterDto> response = new ApiResponse<>(
@@ -55,7 +52,6 @@ public class ParameterController extends BaseControllerImpl<Parameter, Parameter
     public ResponseEntity<ParameterService.ParameterSeedResult> seedDefaults(
             @RequestHeader(value = X_TENANT_ID, required = false) UUID tenantId
     ) {
-        PermissionSupport.requireAction(getResourceName(), Action.CREATE);
         UUID currentTenant = TenantContext.getCurrentTenant();
         UUID resolvedTenantId = currentTenant != null ? currentTenant : tenantId;
         return ResponseEntity.ok(parameterService.seedDefaultsForTenant(resolvedTenantId));
