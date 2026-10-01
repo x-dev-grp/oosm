@@ -40,6 +40,8 @@ import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.Enum.*;
 import com.xdev.ooms.sharedkernel.basetype.dto.BaseTypeDto;
 import com.xdev.ooms.sharedkernel.basetype.service.GenericTypeService;
+import com.xdev.ooms.sharedkernel.ports.CompanyProfileReadPort;
+import com.xdev.ooms.sharedkernel.ports.CompanyProfileSnapshot;
 import com.xdev.ooms.sharedkernel.ports.ExpensePort;
 import com.xdev.ooms.sharedkernel.ports.ExpenseRecordCommand;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
@@ -81,6 +83,7 @@ public class DayImportService {
     private final QualityControlRuleRepository qualityControlRuleRepository;
     private final QualityControlResultService qualityControlResultService;
     private final QualityControlResultRepository qualityControlResultRepository;
+    private final CompanyProfileReadPort companyProfileReadPort;
 
     public DayImportService(
             DayImportLedger ledger,
@@ -102,7 +105,8 @@ public class DayImportService {
             QualityControlRuleService qualityControlRuleService,
             QualityControlRuleRepository qualityControlRuleRepository,
             QualityControlResultService qualityControlResultService,
-            QualityControlResultRepository qualityControlResultRepository) {
+            QualityControlResultRepository qualityControlResultRepository,
+            CompanyProfileReadPort companyProfileReadPort) {
         this.ledger = ledger;
         this.reader = reader;
         this.templateFactory = templateFactory;
@@ -123,20 +127,67 @@ public class DayImportService {
         this.qualityControlRuleRepository = qualityControlRuleRepository;
         this.qualityControlResultService = qualityControlResultService;
         this.qualityControlResultRepository = qualityControlResultRepository;
+        this.companyProfileReadPort = companyProfileReadPort;
     }
 
     public byte[] blankTemplate() throws Exception {
         return blankTemplate("fr");
     }
 
+    @Transactional(readOnly = true)
     public byte[] blankTemplate(String language) throws Exception {
         DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "blankTemplate");
-        byte[] bytes = templateFactory.blankTemplate(language);
+        byte[] bytes = templateFactory.blankTemplate(language, referenceData(), company());
         OOSMLogger.logMethodExit(getClass(), "blankTemplate", bytes != null ? bytes.length + " bytes" : null);
         OOSMLogger.logPerformance(getClass(), "blankTemplate", start, System.currentTimeMillis());
         return bytes;
+    }
+
+    /** Every value uses the spelling the importer's lookups match, so picking it from a dropdown links the record. */
+    DayImportReferenceData referenceData() {
+        UUID tenantId = tenant();
+        List<Supplier> suppliers = supplierRepository.findAllByTenantIdAndIsDeletedFalse(tenantId);
+        Map<String, Long> fullNameCounts = suppliers.stream()
+                .filter(s -> !blank(s.getFullName()))
+                .collect(Collectors.groupingBy(s -> normalize(s.getFullName()), Collectors.counting()));
+        List<String> supplierKeys = suppliers.stream()
+                .map(s -> !blank(s.getFullName()) && fullNameCounts.get(normalize(s.getFullName())) == 1
+                        ? s.getFullName()
+                        : (!blank(s.getPhone()) ? s.getPhone() : s.getMatriculeFiscal()))
+                .toList();
+        List<String> varieties = new ArrayList<>(typeNames(TypeCategory.OLIVE_VARIETY));
+        varieties.addAll(typeNames(TypeCategory.OIL_VARIETY));
+        return new DayImportReferenceData(
+                storageUnitRepo.findAllByTenantIdAndIsDeletedFalse(tenantId).stream().map(StorageUnit::getName).toList(),
+                supplierKeys,
+                typeNames(TypeCategory.REGION),
+                typeNames(TypeCategory.PARCEL),
+                typeNames(TypeCategory.SUPPLIER_TYPE),
+                varieties,
+                oilContainerRepository.findAllByTenantIdAndIsDeletedFalse(tenantId).stream().map(OilContainer::getName).toList(),
+                qualityControlRuleRepository.findAllByTenantIdAndIsDeletedFalse(tenantId).stream()
+                        .map(QualityControlRule::getRuleKey).toList(),
+                unifiedDeliveryService.nextFreeDeliverySequences(DayImportTemplateFactory.LIST_ROWS));
+    }
+
+    /** The company block is informational, so a missing or unreadable profile must not block the download. */
+    private CompanyProfileSnapshot company() {
+        try {
+            Optional<CompanyProfileSnapshot> profile = companyProfileReadPort.findCurrentTenantProfile();
+            return profile == null ? null : profile.orElse(null);
+        } catch (RuntimeException e) {
+            OOSMLogger.warn(getClass(), "[template] company profile unavailable: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    private List<String> typeNames(TypeCategory category) {
+        return genericTypeService.getAllTypes(category).stream()
+                .filter(t -> tenant().equals(t.getTenantId()) && !Boolean.TRUE.equals(t.getDeleted()))
+                .map(t -> t.getName())
+                .toList();
     }
 
     public byte[] sampleTemplate() throws Exception {
@@ -147,7 +198,7 @@ public class DayImportService {
         DayImportAccess.requireImport();
         long start = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(getClass(), "sampleTemplate");
-        byte[] bytes = templateFactory.sampleTemplate(LocalDate.now(), language);
+        byte[] bytes = templateFactory.sampleTemplate(LocalDate.now(), language, company());
         OOSMLogger.logMethodExit(getClass(), "sampleTemplate", bytes != null ? bytes.length + " bytes" : null);
         OOSMLogger.logPerformance(getClass(), "sampleTemplate", start, System.currentTimeMillis());
         return bytes;
@@ -674,6 +725,12 @@ public class DayImportService {
                                    Map<String, UUID> typeCache, Map<String, UUID> supplierCache,
                                    Map<String, UUID> receptionCache, Map<String, UUID> storageCache, Map<UUID, Double> tankBalances, boolean commit) {
         LocalDate day = wb.getBusinessDate();
+        // A commit is refused while any row has errors, so rows are created in file order and take these numbers.
+        Deque<Integer> projectedSequences = new ArrayDeque<>();
+        if (!commit && !wb.getReceptions().isEmpty()) {
+            List<Integer> free = unifiedDeliveryService.nextFreeDeliverySequences(wb.getReceptions().size());
+            if (free != null) projectedSequences.addAll(free);
+        }
         for (ReceptionRow row : wb.getReceptions()) {
             if (blank(row.externalRef)) {
                 report.addRow(ImportRowResultDto.of("Receptions", row.rowNumber, "", ImportRowStatus.ERROR, "externalRef required"));
@@ -694,6 +751,7 @@ public class DayImportService {
                 receptionCache.put(normalize(row.externalRef), existing.get().getId());
                 ImportRowResultDto skip = ImportRowResultDto.of("Receptions", row.rowNumber, row.externalRef,
                         ImportRowStatus.SKIP_DUPLICATE, "Already imported — skipped");
+                skip.setLotNumber(existing.get().getLotNumber());
                 report.addRow(skip);
                 continue;
             }
@@ -756,6 +814,9 @@ public class DayImportService {
             } else if (deliveryType == DeliveryType.OIL) {
                 result.setMessage("Create reception (STOCK_NONE — need oilQuantity, unitPrice, storageUnitKey)");
             }
+            if (!projectedSequences.isEmpty()) {
+                result.setLotNumber(UnifiedDeliveryService.formatLotNumber(projectedSequences.poll(), oliveOilType, day.getYear()));
+            }
             report.addRow(result);
 
             if (commit) {
@@ -813,6 +874,7 @@ public class DayImportService {
                     dto.setStorageUnit(su);
                 }
                 UnifiedDeliveryDTO saved = unifiedDeliveryService.save(dto);
+                result.setLotNumber(saved.getLotNumber());
                 receptionCache.put(normalize(row.externalRef), saved.getId());
                 ledger.record("RECEPTION", row.externalRef, payload, saved.getId());
 
