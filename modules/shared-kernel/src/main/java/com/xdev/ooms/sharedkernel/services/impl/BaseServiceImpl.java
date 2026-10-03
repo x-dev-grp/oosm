@@ -1662,7 +1662,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             return entity;
         }
         generateQrInfo(getEntityType(), entity.getId());
-        return repository.findById(entity.getId()).orElse(entity);
+        return findOwnedEntity(entity.getId()).orElse(entity);
     }
 
     @Transactional
@@ -1675,7 +1675,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     public QrCodeInfo generateQrInfo(String entityType, UUID entityId, boolean forceRegenerate) {
         requireQrSupport();
 
-        E entity = repository.findById(entityId)
+        E entity = findOwnedEntity(entityId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity not found with id: " + entityId));
 
@@ -1811,7 +1811,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     //genere l'image a partir code public
     @Transactional
     public byte[] generateQrImage(String publicCode) {
-        E entity = repository.findByQrHex(publicCode)
+        String normalizedCode = normalizeSearchCode(publicCode);
+        E entity = findByCodeGeneric(normalizedCode)
                 .orElseThrow(() -> new EntityNotFoundException("Entity not found for code: " + publicCode));
 
         byte[] imageBytes = generateQrImageBytesFromEntity(entity);
@@ -1821,7 +1822,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     //chercher l'antite par id
     public E getEntityById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + id));
+        return findOwnedEntity(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + id));
     }
 
     //transforme une entite metier e n image QR
@@ -1840,7 +1842,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
         E entityToEncode = entity;
         if (entity.getId() != null) {
-            entityToEncode = repository.findById(entity.getId()).orElse(entity);
+            entityToEncode = findOwnedEntity(entity.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + entity.getId()));
+        } else if (!isTenantAccessible(entity)) {
+            throw new EntityNotFoundException("Entity is not accessible for the current tenant");
         }
 
         byte[] imageBytes = generateQrImageBytesFromEntity(entityToEncode);
@@ -1861,20 +1866,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     }
 
     private Optional<E> findByCodeGeneric(String normalizedCode) {
-        UUID tenantId = TenantContext.getCurrentTenant();
-        
-        // 1) Try tenant-aware case-insensitive search
-        if (tenantId != null) {
-            Optional<E> tenantMatch = repository.findByQrHexIgnoreCaseAndTenantIdAndIsDeletedFalse(normalizedCode, tenantId);
-            if (tenantMatch.isPresent()) return tenantMatch;
-        }
-
-        // 2) Try global case-insensitive search (as fallback or if no tenant)
-        Optional<E> globalMatch = repository.findByQrHexIgnoreCaseAndIsDeletedFalse(normalizedCode);
-        if (globalMatch.isPresent()) return globalMatch;
-
-        // 3) Legacy exact match fallback
-        return repository.findByQrHex(normalizedCode);
+        return repository.findByQrHexIgnoreCaseAndIsDeletedFalse(normalizedCode)
+                .filter(this::isTenantAccessible);
     }
 
 

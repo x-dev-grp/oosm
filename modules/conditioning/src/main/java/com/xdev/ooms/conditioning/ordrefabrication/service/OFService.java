@@ -866,6 +866,7 @@ public class OFService extends BaseServiceImpl<OrdreFabrication, OrdreFabricatio
     @Transactional(readOnly = true)
     public QrResolveResponse resolve(String publicCode) {
         OrdreFabrication entity = ofRepository.findByQrHex(publicCode)
+                .filter(this::isTenantAccessible)
                 .orElseThrow(() -> new EntityNotFoundException("OF non trouve pour le code : " + publicCode));
 
         QrResolveResponse response = new QrResolveResponse();
