@@ -18,9 +18,11 @@ import  com.xdev.ooms.sharedkernel.Enum.OliveLotStatus;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionState;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
 import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import com.xdev.ooms.sharedkernel.ports.OilCreditPort;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -168,7 +170,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         boolean isTransfertIN = oilTransaction.getTransactionType() == TransactionType.TRANSFER_IN;
         if (request.getStorageUnitSource() != null && request.getStorageUnitSource().getId() != null) {
 
-            StorageUnit src = storageUnitRepo.findById(request.getStorageUnitSource().getId()).orElse(null);
+            StorageUnit src = ownedStorageUnit(request.getStorageUnitSource().getId());
             oilTransaction.setStorageUnitSource(src);
             if (isTransfertIN) {
                 oilTransaction.setUnitPrice(src.getAvgCost());
@@ -177,21 +179,26 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
         // Always fetch and set StorageUnit entities by ID to avoid natural identifier errors
         if (request.getStorageUnitDestination() != null && request.getStorageUnitDestination().getId() != null) {
-            StorageUnit dest = storageUnitRepo.findById(request.getStorageUnitDestination().getId()).orElse(null);
+            StorageUnit dest = ownedStorageUnit(request.getStorageUnitDestination().getId());
             oilTransaction.setStorageUnitDestination(dest);
         }
 
         if (request.getReception() != null && request.getReception().getId() != null) {
-            UnifiedDelivery reception = deliveryRepository.findById(request.getReception().getId()).orElse(null);
+            UnifiedDelivery reception = deliveryRepository.findOwned(request.getReception().getId()).orElse(null);
             oilTransaction.setReception(reception);
         }
 
         oilTransaction.setTotalPrice();
+        if (oilTransaction.getTransactionState() == TransactionState.PENDING) {
+            oilTransaction = oilTransactionRepository.save(oilTransaction);
+            oilTransaction = ensureQrCodeIfSupported(oilTransaction);
+            return modelMapper.map(oilTransaction, OilTransactionDTO.class);
+        }
+        validateNonNegativeVolumeBeforeSave(oilTransaction.getStorageUnitSource(), oilTransaction.getStorageUnitDestination(), oilTransaction.getQuantityKg());
         oilTransaction = oilTransactionRepository.save(oilTransaction);
         oilTransaction = ensureQrCodeIfSupported(oilTransaction);
         StorageUnit storageUnitDestination = oilTransaction.getStorageUnitDestination();
         StorageUnit storageUnitSource = oilTransaction.getStorageUnitSource();
-        validateNonNegativeVolumeBeforeSave(storageUnitSource, storageUnitDestination, oilTransaction.getQuantityKg());
         // Update destination storage unit if present
         if (storageUnitDestination != null) {
             storageUnitDestination.updateCurrentVolume(oilTransaction.getQuantityKg(), 1, oilTransaction.getUnitPrice());
@@ -224,13 +231,11 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         OilTransaction oilTransaction = modelMapper.map(request, OilTransaction.class);
 
         if (request.getStorageUnitSource() != null && request.getStorageUnitSource().getId() != null) {
-            StorageUnit src = storageUnitRepo.findById(request.getStorageUnitSource().getId()).orElse(null);
-            oilTransaction.setStorageUnitSource(src);
+            oilTransaction.setStorageUnitSource(ownedStorageUnit(request.getStorageUnitSource().getId()));
         }
 
         if (request.getStorageUnitDestination() != null && request.getStorageUnitDestination().getId() != null) {
-            StorageUnit dest = storageUnitRepo.findById(request.getStorageUnitDestination().getId()).orElse(null);
-            oilTransaction.setStorageUnitDestination(dest);
+            oilTransaction.setStorageUnitDestination(ownedStorageUnit(request.getStorageUnitDestination().getId()));
         }
 
         oilTransaction.setTotalPrice();
@@ -242,6 +247,26 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         return modelMapper.map(oilTransaction, OilTransactionDTO.class);
     }
 
+    /** Stock only moves through save/approve/delete, so the generic update never touches it. */
+    @Override
+    protected Set<String> protectedUpdateFields() {
+        return Set.of("transactionState", "oilSaleId", "reception");
+    }
+
+    @Override
+    protected void checkUpdatable(OilTransaction existing, OilTransactionDTO request) {
+        if (existing.getTransactionState() != TransactionState.PENDING) {
+            throw new IllegalStateException("Une operation validee ne peut plus etre modifiee : supprimez-la puis recreez-la.");
+        }
+    }
+
+    @Override
+    protected void checkDeletable(OilTransaction existing) {
+        if (existing.getOilSaleId() != null) {
+            throw new IllegalStateException("Cette operation est liee a une vente d'huile : annulez la vente.");
+        }
+    }
+
     @Override
     @Transactional
     public OilTransactionDTO delete(UUID id) {
@@ -251,16 +276,23 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
-            OilTransaction entity = repository.findByIdAndIsDeletedFalse(id).orElse(null);
+            OilTransaction entity = findOwnedEntity(id).orElse(null);
             if (entity == null) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
             }
+            checkDeletable(entity);
+            boolean stockMoved = entity.getTransactionState() != TransactionState.PENDING
+                    && entity.getTransactionState() != TransactionState.CANCELED;
             entity.setDeleted(true);
             OilTransaction updatedEntity = repository.save(entity);
             OilTransactionDTO result = modelMapper.map(updatedEntity, outDTOClass);
+            if (!stockMoved) {
+                return result;
+            }
             if (updatedEntity.getStorageUnitSource() != null) {
                 StorageUnit storageUnitSource = updatedEntity.getStorageUnitSource();
+                // Oil left the tank at its average cost; the transaction price may be a selling price.
                 storageUnitSource.updateDeletedCurrentVolume(updatedEntity.getQuantityKg(), 0, null);
                 storageUnitRepo.save(storageUnitSource);
 
@@ -294,7 +326,11 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
             OOSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
             return null;
         }
-        OilTransaction oilTransaction = oilTransactionRepository.findById(dto.getId()).orElseThrow(() -> new RuntimeException("Oil transaction not found"));
+        OilTransaction oilTransaction = findOwnedEntity(dto.getId())
+                .orElseThrow(() -> new EntityNotFoundException("Oil transaction not found"));
+        if (oilTransaction.getTransactionState() != TransactionState.PENDING) {
+            throw new IllegalStateException("Seule une operation en attente peut etre validee.");
+        }
         handleApprovalLogicByType(oilTransaction, dto);
         OOSMLogger.logMethodExit(this.getClass(), "approveOilTransaction2", modelMapper.map(oilTransaction, OilTransactionDTO.class));
         OOSMLogger.logPerformance(this.getClass(), "approveOilTransaction2", startTime, System.currentTimeMillis());
@@ -334,13 +370,13 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "handleReceptionIn", oilTransaction);
         if (dto.getStorageUnitDestination() != null) {
-            StorageUnit dest = storageUnitRepo.findById(dto.getStorageUnitDestination().getId()).orElseThrow();
+            StorageUnit dest = ownedStorageUnit(dto.getStorageUnitDestination().getId());
             oilTransaction.setStorageUnitDestination(dest);
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
         }
         if (oilTransaction.getReception() != null && oilTransaction.getReception().getId() != null) {
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findById(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setStatus(OliveLotStatus.IN_STOCK);
                 unifiedDeliveryRepo.save(unifiedDelivery);
@@ -358,8 +394,8 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "handleTransferIn", oilTransaction);
         if (dto.getStorageUnitSource() != null && dto.getStorageUnitDestination() != null) {
-            StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
-            StorageUnit dest = storageUnitRepo.findById(dto.getStorageUnitDestination().getId()).orElseThrow();
+            StorageUnit source = ownedStorageUnit(dto.getStorageUnitSource().getId());
+            StorageUnit dest = ownedStorageUnit(dto.getStorageUnitDestination().getId());
             oilTransaction.setStorageUnitSource(source);
             oilTransaction.setStorageUnitDestination(dest);
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
@@ -376,7 +412,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "handleSale", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
-            StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
+            StorageUnit source = ownedStorageUnit(dto.getStorageUnitSource().getId());
             oilTransaction.setStorageUnitSource(source);
             oilTransaction.setTotalPrice();
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
@@ -392,7 +428,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "handleLoan", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
-            StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
+            StorageUnit source = ownedStorageUnit(dto.getStorageUnitSource().getId());
             oilTransaction.setStorageUnitSource(source);
             oilTransaction.setUnitPrice(source.getAvgCost());
             oilTransaction.setTotalPrice();
@@ -410,13 +446,13 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "handleExchange", oilTransaction);
         if (dto.getStorageUnitSource() != null) {
-            StorageUnit source = storageUnitRepo.findById(dto.getStorageUnitSource().getId()).orElseThrow();
+            StorageUnit source = ownedStorageUnit(dto.getStorageUnitSource().getId());
             oilTransaction.setStorageUnitSource(source);
 //            oilTransaction.setUnitPrice(source.getAvgCost());
 //            oilTransaction.setTotalPrice();
             oilTransaction.setTransactionState(TransactionState.COMPLETED);
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findById(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setPaid(true);
                 unifiedDelivery.setUnpaidAmount(0.0);
@@ -425,7 +461,7 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         }
         if (oilTransaction.getReception() != null && oilTransaction.getReception().getId() != null) {
             UUID reception = oilTransaction.getReception().getId();
-            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findById(reception).orElse(null);
+            UnifiedDelivery unifiedDelivery = unifiedDeliveryRepo.findOwned(reception).orElse(null);
             if (unifiedDelivery != null) {
                 unifiedDelivery.setStatus(OliveLotStatus.PROD_READY);
                 unifiedDeliveryRepo.save(unifiedDelivery);
@@ -444,7 +480,9 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
     public List<OilTransaction> findByStorageUnitId(UUID storageUnitId) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "findByStorageUnitId", storageUnitId);
-        List<OilTransaction> transactions = oilTransactionRepository.findByStorageUnitDestinationId(storageUnitId);
+        List<OilTransaction> transactions = oilTransactionRepository.findByStorageUnitDestinationId(storageUnitId).stream()
+                .filter(this::isTenantAccessible)
+                .toList();
         OOSMLogger.logMethodExit(this.getClass(), "findByStorageUnitId", transactions);
         OOSMLogger.logPerformance(this.getClass(), "findByStorageUnitId", startTime, System.currentTimeMillis());
         return transactions;
@@ -511,9 +549,10 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
                 throw new IllegalArgumentException("Oil transaction can only be created for OIL deliveries");
             }
 
-            // Validate delivery state
-            if (delivery.getStatus() == OliveLotStatus.IN_STOCK) {
-                OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "[createSingleOilTransactionIn] Creating oil transaction for delivery %s that is already IN_STOCK", delivery.getLotNumber());
+            if (delivery.getId() != null && oilTransactionRepository
+                    .findFirstByReceptionIdAndTransactionTypeAndIsDeletedFalse(delivery.getId(), TransactionType.RECEPTION_IN)
+                    .isPresent()) {
+                throw new IllegalArgumentException("Oil of reception " + delivery.getLotNumber() + " is already in stock");
             }
 
             // Validate required fields
@@ -638,6 +677,10 @@ public class OilTransactionService extends BaseServiceImpl<OilTransaction, OilTr
         oilTransactionDTOforSale.setTransactionState(TransactionState.PENDING);
         // Stock is deducted when storage validates/approves the linked transaction, not at sale create.
         return saveWithoutStockAdjustment(oilTransactionDTOforSale);
+    }
+
+    private StorageUnit ownedStorageUnit(UUID id) {
+        return TenantAccess.require(storageUnitRepo.findByIdAndIsDeletedFalse(id), "Cuve", id);
     }
 
     private void validateNonNegativeVolumeBeforeSave(StorageUnit source, StorageUnit destination, Double quantityKg) {

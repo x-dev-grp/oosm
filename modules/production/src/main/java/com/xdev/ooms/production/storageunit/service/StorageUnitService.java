@@ -12,6 +12,7 @@ import com.xdev.ooms.production.supplier.repository.SupplierRepository;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import jakarta.persistence.EntityNotFoundException;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -35,7 +36,7 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
     }
     @Transactional
     public void changeSupplier(UUID storageId, UUID supplierId) {
-        StorageUnit storageUnit = storageUnitRepo.findByIdAndIsDeletedFalse(storageId)
+        StorageUnit storageUnit = findOwnedEntity(storageId)
                 .orElseThrow(() -> new EntityNotFoundException("Storage unit with id " + storageId + " not found"));
 
         Supplier currentSupplier = storageUnit.getSupplier();
@@ -48,8 +49,7 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         }
 
         if (supplierId != null) {
-            Supplier newSupplier = supplierRepository.findByIdAndIsDeletedFalse(supplierId)
-                    .orElseThrow(() -> new EntityNotFoundException("Supplier with id " + supplierId + " not found"));
+            Supplier newSupplier = TenantAccess.require(supplierRepository.findByIdAndIsDeletedFalse(supplierId), "Fournisseur", supplierId);
 
             newSupplier.setHasStorage(true);
             newSupplier.setStorageUnit(storageUnit);
@@ -59,6 +59,36 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         }
 
         storageUnitRepo.save(storageUnit);
+    }
+
+    /** Stock and cost change through oil transactions; the supplier through assign-supplier. */
+    @Override
+    protected Set<String> protectedUpdateFields() {
+        return Set.of(
+                "currentVolume",
+                "avgCost",
+                "totalCost",
+                "supplier",
+                "lastInspectionDate",
+                "lastFillDate",
+                "lastEmptyDate",
+                "lastFiltrationDate"
+        );
+    }
+
+    @Override
+    protected void checkUpdatable(StorageUnit existing, StorageUnitDto request) {
+        if (request.getMaxCapacity() != null && existing.getCurrentVolume() != null
+                && request.getMaxCapacity() < existing.getCurrentVolume()) {
+            throw new IllegalArgumentException("La capacite ne peut pas etre inferieure au volume actuel de la cuve.");
+        }
+    }
+
+    @Override
+    protected void checkDeletable(StorageUnit existing) {
+        if (existing.getCurrentVolume() != null && existing.getCurrentVolume() > 0) {
+            throw new IllegalStateException("Impossible de supprimer une cuve qui contient encore de l'huile.");
+        }
     }
 
     @Override

@@ -33,7 +33,10 @@ import com.xdev.ooms.sharedkernel.services.utils.SearchSpecificationBuilder;
 import com.xdev.ooms.sharedkernel.utils.AuditHelper;
 import com.xdev.ooms.sharedkernel.utils.BusinessCodeGenerator;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.beans.BeanWrapper;
+import org.springframework.beans.BeanWrapperImpl;
 import org.apache.poi.ss.usermodel.BorderStyle;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.HorizontalAlignment;
@@ -161,6 +164,27 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         return this.outDTOClass;
     }
 
+    protected boolean isTenantAccessible(E entity) {
+        return TenantAccess.isAccessible(entity);
+    }
+
+    protected Optional<E> findOwnedEntity(UUID id) {
+        return id == null ? Optional.empty() : repository.findByIdAndIsDeletedFalse(id).filter(this::isTenantAccessible);
+    }
+
+    /** Throw to refuse the generic update (for example once the record is validated). */
+    protected void checkUpdatable(E existing, INDTO request) {
+    }
+
+    /** Throw to refuse the soft delete (for example once stock or money has moved). */
+    protected void checkDeletable(E existing) {
+    }
+
+    /** Fields only changed by business operations; the generic update keeps their stored values. */
+    protected Set<String> protectedUpdateFields() {
+        return Set.of();
+    }
+
     @Transactional(readOnly = true)
     @Override
     public OUTDTO findById(UUID id) {
@@ -168,7 +192,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
         OOSMLogger.logMethodEntry(this.getClass(), "findById", id);
 
         try {
-            Optional<E> data = repository.findByIdAndIsDeletedFalse(id);
+            Optional<E> data = repository.findByIdAndIsDeletedFalse(id).filter(this::isTenantAccessible);
             if (data.isEmpty()) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity not found with ID: {}", id);
                 throw new EntityNotFoundException("Entity not found with this id " + id);
@@ -300,14 +324,25 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
         try {
             if (request != null && request.getId() != null) {
-                Optional<E> existedOptEntity = this.repository.findById(request.getId());
+                Optional<E> existedOptEntity = findOwnedEntity(request.getId());
                 if (existedOptEntity.isEmpty()) {
                     OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for update", request.getId());
                     return null;
                 } else {
                     E existedEntity = existedOptEntity.get();
+                    checkUpdatable(existedEntity, request);
+                    UUID ownerTenant = existedEntity.getTenantId();
+                    BeanWrapper wrapper = new BeanWrapperImpl(existedEntity);
+                    Map<String, Object> kept = new HashMap<>();
+                    for (String field : protectedUpdateFields()) {
+                        kept.put(field, wrapper.getPropertyValue(field));
+                    }
                     AuditHelper.applyAuditOnCreate(existedEntity);
                     this.modelMapper.map(request, existedEntity);
+                    kept.forEach(wrapper::setPropertyValue);
+                    if (ownerTenant != null) {
+                        existedEntity.setTenantId(ownerTenant);
+                    }
                     resolveEntityRelations(existedEntity);
 
                     E updatedEntity = this.repository.save(existedEntity);
@@ -353,7 +388,9 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
         try {
             if (id != null) {
-                repository.deleteById(id);
+                if (delete(id) == null) {
+                    throw new EntityNotFoundException("Entity not found with this id " + id);
+                }
                 OOSMLogger.logMethodExit(this.getClass(), "remove");
                 OOSMLogger.logPerformance(this.getClass(), "remove", startTime, System.currentTimeMillis());
                 OOSMLogger.logDataAccess(this.getClass(), "REMOVE", entityClass.getSimpleName());
@@ -377,11 +414,12 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Delete ID is null: {}", id);
                 return null;
             }
-            E entity = repository.findById(id).orElse(null);
+            E entity = findOwnedEntity(id).orElse(null);
             if (entity == null) {
                 OOSMLogger.log(this.getClass(), OOSMLogger.LogLevel.WARN, "Entity with ID {} not found for deletion", id);
                 return null;
             }
+            checkDeletable(entity);
 
             entity.setDeleted(true);
             E updatedEntity = repository.save(entity);
@@ -1624,7 +1662,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
             return entity;
         }
         generateQrInfo(getEntityType(), entity.getId());
-        return repository.findById(entity.getId()).orElse(entity);
+        return findOwnedEntity(entity.getId()).orElse(entity);
     }
 
     @Transactional
@@ -1637,7 +1675,7 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     public QrCodeInfo generateQrInfo(String entityType, UUID entityId, boolean forceRegenerate) {
         requireQrSupport();
 
-        E entity = repository.findById(entityId)
+        E entity = findOwnedEntity(entityId)
                 .orElseThrow(() ->
                         new EntityNotFoundException("Entity not found with id: " + entityId));
 
@@ -1773,7 +1811,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     //genere l'image a partir code public
     @Transactional
     public byte[] generateQrImage(String publicCode) {
-        E entity = repository.findByQrHex(publicCode)
+        String normalizedCode = normalizeSearchCode(publicCode);
+        E entity = findByCodeGeneric(normalizedCode)
                 .orElseThrow(() -> new EntityNotFoundException("Entity not found for code: " + publicCode));
 
         byte[] imageBytes = generateQrImageBytesFromEntity(entity);
@@ -1783,7 +1822,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
     //chercher l'antite par id
     public E getEntityById(UUID id) {
-        return repository.findById(id).orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + id));
+        return findOwnedEntity(id)
+                .orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + id));
     }
 
     //transforme une entite metier e n image QR
@@ -1802,7 +1842,10 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
 
         E entityToEncode = entity;
         if (entity.getId() != null) {
-            entityToEncode = repository.findById(entity.getId()).orElse(entity);
+            entityToEncode = findOwnedEntity(entity.getId())
+                    .orElseThrow(() -> new EntityNotFoundException("Entity not found with id: " + entity.getId()));
+        } else if (!isTenantAccessible(entity)) {
+            throw new EntityNotFoundException("Entity is not accessible for the current tenant");
         }
 
         byte[] imageBytes = generateQrImageBytesFromEntity(entityToEncode);
@@ -1823,20 +1866,8 @@ public abstract class BaseServiceImpl<E extends BaseEntity, INDTO extends BaseDt
     }
 
     private Optional<E> findByCodeGeneric(String normalizedCode) {
-        UUID tenantId = TenantContext.getCurrentTenant();
-        
-        // 1) Try tenant-aware case-insensitive search
-        if (tenantId != null) {
-            Optional<E> tenantMatch = repository.findByQrHexIgnoreCaseAndTenantIdAndIsDeletedFalse(normalizedCode, tenantId);
-            if (tenantMatch.isPresent()) return tenantMatch;
-        }
-
-        // 2) Try global case-insensitive search (as fallback or if no tenant)
-        Optional<E> globalMatch = repository.findByQrHexIgnoreCaseAndIsDeletedFalse(normalizedCode);
-        if (globalMatch.isPresent()) return globalMatch;
-
-        // 3) Legacy exact match fallback
-        return repository.findByQrHex(normalizedCode);
+        return repository.findByQrHexIgnoreCaseAndIsDeletedFalse(normalizedCode)
+                .filter(this::isTenantAccessible);
     }
 
 

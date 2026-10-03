@@ -27,6 +27,7 @@ import com.xdev.ooms.sharedkernel.ports.NotificationPort;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -110,10 +111,20 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
 
         // 2) Load that delivery
-        UnifiedDelivery delivery = deliveryRepo.findById(deliveryId).orElseThrow(() -> new IllegalArgumentException("Delivery not found for ID " + deliveryId));
+        UnifiedDelivery delivery = deliveryRepo.findOwned(deliveryId).orElseThrow(() -> new IllegalArgumentException("Delivery not found for ID " + deliveryId));
+        OliveLotStatus current = delivery.getStatus();
+        boolean controllable = current == OliveLotStatus.NEW
+                || current == OliveLotStatus.WAITING
+                || current == OliveLotStatus.OLIVE_CONTROLLED
+                || current == OliveLotStatus.OIL_CONTROLLED
+                || (current == OliveLotStatus.PROD_READY && delivery.getOperationType() == OperationType.BASE);
+        if (!controllable) {
+            throw new IllegalArgumentException("Quality control cannot be recorded on reception " + delivery.getLotNumber() + " in status " + current);
+        }
 
         // 3) Load & validate rules
-        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos);
+        boolean oilQc = delivery.getDeliveryType() == DeliveryType.OIL;
+        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos, oilQc);
 
 
         // 5) Map each DTO → entity
@@ -127,15 +138,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             return e;
         }).toList();
 
-        Optional<QualityControlResult> match = entities.stream()
-                .filter(qcr -> allowedSet.contains(qcr.getMeasuredValue()))
-                .findFirst();
-
-        if (match.isPresent()) {
-            delivery.setCategoryOliveOil(TunisiaOilGradeUtil.normalizeCategory(match.get().getMeasuredValue()));
-        } else {
-            suggestCategoryFromMeasurements(entities).ifPresent(delivery::setCategoryOliveOil);
-        }
+        applyMeasuredCategory(delivery, entities);
 
         // 6) Persist QC results
         List<QualityControlResult> saved = repository.saveAll(entities);
@@ -172,7 +175,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         UnifiedDelivery newOIlRec = unifiedDeliveryService.createOilRecFromOliveRecImpl(idx, true, std);
         log.info("Saving QC results for idx: {} ({} results)", idx, dtos.size());
         // Validate rules
-        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos);
+        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos, true);
         // Map each DTO → entity (no delivery linkage)
         List<QualityControlResult> entities = dtos.stream().map(dto -> {
             QualityControlRule rule = ruleMap.get(dto.getRule().getId());
@@ -184,14 +187,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             return e;
         }).toList();
 
-        Optional<QualityControlResult> match = entities.stream()
-                .filter(qcr -> allowedSet.contains(qcr.getMeasuredValue()))
-                .findFirst();
-        if (match.isPresent()) {
-            newOIlRec.setCategoryOliveOil(TunisiaOilGradeUtil.normalizeCategory(match.get().getMeasuredValue()));
-        } else {
-            suggestCategoryFromMeasurements(entities).ifPresent(newOIlRec::setCategoryOliveOil);
-        }
+        applyMeasuredCategory(newOIlRec, entities);
 
         // Persist QC results
         List<QualityControlResult> saved = repository.saveAll(entities);
@@ -224,7 +220,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
                 .map(com.xdev.ooms.production.genealogy.entity.TraceabilityLot::getId)
                 .orElse(null);
 
-        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos);
+        Map<UUID, QualityControlRule> ruleMap = fetchAndValidateRules(dtos, true);
 
         List<QualityControlResult> entities = dtos.stream().map(dto -> {
             QualityControlRule rule = ruleMap.get(dto.getRule().getId());
@@ -247,7 +243,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     // ——————————————————————————————————
 
     // Helper: fetch & validate rule IDs
-    private Map<UUID, QualityControlRule> fetchAndValidateRules(List<QualityControlResultDto> dtos) {
+    private Map<UUID, QualityControlRule> fetchAndValidateRules(List<QualityControlResultDto> dtos, boolean oilQc) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "fetchAndValidateRules", dtos);
         Set<UUID> ruleIds = dtos.stream().peek(dto -> {
@@ -256,7 +252,10 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             }
         }).map(dto -> dto.getRule().getId()).collect(Collectors.toSet());
 
-        List<QualityControlRule> rules = ruleRepository.findAllById(ruleIds);
+        List<QualityControlRule> rules = ruleRepository.findAllById(ruleIds).stream()
+                .filter(TenantAccess::isAccessible)
+                .filter(rule -> Boolean.valueOf(oilQc).equals(rule.getOilQc()))
+                .toList();
         if (rules.size() != ruleIds.size()) {
             throw new IllegalArgumentException("One or more provided Rule IDs were not found");
         }
@@ -272,18 +271,18 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     private void validateMeasuredValue(String measuredValue, QualityControlRule rule) {
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "validateMeasuredValue", measuredValue, rule);
+        if (measuredValue == null || measuredValue.isBlank()) {
+            throw new IllegalArgumentException("Measured value is required for rule ID: " + rule.getId());
+        }
         RuleType ruleType = rule.getRuleType();
+        if (ruleType == null) {
+            throw new IllegalArgumentException("Rule type is required for rule ID: " + rule.getId());
+        }
 
         switch (ruleType) {
             case NUMERIC:
                 try {
-                    Double value = Double.parseDouble(measuredValue);
-                    if (rule.getMinValue() != null && value < rule.getMinValue() - NUMERIC_EPSILON) {
-                        throw new IllegalArgumentException("Measured value below minValue for rule ID: " + rule.getId());
-                    }
-                    if (rule.getMaxValue() != null && value > rule.getMaxValue() + NUMERIC_EPSILON) {
-                        throw new IllegalArgumentException("Measured value above maxValue for rule ID: " + rule.getId());
-                    }
+                    Double.parseDouble(measuredValue);
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException(
                             "Invalid numeric value '" + measuredValue + "' for rule '"
@@ -327,7 +326,11 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
             throw new IllegalArgumentException("Delivery ID is required");
         }
 
-        List<QualityControlResult> results = repository.findByDeliveryId(deliveryId);
+        deliveryRepo.findOwned(deliveryId)
+                .orElseThrow(() -> new IllegalArgumentException("Delivery not found for ID " + deliveryId));
+        List<QualityControlResult> results = repository.findByDeliveryId(deliveryId).stream()
+                .filter(TenantAccess::isAccessible)
+                .toList();
         log.debug("Found {} quality control results for deliveryId: {}", results.size(), deliveryId);
 
         List<QualityControlResultDto> resultDtos = results.stream().map(entity -> modelMapper.map(entity, QualityControlResultDto.class)).collect(Collectors.toList());
@@ -343,6 +346,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
 
         return repository.findByFiltrationOperationIdAndIsDeletedFalse(filtrationOperationId).stream()
+                .filter(TenantAccess::isAccessible)
                 .map(this::toDto)
                 .toList();
     }
@@ -354,6 +358,7 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
 
         return repository.findByTraceabilityLotIdAndIsDeletedFalse(traceabilityLotId).stream()
+                .filter(TenantAccess::isAccessible)
                 .map(this::toDto)
                 .toList();
     }
@@ -399,6 +404,21 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
         }
 
         return TunisiaOilGradeUtil.suggestOilGrade(acidity, k232, k270, deltaK, peroxide);
+    }
+
+    private void applyMeasuredCategory(UnifiedDelivery delivery, List<QualityControlResult> results) {
+        Optional<String> measuredGrade = suggestCategoryFromMeasurements(results);
+        if (measuredGrade.isPresent()) {
+            delivery.setCategoryOliveOil(measuredGrade.get());
+            return;
+        }
+        results.stream()
+                .map(QualityControlResult::getMeasuredValue)
+                .filter(Objects::nonNull)
+                .filter(allowedSet::contains)
+                .findFirst()
+                .map(TunisiaOilGradeUtil::normalizeCategory)
+                .ifPresent(delivery::setCategoryOliveOil);
     }
 
     private void publishQcCompletedNotification(UnifiedDelivery delivery) {
@@ -454,10 +474,30 @@ public class QualityControlResultService extends BaseServiceImpl<QualityControlR
     }
 
     private boolean isFailedQcValue(QualityControlResult result) {
-        if (result == null || result.getMeasuredValue() == null) {
+        if (result == null || result.getMeasuredValue() == null || result.getRule() == null) {
             return false;
         }
-        String value = result.getMeasuredValue().trim().toLowerCase(Locale.ROOT);
+        QualityControlRule rule = result.getRule();
+        String measuredValue = result.getMeasuredValue().trim();
+        if (rule.getRuleType() == RuleType.NUMERIC) {
+            try {
+                double numeric = Double.parseDouble(measuredValue);
+                return (rule.getMinValue() != null && numeric < rule.getMinValue() - NUMERIC_EPSILON)
+                        || (rule.getMaxValue() != null && numeric > rule.getMaxValue() + NUMERIC_EPSILON);
+            } catch (NumberFormatException ignored) {
+                return true;
+            }
+        }
+        if (rule.getRuleType() == RuleType.BOOLEAN && rule.getBooleanValue() != null) {
+            return !Boolean.valueOf(measuredValue).equals(rule.getBooleanValue());
+        }
+        if ((rule.getRuleType() == RuleType.STRING || rule.getRuleType() == RuleType.RAW_STRING)
+                && rule.getRuleTextValue() != null && !rule.getRuleTextValue().isBlank()) {
+            return Arrays.stream(rule.getRuleTextValue().split(","))
+                    .map(String::trim)
+                    .noneMatch(measuredValue::equals);
+        }
+        String value = measuredValue.toLowerCase(Locale.ROOT);
         return value.contains("non conforme")
                 || value.equals("nonconforme")
                 || value.equals("fail")

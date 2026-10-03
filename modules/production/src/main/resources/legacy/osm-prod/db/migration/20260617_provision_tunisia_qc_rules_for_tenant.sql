@@ -10,27 +10,27 @@
 
 INSERT INTO quality_control_rule (
     id, created_date, last_modified_date, is_deleted, tenant_id,
-    rule_key, rule_name, rule_type, oil_qc, min_value, max_value, rule_text_value, description, external_id
+    rule_key, rule_name, rule_type, oil_qc, min_value, max_value, rule_text_value, external_id
 )
 SELECT
     gen_random_uuid(), NOW(), NOW(), false, 'YOUR_TENANT_UUID'::uuid,
-    v.rule_key, v.rule_name, v.rule_type, v.oil_qc, v.min_value, v.max_value, v.rule_text_value, v.description, gen_random_uuid()
+    v.rule_key, v.rule_name, v.rule_type, v.oil_qc, v.min_value, v.max_value, v.rule_text_value, gen_random_uuid()
 FROM (VALUES
     -- Oil QC (oil_qc = true)
-    ('Categorie',       'Catégorie',                    'STRING',  true,  NULL::real, NULL::real, 'Extra Vierge,Vierge,Lampante', 'Tunisia default — COI/Tunisia — classification huile d''olive vierge'),
-    ('Acidite',         'Acidité (% maaa)',             'NUMERIC', true,  0,          2.0,        NULL,                           'Tunisia default — COI/Tunisia — EVOO ≤0.8%, Vierge ≤2%'),
-    ('K232',            'K232',                         'NUMERIC', true,  0,          2.60,       NULL,                           'Tunisia default — COI/Tunisia — EVOO ≤2.50, Vierge ≤2.60'),
-    ('K270',            'K270',                         'NUMERIC', true,  0,          0.25,       NULL,                           'Tunisia default — COI/Tunisia — EVOO ≤0.22, Vierge ≤0.25'),
-    ('DeltaK',          'Delta K',                      'NUMERIC', true,  0,          0.01,       NULL,                           'Tunisia default — COI/Tunisia — Delta K ≤0.01'),
-    ('IndicePreoxyde',  'Indice peroxyde (meq O2/kg)',  'NUMERIC', true,  0,          20,         NULL,                           'Tunisia default — COI/Tunisia — indice de peroxyde ≤20'),
-    ('EtatCamion',      'État camion',                  'STRING',  true,  NULL::real, NULL::real, 'Conforme,Non conforme',        'Tunisia default — état du camion à réception huile'),
+    ('Categorie',       'Catégorie',                    'STRING',  true,  NULL::real, NULL::real, 'Extra Vierge,Vierge,Lampante'),
+    ('Acidite',         'Acidité (% maaa)',             'NUMERIC', true,  0,          2.0,        NULL),
+    ('K232',            'K232',                         'NUMERIC', true,  0,          2.60,       NULL),
+    ('K270',            'K270',                         'NUMERIC', true,  0,          0.25,       NULL),
+    ('DeltaK',          'Delta K',                      'NUMERIC', true,  0,          0.01,       NULL),
+    ('IndicePreoxyde',  'Indice peroxyde (meq O2/kg)',  'NUMERIC', true,  0,          20,         NULL),
+    ('EtatCamion',      'État camion',                  'STRING',  true,  NULL::real, NULL::real, 'Conforme,Non conforme'),
     -- Olive QC (oil_qc = false)
-    ('Infestees',       'Infestées %',                  'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives infestées (%)'),
-    ('Fermentees',      'Fermentées %',                 'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives fermentées (%)'),
-    ('Endommagees',     'Endommagées %',                'NUMERIC', false, 0,          100,        NULL,                           'Tunisia default — olives endommagées (%)'),
-    ('Categorie',       'Catégorie Olive',              'STRING',  false, NULL::real, NULL::real, 'Vierge Extra,Vierge,Lampante', 'Tunisia default — catégorie olives à réception'),
-    ('EtatCamion',      'État camion',                  'STRING',  false, NULL::real, NULL::real, 'Conforme,Non conforme',        'Tunisia default — état du camion à réception olive')
-) AS v(rule_key, rule_name, rule_type, oil_qc, min_value, max_value, rule_text_value, description)
+    ('Infestees',       'Infestées %',                  'NUMERIC', false, 0,          100,        NULL),
+    ('Fermentees',      'Fermentées %',                 'NUMERIC', false, 0,          100,        NULL),
+    ('Endommagees',     'Endommagées %',                'NUMERIC', false, 0,          100,        NULL),
+    ('Categorie',       'Catégorie Olive',              'STRING',  false, NULL::real, NULL::real, 'Vierge Extra,Vierge,Lampante'),
+    ('EtatCamion',      'État camion',                  'STRING',  false, NULL::real, NULL::real, 'Conforme,Non conforme')
+) AS v(rule_key, rule_name, rule_type, oil_qc, min_value, max_value, rule_text_value)
 WHERE NOT EXISTS (
     SELECT 1
     FROM quality_control_rule r
@@ -39,9 +39,3 @@ WHERE NOT EXISTS (
       AND r.rule_key = v.rule_key
       AND COALESCE(r.oil_qc, false) = v.oil_qc
 );
-
--- Fix duplicated prefix on olive rules provisioned via API before TunisiaQualityControlDefaults was corrected:
--- UPDATE quality_control_rule
--- SET description = regexp_replace(description, '^Tunisia default — Tunisia default — ', 'Tunisia default — ')
--- WHERE is_deleted = false
---   AND description LIKE 'Tunisia default — Tunisia default — %';

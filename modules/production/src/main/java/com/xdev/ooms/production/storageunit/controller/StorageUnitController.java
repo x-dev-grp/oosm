@@ -9,6 +9,8 @@ import com.xdev.ooms.production.storageunit.entity.StorageUnit;
 import com.xdev.ooms.production.storageunit.service.StorageUnitService;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,6 +30,9 @@ public class StorageUnitController extends BaseControllerImpl<StorageUnit, Stora
     public ResponseEntity<Void> changeSupplier(
             @PathVariable UUID storageId,
             @RequestParam(required = false) UUID supplierId) {
+        if (!PermissionSupport.hasAction(getResourceName(), Action.ASSIGN_SUPPLIER)) {
+            PermissionSupport.requireAction(getResourceName(), Action.UPDATE);
+        }
         storageUnitService.changeSupplier(storageId, supplierId);
         return ResponseEntity.noContent().build();
     }

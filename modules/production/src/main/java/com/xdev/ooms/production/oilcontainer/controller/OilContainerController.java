@@ -8,6 +8,8 @@ import com.xdev.ooms.production.oilcontainer.service.OilContainerService;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
 import com.xdev.ooms.sharedkernel.services.BaseService;
+import com.xdev.ooms.sharedkernel.models.Action;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -37,6 +39,9 @@ public class OilContainerController extends BaseControllerImpl<OilContainer, Oil
     public ResponseEntity<ApiResponse<OilContainer, OilContainerDTO>> purchase(
             @PathVariable UUID id,
             @RequestBody OilContainerPurchaseRequest request) {
+        if (!PermissionSupport.hasAction(getResourceName(), Action.ENTREE_STOCK)) {
+            PermissionSupport.requireAction(getResourceName(), Action.UPDATE);
+        }
         try {
             OilContainerPurchaseResult result = oilContainerService.purchase(id, request);
             String message = "Container purchase recorded successfully. Invoice: " + result.getInvoiceReference();

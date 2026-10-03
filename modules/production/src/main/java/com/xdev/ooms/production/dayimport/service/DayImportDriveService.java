@@ -16,8 +16,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Google Drive day-import sync for the current tenant's connected Google account.
@@ -28,35 +26,33 @@ public class DayImportDriveService {
     private final BooleanParameterReader booleanParameterReader;
     private final ParameterService parameterService;
     private final DayImportDriveClient driveClient;
-    private final DayImportService dayImportService;
+    private final DayImportWorkflow workflow;
+    private final DayImportDriveStore store;
+    @org.springframework.beans.factory.annotation.Value("${oosm.import.gdrive.cron:0 0 6 * * *}")
+    private String cron;
     private final GoogleDriveOAuthService oauthService;
     private final TenantGoogleDriveCredentialRepository credentialRepository;
-
-    private final AtomicReference<Instant> lastSyncAt = new AtomicReference<>();
-    private final AtomicReference<String> lastResult = new AtomicReference<>("NEVER");
-    private final AtomicReference<String> lastError = new AtomicReference<>();
-    private final AtomicInteger pendingCount = new AtomicInteger();
-    private final AtomicInteger processedCount = new AtomicInteger();
-    private final AtomicInteger failedCount = new AtomicInteger();
 
     public DayImportDriveService(
             BooleanParameterReader booleanParameterReader,
             ParameterService parameterService,
             DayImportDriveClient driveClient,
-            DayImportService dayImportService,
+            DayImportWorkflow workflow,
+            DayImportDriveStore store,
             GoogleDriveOAuthService oauthService,
             TenantGoogleDriveCredentialRepository credentialRepository) {
         this.booleanParameterReader = booleanParameterReader;
         this.parameterService = parameterService;
         this.driveClient = driveClient;
-        this.dayImportService = dayImportService;
+        this.workflow = workflow;
+        this.store = store;
         this.oauthService = oauthService;
         this.credentialRepository = credentialRepository;
     }
 
     public DayImportDriveStatusDto status() {
-        UUID tenantId = TenantContext.getCurrentTenant();
-        DayImportDriveStatusDto dto = new DayImportDriveStatusDto();
+        UUID tenantId = DayImportAccess.tenant();
+        DayImportDriveStatusDto dto = store.status();
         boolean enabled = booleanParameterReader.isEnabled("IMPORT_GDRIVE_ENABLED", false);
         String folderId = readParam("IMPORT_GDRIVE_FOLDER_ID");
         String processedFolderId = readParam("IMPORT_GDRIVE_PROCESSED_FOLDER_ID");
@@ -71,18 +67,13 @@ public class DayImportDriveService {
         dto.setConnected(connected);
         dto.setGoogleAccountEmail(email);
         dto.setConfigured(enabled && folderId != null && !folderId.isBlank() && oauthConfigured && connected);
-        dto.setCron(readParam("IMPORT_GDRIVE_CRON"));
-        dto.setLastSyncAt(lastSyncAt.get());
-        dto.setLastResult(lastResult.get());
-        dto.setLastError(lastError.get());
-        dto.setPendingCount(pendingCount.get());
-        dto.setProcessedCount(processedCount.get());
-        dto.setFailedCount(failedCount.get());
+        dto.setCron(cron);
         return dto;
     }
 
     public Map<String, String> beginAuthorize() {
-        UUID tenantId = TenantContext.getCurrentTenant();
+        DayImportAccess.requireAdmin();
+        UUID tenantId = DayImportAccess.tenant();
         OOSMLogger.logMethodEntry(getClass(), "beginAuthorize", tenantId);
         String url = oauthService.buildAuthorizeUrl(tenantId);
         Map<String, String> payload = new HashMap<>();
@@ -92,104 +83,80 @@ public class DayImportDriveService {
     }
 
     public DayImportDriveStatusDto disconnect() {
-        UUID tenantId = TenantContext.getCurrentTenant();
+        DayImportAccess.requireAdmin();
+        UUID tenantId = DayImportAccess.tenant();
         OOSMLogger.logMethodEntry(getClass(), "disconnect", tenantId);
         oauthService.disconnect(tenantId);
-        lastResult.set("DISCONNECTED");
-        lastError.set(null);
+
         OOSMLogger.logBusinessEvent(getClass(), "GDRIVE_OAUTH_DISCONNECT", "tenantId=" + tenantId);
         return status();
     }
 
     public DayImportDriveStatusDto syncNow() {
-        long start = System.currentTimeMillis();
-        UUID tenantId = TenantContext.getCurrentTenant();
-        OOSMLogger.logMethodEntry(getClass(), "syncNow", tenantId);
-        lastSyncAt.set(Instant.now());
-        DayImportDriveStatusDto before = status();
-        if (!before.isOauthConfigured()) {
-            lastResult.set("SKIPPED_OAUTH_NOT_CONFIGURED");
-            lastError.set("Set oosm.import.gdrive.oauth.client-id/secret/redirect-uri on the server");
-            OOSMLogger.warn(getClass(), "[syncNow] skipped oauth not configured tenant={}", tenantId);
-            return status();
+        DayImportAccess.requireImport();
+        DayImportDriveStatusDto result = status();
+        if (!result.isConfigured() || result.getProcessedFolderId() == null || result.getProcessedFolderId().isBlank()) {
+            result.setLastResult("SKIPPED_NOT_CONFIGURED");
+            result.setLastError("Connect and enable Drive, then configure distinct source and processed folders");
+            return result;
         }
-        if (!before.isConnected()) {
-            lastResult.set("SKIPPED_NOT_CONNECTED");
-            lastError.set("Connect Google Drive with the Connect button (personal or Workspace account)");
-            OOSMLogger.warn(getClass(), "[syncNow] skipped not connected tenant={}", tenantId);
-            return status();
-        }
-        if (!before.isEnabled()) {
-            lastResult.set("SKIPPED_DISABLED");
-            lastError.set("Enable IMPORT_GDRIVE_ENABLED for this tenant");
-            OOSMLogger.warn(getClass(), "[syncNow] skipped disabled tenant={}", tenantId);
-            return status();
-        }
-        if (before.getFolderId() == null || before.getFolderId().isBlank()) {
-            lastResult.set("SKIPPED_NO_FOLDER");
-            lastError.set("Set IMPORT_GDRIVE_FOLDER_ID (Drive folder shared with the connected account)");
-            OOSMLogger.warn(getClass(), "[syncNow] skipped no folder tenant={}", tenantId);
-            return status();
-        }
-
-        String folderId = before.getFolderId();
-        String processedFolderId = before.getProcessedFolderId();
-        String failedFolderId = readParam("IMPORT_GDRIVE_FAILED_FOLDER_ID");
-        int ok = 0;
-        int fail = 0;
+        if (result.getFolderId().equals(result.getProcessedFolderId())) throw new IllegalArgumentException("Source and processed folders must differ");
+        UUID lease = store.acquire();
+        if (lease == null) { result.setLastResult("RUNNING"); return result; }
+        int processed=0, failed=0, pendingMoves=0;
+        result.setLastSyncAt(Instant.now());
+        result.setLastError(null);
+        java.util.Set<String> routingFiles = new java.util.HashSet<>();
         try {
-            var files = driveClient.listXlsx(folderId);
-            pendingCount.set(files.size());
-            OOSMLogger.info(getClass(), "[syncNow] tenant={} folder={} pendingFiles={}",
-                    tenantId, folderId, files.size());
-            for (DayImportDriveClient.DriveFileRef file : files) {
+            // Routing retry never invokes the import engine, even after a process restart.
+            for (var pending : store.pending()) {
+                store.renew(lease);
+                if (!status().isConfigured()) throw new IllegalStateException("Drive disconnected or disabled during sync");
+                routingFiles.add(pending.fileId());
                 try {
-                    byte[] bytes = driveClient.download(file.id());
-                    DayImportReportDto dry = dayImportService.dryRun(bytes);
-                    if (!dry.isCanCommit()) {
-                        fail++;
-                        if (failedFolderId != null && !failedFolderId.isBlank()) {
-                            driveClient.moveToFolder(file.id(), failedFolderId);
-                        }
-                        lastError.set("Dry-run failed for " + file.name() + " (" + dry.getInvalidCount() + " errors)");
-                        OOSMLogger.warn(getClass(), "[syncNow] dry-run failed file={} invalid={}",
-                                file.name(), dry.getInvalidCount());
-                        continue;
-                    }
-                    dayImportService.commit(bytes);
-                    if (processedFolderId != null && !processedFolderId.isBlank()) {
-                        driveClient.moveToFolder(file.id(), processedFolderId);
-                    }
-                    ok++;
-                    OOSMLogger.info(getClass(), "[syncNow] committed file={}", file.name());
-                } catch (Exception ex) {
-                    fail++;
-                    lastError.set(file.name() + ": " + ex.getMessage());
-                    OOSMLogger.logException(getClass(), "[syncNow] file failed name=" + file.name(), ex);
-                    if (failedFolderId != null && !failedFolderId.isBlank()) {
-                        try {
-                            driveClient.moveToFolder(file.id(), failedFolderId);
-                        } catch (Exception moveEx) {
-                            OOSMLogger.logException(getClass(), "[syncNow] move to failed folder failed", moveEx);
-                        }
-                    }
+                    if (!DayImportLedger.digest(driveClient.download(pending.fileId())).equals(pending.digest()))
+                        throw new IllegalStateException("Committed file changed before routing; reconcile manually");
+                    driveClient.moveToFolder(pending.fileId(), pending.folder());
+                    store.routed(pending.fileId());
+                } catch (Exception e) { pendingMoves++; result.setLastError("Committed file routing pending: " + pending.fileId()); }
+            }
+            var files = driveClient.listXlsx(result.getFolderId());
+            result.setPendingCount(files.size());
+            for (var file : files) {
+                if (routingFiles.contains(file.id())) continue;
+                store.renew(lease);
+                if (!status().isConfigured()) throw new IllegalStateException("Drive disconnected or disabled during sync");
+                boolean committed=false;
+                try {
+                    byte[] bytes=driveClient.download(file.id());
+                    if (bytes.length > 20 * 1024 * 1024) throw new IllegalArgumentException("Workbook exceeds 20 MB");
+                    var preview=workflow.preview(bytes, "DRIVE");
+                    if (!preview.isCanCommit()) { failed++; result.setLastError("Validation failed: " + file.name() + "; run=" + preview.getRunId()); continue; }
+                    var report=workflow.commit(bytes, preview.getRunId());
+                    if (!java.util.Set.of("COMMITTED", "REPLAYED").contains(report.getOutcome())) throw new IllegalStateException("Import did not commit");
+                    committed=true;
+                    processed++;
+                    store.routing(file.id(), DayImportLedger.digest(bytes), result.getProcessedFolderId());
+                    if (!DayImportLedger.digest(driveClient.download(file.id())).equals(DayImportLedger.digest(bytes)))
+                        throw new IllegalStateException("Committed workbook changed before routing");
+                    driveClient.moveToFolder(file.id(), result.getProcessedFolderId());
+                    store.routed(file.id());
+                } catch (Exception e) {
+                    if (committed) { pendingMoves++; result.setLastError("Committed; file routing pending: " + file.name()); }
+                    else { failed++; result.setLastError("Import failed: " + file.name()); }
+                    OOSMLogger.logException(getClass(), "Drive file processing failed", e);
                 }
             }
-            processedCount.addAndGet(ok);
-            failedCount.addAndGet(fail);
-            lastResult.set("OK processed=" + ok + " failed=" + fail);
-            if (fail == 0) {
-                lastError.set(null);
-            }
-            OOSMLogger.logBusinessEvent(getClass(), "DAY_IMPORT_DRIVE_SYNC",
-                    "tenant=" + tenantId + " processed=" + ok + " failed=" + fail);
+            result.setLastResult(pendingMoves > 0 ? "COMMITTED_ROUTING_PENDING" : failed > 0 ? "COMPLETED_WITH_ERRORS" : "OK");
         } catch (Exception e) {
-            lastResult.set("ERROR");
-            lastError.set(e.getMessage());
-            OOSMLogger.logException(getClass(), "[syncNow] failed tenant=" + tenantId, e);
+            result.setLastResult("ERROR"); result.setLastError("Drive sync interrupted; committed files remain recorded");
+            OOSMLogger.logException(getClass(), "Drive sync failed", e);
+        } finally {
+            result.setProcessedCount(processed); result.setFailedCount(failed);
+            result.setPendingCount(pendingMoves + failed);
+            store.finish(lease, result);
         }
-        OOSMLogger.logPerformance(getClass(), "syncNow", start, System.currentTimeMillis());
-        return status();
+        return result;
     }
 
     @Scheduled(cron = "${oosm.import.gdrive.cron:0 0 6 * * *}")
@@ -206,7 +173,7 @@ public class DayImportDriveService {
                     continue;
                 }
                 OOSMLogger.info(getClass(), "[scheduledSync] tenant={}", cred.getTenantId());
-                syncNow();
+                DayImportAccess.automated(this::syncNow);
             } catch (Exception e) {
                 OOSMLogger.logException(getClass(),
                         "[scheduledSync] tenant failed id=" + cred.getTenantId(), e);
@@ -219,7 +186,7 @@ public class DayImportDriveService {
 
     private String readParam(String code) {
         try {
-            UUID tenantId = TenantContext.getCurrentTenant();
+            UUID tenantId = DayImportAccess.tenant();
             if (tenantId == null) {
                 return "";
             }

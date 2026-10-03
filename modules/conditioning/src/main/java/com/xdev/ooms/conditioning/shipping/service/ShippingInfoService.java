@@ -220,9 +220,11 @@ public class ShippingInfoService extends BaseServiceImpl<ShippingInfo, ShippingI
 
         String normalized = publicCode.trim().toUpperCase(Locale.ROOT);
 
-        Optional<ShippingInfo> match = shippingInfoRepository.findByQrHexAndIsDeletedFalse(normalized);
+        Optional<ShippingInfo> match = shippingInfoRepository.findByQrHexAndIsDeletedFalse(normalized)
+                .filter(this::isTenantAccessible);
         if (match.isEmpty()) {
-            match = shippingInfoRepository.findByShippingNumberIgnoreCaseAndIsDeletedFalse(normalized);
+            match = shippingInfoRepository.findByShippingNumberIgnoreCaseAndIsDeletedFalse(normalized)
+                    .filter(this::isTenantAccessible);
         }
 
         ShippingInfo shipping = match.orElseThrow(() ->
