@@ -56,9 +56,6 @@ public class PlanningController {
 
     @GetMapping("/planning")
     public ResponseEntity<PlanningSaveRequest> getPlanning() {
-        if (!PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.READ)) {
-            PermissionSupport.requireAction(DELIVERY_RESOURCE, Action.PLANNING);
-        }
         log.info("Fetching planning");
         return ResponseEntity.ok(planningService.getPlanning());
     }

@@ -8,10 +8,8 @@ import com.xdev.ooms.production.qualitycontrol.entity.QualityControlResult;
 import com.xdev.ooms.production.qualitycontrol.service.QualityControlResultService;
 import com.xdev.ooms.sharedkernel.apiDTOs.ApiResponse;
 import com.xdev.ooms.sharedkernel.controllers.impl.BaseControllerImpl;
-import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.services.BaseService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
-import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.modelmapper.ModelMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,31 +34,8 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
 
     }
 
-    private static final String DELIVERY_RESOURCE = "UNIFIEDDELIVERY";
-
-    private static void requireQualityAction(Action... deliveryActions) {
-        for (Action action : deliveryActions) {
-            if (PermissionSupport.hasAction(DELIVERY_RESOURCE, action)) {
-                return;
-            }
-        }
-        PermissionSupport.requireAction("QUALITYCONTROLRESULT", Action.CREATE);
-    }
-
-    private static void requireQualityRead() {
-        if (PermissionSupport.hasAction("QUALITYCONTROLRESULT", Action.READ)
-                || PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.OLIVE_QUALITY)
-                || PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.OIL_QUALITY)
-                || PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.UPDATE_OLIVE_QUALITY)
-                || PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.UPDATE_OIL_QUALITY)) {
-            return;
-        }
-        PermissionSupport.requireAction("QUALITYCONTROLRESULT", Action.READ);
-    }
-
     @PostMapping("/save-batch")
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> saveBatch(@RequestBody List<QualityControlResultDto> dtos) {
-        requireQualityAction(Action.OLIVE_QUALITY, Action.OIL_QUALITY, Action.UPDATE_OLIVE_QUALITY, Action.UPDATE_OIL_QUALITY);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "saveBatch", dtos.size());
         try {
@@ -86,7 +61,6 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> saveBatchDirect(
             @PathVariable UUID idx,@PathVariable String std,
             @RequestBody List<QualityControlResultDto> dtos) {
-        requireQualityAction(Action.OIL_QUALITY, Action.UPDATE_OIL_QUALITY);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "saveBatchDirect", dtos.size());
         try {
@@ -110,7 +84,6 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
 
     @GetMapping("/fetchByDelivery/{deliveryId}")
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> getResultsByDelivery(@PathVariable UUID deliveryId) {
-        requireQualityRead();
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getResultsByDelivery", deliveryId);
         try {
@@ -133,7 +106,6 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> saveBatchForFiltration(
             @PathVariable UUID filtrationOperationId,
             @RequestBody List<QualityControlResultDto> dtos) {
-        PermissionSupport.requireAction("QUALITYCONTROLRESULT", Action.CREATE);
         try {
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
@@ -151,7 +123,6 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
     @GetMapping("/filtration/{filtrationOperationId}")
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> getResultsByFiltration(
             @PathVariable UUID filtrationOperationId) {
-        requireQualityRead();
         try {
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
@@ -169,7 +140,6 @@ public class QualityControlResultController extends BaseControllerImpl<QualityCo
     @GetMapping("/traceability-lot/{traceabilityLotId}")
     public ResponseEntity<ApiResponse<QualityControlResult, QualityControlResultDto>> getResultsByTraceabilityLot(
             @PathVariable UUID traceabilityLotId) {
-        requireQualityRead();
         try {
             return ResponseEntity.ok(new ApiResponse<>(
                     true,
