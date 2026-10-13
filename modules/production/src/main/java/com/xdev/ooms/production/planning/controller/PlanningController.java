@@ -7,7 +7,9 @@ import com.xdev.ooms.production.planning.dto.PlanningSaveRequest;
 
 import com.xdev.ooms.production.planning.service.PlanningService;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ChildLotCompletionDto;
+import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +46,14 @@ public class PlanningController {
         this.planningService = planningService;
     }
 
+    private static final String DELIVERY_RESOURCE = "UNIFIEDDELIVERY";
+
+    private static void requireCompletion() {
+        if (!PermissionSupport.hasAction(DELIVERY_RESOURCE, Action.PLANNING)) {
+            PermissionSupport.requireAction(DELIVERY_RESOURCE, Action.COMPLETE);
+        }
+    }
+
     @GetMapping("/planning")
     public ResponseEntity<PlanningSaveRequest> getPlanning() {
         log.info("Fetching planning");
@@ -52,6 +62,7 @@ public class PlanningController {
 
     @PostMapping("/planning")
     public ResponseEntity<String> savePlanning(@RequestBody PlanningSaveRequest request) {
+        PermissionSupport.requireAction(DELIVERY_RESOURCE, Action.PLANNING);
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "savePlanning", request);
         try {
@@ -71,6 +82,7 @@ public class PlanningController {
     /* ───── MARK LOT completed ───── */
     @PostMapping("/planning/lots/{lotNumber}/completed")
     public ResponseEntity<String> completeLot(@PathVariable String lotNumber, @RequestBody Map<String, Object> body) {
+        requireCompletion();
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "completeLot", new Object[]{lotNumber, body});
 
@@ -151,6 +163,7 @@ public class PlanningController {
     public ResponseEntity<String> completeGlobalLot(
             @PathVariable String globalLotNumber,
             @RequestBody Map<String, Object> body) {
+        requireCompletion();
         long startTime = System.currentTimeMillis();
 
 

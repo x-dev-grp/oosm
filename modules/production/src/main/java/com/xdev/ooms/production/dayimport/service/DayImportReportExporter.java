@@ -38,14 +38,15 @@ public class DayImportReportExporter {
 
     public byte[] toCsv(DayImportReportDto report) {
         StringBuilder sb = new StringBuilder();
-        sb.append("sheet,rowNumber,businessKey,status,message,stockDelta\n");
+        sb.append("sheet,rowNumber,businessKey,status,message,stockDelta,lotNumber\n");
         for (ImportRowResultDto row : report.getRows()) {
             sb.append(csv(row.getSheet())).append(',')
                     .append(row.getRowNumber()).append(',')
                     .append(csv(row.getBusinessKey())).append(',')
                     .append(row.getStatus() != null ? row.getStatus().name() : "").append(',')
                     .append(csv(row.getMessage())).append(',')
-                    .append(row.getStockDelta() != null ? row.getStockDelta() : "")
+                    .append(row.getStockDelta() != null ? row.getStockDelta() : "").append(',')
+                    .append(csv(row.getLotNumber()))
                     .append('\n');
         }
         return sb.toString().getBytes(StandardCharsets.UTF_8);
@@ -73,7 +74,7 @@ public class DayImportReportExporter {
 
             Sheet sheet = wb.createSheet("Report");
             sheet.createFreezePane(0, 1);
-            String[] headers = {"sheet", "rowNumber", "businessKey", "status", "message", "stockDelta"};
+            String[] headers = {"sheet", "rowNumber", "businessKey", "status", "message", "stockDelta", "lotNumber"};
             Row header = sheet.createRow(0);
             header.setHeightInPoints(22);
             for (int c = 0; c < headers.length; c++) {
@@ -96,7 +97,8 @@ public class DayImportReportExporter {
                 } else {
                     r.createCell(5).setCellValue("");
                 }
-                for (int c = 0; c <= 5; c++) {
+                r.createCell(6).setCellValue(empty(row.getLotNumber()));
+                for (int c = 0; c <= 6; c++) {
                     r.getCell(c).setCellStyle(rowStyle);
                 }
             }

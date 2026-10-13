@@ -17,6 +17,7 @@ import com.xdev.ooms.conditioning.shipping.repository.ShippingInfoRepository;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.qr.model.QrResolveResponse;
 import com.xdev.ooms.sharedkernel.services.GlobalCodeSearchContributor;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,9 +99,11 @@ public class GlobalSearch implements GlobalCodeSearchContributor {
     }
 
     private Optional<QrResolveResponse> resolveExpedition(String code) {
-        Optional<Expedition> entity = expeditionRepository.findByQrHexAndIsDeletedFalse(code);
+        Optional<Expedition> entity = expeditionRepository.findByQrHexAndIsDeletedFalse(code)
+                .filter(TenantAccess::isAccessible);
         if (entity.isEmpty()) {
-            entity = expeditionRepository.findByExpeditionNumberIgnoreCaseAndIsDeletedFalse(code);
+            entity = expeditionRepository.findByExpeditionNumberIgnoreCaseAndIsDeletedFalse(code)
+                    .filter(TenantAccess::isAccessible);
         }
 
         return entity.map(expedition -> response(
@@ -116,9 +119,11 @@ public class GlobalSearch implements GlobalCodeSearchContributor {
     }
 
     private Optional<QrResolveResponse> resolveShipping(String code) {
-        Optional<ShippingInfo> entity = shippingInfoRepository.findByQrHexAndIsDeletedFalse(code);
+        Optional<ShippingInfo> entity = shippingInfoRepository.findByQrHexAndIsDeletedFalse(code)
+                .filter(TenantAccess::isAccessible);
         if (entity.isEmpty()) {
-            entity = shippingInfoRepository.findByShippingNumberIgnoreCaseAndIsDeletedFalse(code);
+            entity = shippingInfoRepository.findByShippingNumberIgnoreCaseAndIsDeletedFalse(code)
+                    .filter(TenantAccess::isAccessible);
         }
 
         return entity.map(shipping -> response(

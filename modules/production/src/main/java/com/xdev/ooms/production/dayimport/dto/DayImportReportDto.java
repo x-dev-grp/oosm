@@ -7,6 +7,15 @@ import java.util.List;
 import java.util.Map;
 
 public class DayImportReportDto {
+    private java.util.Map<String,String> validationContext = new java.util.TreeMap<>();
+    public java.util.Map<String,String> getValidationContext() { return validationContext; }
+    public void setValidationContext(java.util.Map<String,String> value) { validationContext = new java.util.TreeMap<>(value); }
+    private java.util.UUID runId;
+    private String outcome;
+    public java.util.UUID getRunId() { return runId; }
+    public void setRunId(java.util.UUID value) { runId = value; }
+    public String getOutcome() { return outcome; }
+    public void setOutcome(String value) { outcome = value; }
     private LocalDate businessDate;
     private boolean canCommit;
     private int validCount;

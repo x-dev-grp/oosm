@@ -10,4 +10,7 @@ public interface SupplierRepository extends BaseRepository<Supplier> {
 
     java.util.Optional<Supplier> findFirstByPhoneAndNameIgnoreCaseAndLastnameIgnoreCaseAndIsDeletedFalse(
             String phone, String name, String lastname);
+
+    java.util.Optional<Supplier> findFirstByTenantIdAndMatriculeFiscalIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String value);
+    java.util.Optional<Supplier> findFirstByTenantIdAndPhoneAndNameIgnoreCaseAndLastnameIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String phone, String name, String lastname);
 }

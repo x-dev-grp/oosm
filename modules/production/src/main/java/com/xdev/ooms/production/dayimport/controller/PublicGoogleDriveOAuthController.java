@@ -2,6 +2,7 @@ package com.xdev.ooms.production.dayimport.controller;
 
 import com.xdev.ooms.production.dayimport.service.GoogleDriveOAuthService;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @RestController
 @RequestMapping("/api/public/gdrive/oauth")
+@ConditionalOnProperty(name = "oosm.features.day-import.enabled", havingValue = "true")
 public class PublicGoogleDriveOAuthController {
 
     private final GoogleDriveOAuthService oauthService;

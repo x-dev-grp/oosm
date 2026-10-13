@@ -36,7 +36,7 @@ public class GoogleDriveOAuthService {
     private final TenantGoogleDriveCredentialRepository credentialRepository;
     private final AppSettingEncryptionService encryptionService;
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final HttpClient httpClient = HttpClient.newBuilder().connectTimeout(java.time.Duration.ofSeconds(15)).build();
 
     @Value("${oosm.import.gdrive.oauth.client-id:}")
     private String clientId;
@@ -202,7 +202,7 @@ public class GoogleDriveOAuthService {
     }
 
     private TokenResponse postToken(String formBody) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder().timeout(java.time.Duration.ofSeconds(45))
                 .uri(URI.create("https://oauth2.googleapis.com/token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString(formBody))
@@ -221,7 +221,7 @@ public class GoogleDriveOAuthService {
     }
 
     private String fetchEmail(String accessToken) throws Exception {
-        HttpRequest request = HttpRequest.newBuilder()
+        HttpRequest request = HttpRequest.newBuilder().timeout(java.time.Duration.ofSeconds(45))
                 .uri(URI.create("https://www.googleapis.com/oauth2/v2/userinfo"))
                 .header("Authorization", "Bearer " + accessToken)
                 .GET()

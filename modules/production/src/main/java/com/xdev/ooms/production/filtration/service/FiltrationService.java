@@ -23,6 +23,7 @@ import com.xdev.ooms.production.storageunit.repository.StorageUnitRepo;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionState;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 
 import com.xdev.ooms.sharedkernel.utils.BusinessCodeGenerator;
 import org.modelmapper.ModelMapper;
@@ -445,7 +446,9 @@ public class FiltrationService {
         try {
 
             // [NOUVEAU] Appel à la nouvelle méthode du repository
-            List<FiltrationOperation> operations = filtrationRepo.findByStatusAndIsDeletedFalse(status.toString());
+            List<FiltrationOperation> operations = filtrationRepo.findByStatusAndIsDeletedFalse(status.toString()).stream()
+                    .filter(TenantAccess::isAccessible)
+                    .toList();
 
             return operations.stream().map(this::mapToDto).collect(Collectors.toList());
 
@@ -475,7 +478,9 @@ public class FiltrationService {
 
     // Recherche une unité
     private StorageUnit findStorageUnitById(UUID id, String type) {
-        return storageUnitRepo.findById(id).orElseThrow(
+        return storageUnitRepo.findById(id)
+                .filter(TenantAccess::isAccessible)
+                .orElseThrow(
                 () -> new IllegalArgumentException(String.format("%s non trouvée avec l'ID: %s", type, id)));
     }
 
@@ -523,6 +528,7 @@ public class FiltrationService {
 
     private FiltrationOperation findFiltrationOperationById(UUID id) {
         FiltrationOperation op = filtrationRepo.findByIdAndIsDeletedFalse(id)
+                .filter(TenantAccess::isAccessible)
                 .orElseThrow(() -> new IllegalArgumentException(
                         String.format("Opération non trouvée avec l'ID: %s", id)));
 

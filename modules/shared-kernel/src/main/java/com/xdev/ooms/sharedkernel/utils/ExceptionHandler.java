@@ -6,10 +6,12 @@ import com.xdev.ooms.sharedkernel.apiDTOs.ApiSingleResponse;
 import com.xdev.ooms.sharedkernel.dtos.BaseDto;
 import com.xdev.ooms.sharedkernel.entities.BaseEntity;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.persistence.OptimisticLockException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -132,6 +134,10 @@ public class ExceptionHandler {
                 exception instanceof BindException ||
                 exception instanceof ConstraintViolationException) {
             return HttpStatus.BAD_REQUEST;
+        } else if (isOptimisticLockConflict(exception)) {
+            return HttpStatus.CONFLICT;
+        } else if (exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return HttpStatus.CONFLICT;
         } else if (exception instanceof SQLException) {
             return HttpStatus.INTERNAL_SERVER_ERROR;
         } else {
@@ -153,6 +159,10 @@ public class ExceptionHandler {
             return "Access denied: insufficient permissions";
         } else if (exception instanceof IllegalArgumentException) {
             return "Invalid argument provided: " + exception.getMessage();
+        } else if (isOptimisticLockConflict(exception)) {
+            return "The record was changed by another operation. Reload it and retry.";
+        } else if (exception instanceof IllegalStateException || exception instanceof UnsupportedOperationException) {
+            return exception.getMessage();
         } else if (exception instanceof MethodArgumentTypeMismatchException ex) {
             return String.format("Invalid parameter type for '%s': expected %s, got %s",
                     ex.getName(), ex.getRequiredType().getSimpleName(),
@@ -168,6 +178,11 @@ public class ExceptionHandler {
         } else {
             return "An unexpected error occurred during " + operation;
         }
+    }
+
+    private static boolean isOptimisticLockConflict(Exception exception) {
+        return exception instanceof OptimisticLockException
+                || exception instanceof ObjectOptimisticLockingFailureException;
     }
 
     /**
@@ -239,4 +254,4 @@ public class ExceptionHandler {
     public static <E extends BaseEntity, OUTDTO extends BaseDto<E>> ApiSingleResponse<E, OUTDTO> createSingleSuccessResponse(String message, OUTDTO data) {
         return new ApiSingleResponse<>(true, message, data);
     }
-} 
+}

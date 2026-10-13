@@ -99,13 +99,13 @@ public class QualityControlPdfConfigMapper {
     private String pickLabel(Map<String, QualityControlResult> resultMap, String ruleKey) {
         QualityControlResult result = resultMap.get(normalize(ruleKey));
         if (result != null && result.getRule() != null) {
-            String description = result.getRule().getDescription();
-            if (hasText(description)) {
-                return description.trim();
-            }
             String ruleName = result.getRule().getRuleName();
             if (hasText(ruleName)) {
                 return ruleName.trim();
+            }
+            String description = result.getRule().getDescription();
+            if (hasText(description)) {
+                return description.trim();
             }
         }
         return ruleKey;

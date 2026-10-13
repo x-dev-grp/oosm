@@ -397,9 +397,11 @@ public class ExpeditionService extends BaseServiceImpl<Expedition, ExpeditionDto
 
         String normalized = publicCode.trim().toUpperCase(Locale.ROOT);
 
-        Optional<Expedition> match = expeditionRepository.findByQrHexAndIsDeletedFalse(normalized);
+        Optional<Expedition> match = expeditionRepository.findByQrHexAndIsDeletedFalse(normalized)
+                .filter(this::isTenantAccessible);
         if (match.isEmpty()) {
-            match = expeditionRepository.findByExpeditionNumberIgnoreCaseAndIsDeletedFalse(normalized);
+            match = expeditionRepository.findByExpeditionNumberIgnoreCaseAndIsDeletedFalse(normalized)
+                    .filter(this::isTenantAccessible);
         }
 
         Expedition expedition = match.orElseThrow(() ->

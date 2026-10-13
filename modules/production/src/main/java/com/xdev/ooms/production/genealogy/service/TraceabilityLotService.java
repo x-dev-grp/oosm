@@ -14,6 +14,7 @@ import com.xdev.ooms.production.genealogy.enums.TraceabilitySourceType;
 import com.xdev.ooms.production.unifieddelivery.entity.UnifiedDelivery;
 import com.xdev.ooms.production.genealogy.repository.TraceabilityLotRepository;
 import  com.xdev.ooms.sharedkernel.Enum.TransactionType;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -71,16 +72,17 @@ public class TraceabilityLotService {
     @Transactional(readOnly = true)
     public Optional<TraceabilityLot> resolveByLotOrStorage(UUID lotOrStorageId) {
         Optional<TraceabilityLot> directLot = traceabilityLotRepository.findByIdAndIsDeletedFalse(lotOrStorageId);
-        if (directLot.isPresent()) {
-            return directLot;
+        if (directLot.filter(TenantAccess::isAccessible).isPresent()) {
+            return directLot.filter(TenantAccess::isAccessible);
         }
 
-        return traceabilityLotRepository.findFirstByStorageUnitIdAndActiveTrueAndIsDeletedFalseOrderByCapturedAtDesc(lotOrStorageId);
+        return traceabilityLotRepository.findFirstByStorageUnitIdAndActiveTrueAndIsDeletedFalseOrderByCapturedAtDesc(lotOrStorageId)
+                .filter(TenantAccess::isAccessible);
     }
 
     @Transactional(readOnly = true)
     public Optional<TraceabilityLot> findById(UUID lotId) {
-        return traceabilityLotRepository.findByIdAndIsDeletedFalse(lotId);
+        return traceabilityLotRepository.findByIdAndIsDeletedFalse(lotId).filter(TenantAccess::isAccessible);
     }
 
     private TraceabilityLot createRootLot(StorageUnit storageUnit) {

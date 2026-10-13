@@ -93,18 +93,10 @@ public class ProjetService extends BaseServiceImpl<Projet, ProjetDto, ProjetDto>
                 ? projetRepository.findByQrHex(normalizedCode)
                 : projetRepository.findByQrHexAndTenantIdAndIsDeletedFalse(normalizedCode, tenantId);
 
-        if (entity.isEmpty() && tenantId != null) {
-            entity = projetRepository.findByQrHex(normalizedCode);
-        }
-
         if (entity.isEmpty()) {
             entity = (tenantId == null)
                     ? projetRepository.findByCodeIgnoreCaseAndIsDeletedFalse(normalizedCode)
                     : projetRepository.findByCodeIgnoreCaseAndTenantIdAndIsDeletedFalse(normalizedCode, tenantId);
-        }
-
-        if (entity.isEmpty() && tenantId != null) {
-            entity = projetRepository.findByCodeIgnoreCaseAndIsDeletedFalse(normalizedCode);
         }
 
         return entity.map(p -> buildResolveResponse(normalizedCode, p))

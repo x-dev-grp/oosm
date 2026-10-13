@@ -6,8 +6,6 @@ import java.util.List;
 
 public final class TunisiaQualityControlDefaults {
 
-    public static final String REGULATORY_MARKER = "Tunisia default";
-
     private TunisiaQualityControlDefaults() {
     }
 
@@ -26,33 +24,21 @@ public final class TunisiaQualityControlDefaults {
     public static List<QcRuleTemplate> all() {
         return List.of(
                 oilRule("Categorie", "Catégorie", RuleType.STRING, null, null,
-                        "Extra Vierge,Vierge,Lampante",
-                        "COI/Tunisia — classification huile d'olive vierge"),
-                oilRule("Acidite", "Acidité (% maaa)", RuleType.NUMERIC, 0f, 2.0f, null,
-                        "COI/Tunisia — EVOO ≤0.8%, Vierge ≤2%"),
-                oilRule("K232", "K232", RuleType.NUMERIC, 0f, 2.60f, null,
-                        "COI/Tunisia — EVOO ≤2.50, Vierge ≤2.60"),
-                oilRule("K270", "K270", RuleType.NUMERIC, 0f, 0.25f, null,
-                        "COI/Tunisia — EVOO ≤0.22, Vierge ≤0.25"),
-                oilRule("DeltaK", "Delta K", RuleType.NUMERIC, 0f, 0.01f, null,
-                        "COI/Tunisia — Delta K ≤0.01"),
-                oilRule("IndicePreoxyde", "Indice peroxyde (meq O2/kg)", RuleType.NUMERIC, 0f, 20f, null,
-                        "COI/Tunisia — indice de peroxyde ≤20"),
+                        "Extra Vierge,Vierge,Lampante"),
+                oilRule("Acidite", "Acidité (% maaa)", RuleType.NUMERIC, 0f, 2.0f, null),
+                oilRule("K232", "K232", RuleType.NUMERIC, 0f, 2.60f, null),
+                oilRule("K270", "K270", RuleType.NUMERIC, 0f, 0.25f, null),
+                oilRule("DeltaK", "Delta K", RuleType.NUMERIC, 0f, 0.01f, null),
+                oilRule("IndicePreoxyde", "Indice peroxyde (meq O2/kg)", RuleType.NUMERIC, 0f, 20f, null),
                 oilRule("EtatCamion", "État camion", RuleType.STRING, null, null,
-                        "Conforme,Non conforme",
-                        "état du camion à réception huile"),
-                oliveRule("Infestees", "Infestées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "olives infestées (%)"),
-                oliveRule("Fermentees", "Fermentées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "olives fermentées (%)"),
-                oliveRule("Endommagees", "Endommagées %", RuleType.NUMERIC, 0f, 100f, null,
-                        "olives endommagées (%)"),
+                        "Conforme,Non conforme"),
+                oliveRule("Infestees", "Infestées %", RuleType.NUMERIC, 0f, 100f, null),
+                oliveRule("Fermentees", "Fermentées %", RuleType.NUMERIC, 0f, 100f, null),
+                oliveRule("Endommagees", "Endommagées %", RuleType.NUMERIC, 0f, 100f, null),
                 oliveRule("Categorie", "Catégorie Olive", RuleType.STRING, null, null,
-                        "Vierge Extra,Vierge,Lampante",
-                        "catégorie olives à réception"),
+                        "Vierge Extra,Vierge,Lampante"),
                 oliveRule("EtatCamion", "État camion", RuleType.STRING, null, null,
-                        "Conforme,Non conforme",
-                        "état du camion à réception olive")
+                        "Conforme,Non conforme")
         );
     }
 
@@ -62,11 +48,10 @@ public final class TunisiaQualityControlDefaults {
             RuleType ruleType,
             Float minValue,
             Float maxValue,
-            String ruleTextValue,
-            String description
+            String ruleTextValue
     ) {
         return new QcRuleTemplate(ruleKey, ruleName, ruleType, true, minValue, maxValue, ruleTextValue,
-                REGULATORY_MARKER + " — " + description);
+                null);
     }
 
     private static QcRuleTemplate oliveRule(
@@ -75,10 +60,9 @@ public final class TunisiaQualityControlDefaults {
             RuleType ruleType,
             Float minValue,
             Float maxValue,
-            String ruleTextValue,
-            String description
+            String ruleTextValue
     ) {
         return new QcRuleTemplate(ruleKey, ruleName, ruleType, false, minValue, maxValue, ruleTextValue,
-                REGULATORY_MARKER + " — " + description);
+                null);
     }
 }

@@ -82,7 +82,7 @@ public class ProductionFinancialSyncPortImpl implements ProductionFinancialSyncP
             UUID id = parseUuid(command.externalTransactionId());
             if (id != null) {
                 Optional<UnifiedDelivery> byId =
-                        deliveryRepository.findByIdAndIsDeletedFalse(id);
+                        deliveryRepository.findOwned(id);
                 if (byId.isPresent()) {
                     return byId;
                 }

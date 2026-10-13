@@ -37,6 +37,10 @@ import static org.apache.commons.math3.util.Precision.round;
 @JsonIgnoreProperties(value = {"hibernateLazyInitializer", "handler"}, ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class UnifiedDelivery extends BaseEntity implements Serializable {
+    @jakarta.persistence.Version
+    @jakarta.persistence.Column(name = "balance_version", nullable = false)
+    private long balanceVersion;
+
 
 
     private LocalDate ddm; // Expedition

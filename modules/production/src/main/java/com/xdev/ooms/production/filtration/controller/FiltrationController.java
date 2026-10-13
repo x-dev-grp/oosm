@@ -1,6 +1,8 @@
 package com.xdev.ooms.production.filtration.controller;
 
+import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
+import com.xdev.ooms.sharedkernel.utils.PermissionSupport;
 
 import com.xdev.ooms.production.filtration.dto.FiltrationCompletionDto;
 import com.xdev.ooms.production.filtration.dto.FiltrationRequestDto;
@@ -21,6 +23,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/production/filtration")
 public class FiltrationController {
+    private static final String RESOURCE = "FILTRATIONOPERATION";
     private final FiltrationService filtrationService;
 
     public FiltrationController(FiltrationService filtrationService) {
@@ -84,6 +87,7 @@ public class FiltrationController {
 
     @PutMapping("/{operationId}/start")
     public ResponseEntity<?> startFiltration(@PathVariable UUID operationId) {
+        PermissionSupport.requireAction(RESOURCE, Action.UPDATE);
         String requestId = generateRequestId();
 
         try {
@@ -108,6 +112,9 @@ public class FiltrationController {
     public ResponseEntity<?> completeFiltration(
             @PathVariable UUID operationId,
             @Valid @RequestBody FiltrationCompletionDto completionData) { // [NOUVEAU] Paramètre ajouté
+        if (!PermissionSupport.hasAction(RESOURCE, Action.VALIDATE)) {
+            PermissionSupport.requireAction(RESOURCE, Action.UPDATE);
+        }
         String requestId = generateRequestId();
 
         try {
@@ -117,7 +124,9 @@ public class FiltrationController {
             OOSMLogger.info(FiltrationController.class, "Request ID: {} - Opération {} terminée avec succès", requestId, operationId);
             return ResponseEntity.ok(result);
 
-        }   catch (Exception e) {
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            return ResponseEntity.badRequest().body(new ErrorResponse("Erreur: " + e.getMessage()));
+        } catch (Exception e) {
             OOSMLogger.error(FiltrationController.class, "Request ID: {} - Erreur inattendue: {}", requestId, e.getMessage(), e);
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -129,6 +138,7 @@ public class FiltrationController {
     public ResponseEntity<?> updateFiltrationStatus(
             @PathVariable UUID operationId,
             @Valid @RequestBody UpdateFiltrationStatusDto statusDto) {
+        PermissionSupport.requireAction(RESOURCE, Action.UPDATE);
         String requestId = generateRequestId();
 
         try {

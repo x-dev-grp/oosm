@@ -4,6 +4,7 @@ import com.xdev.ooms.finance.expense.dto.ExpenseDto;
 import com.xdev.ooms.finance.expense.repository.ExpensesRepository;
 import com.xdev.ooms.finance.expense.service.ExpensesService;
 import com.xdev.ooms.sharedkernel.Enum.ExpenseStatus;
+import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.ports.ExpensePort;
 import com.xdev.ooms.sharedkernel.ports.ExpenseRecordCommand;
 import org.springframework.stereotype.Service;
@@ -49,8 +50,8 @@ public class ExpensePortImpl implements ExpensePort {
             return false;
         }
         String token = "ExternalRef:" + externalReference.trim();
-        return expensesRepository.existsByNotesContainingIgnoreCaseAndIsDeletedFalse(token)
-                || expensesRepository.existsByInvoiceRefIgnoreCaseAndIsDeletedFalse("IMP-" + externalReference.trim());
+        return expensesRepository.existsByTenantIdAndNotesContainingIgnoreCaseAndIsDeletedFalse( TenantContext.getCurrentTenant(), token)
+                || expensesRepository.existsByTenantIdAndInvoiceRefIgnoreCaseAndIsDeletedFalse( TenantContext.getCurrentTenant(), "IMP-" + externalReference.trim());
     }
 
     private String appendExternalReference(String notes, String externalReference) {

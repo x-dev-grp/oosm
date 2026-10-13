@@ -23,6 +23,8 @@ public interface TenantEnabledModuleRepository extends JpaRepository<TenantEnabl
 
     boolean existsByCompanyTenantIdAndModuleAndIsDeletedFalse(UUID companyTenantId, OOSMModule module);
 
+    List<TenantEnabledModule> findByIsDeletedFalse();
+
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query("DELETE FROM TenantEnabledModule m WHERE m.companyTenantId = :companyTenantId")
     void deleteByCompanyTenantId(@Param("companyTenantId") UUID companyTenantId);

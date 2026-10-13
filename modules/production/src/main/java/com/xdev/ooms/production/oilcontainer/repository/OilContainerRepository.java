@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface OilContainerRepository extends BaseRepository<OilContainer> {
     Optional<OilContainer> findFirstByNameIgnoreCaseAndIsDeletedFalse(String name);
+
+    java.util.Optional<OilContainer> findFirstByTenantIdAndNameIgnoreCaseAndIsDeletedFalse(java.util.UUID tenantId, String name);
 }

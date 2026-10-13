@@ -283,6 +283,7 @@ public class ArticleSecService extends BaseServiceImpl<ArticleSec, ArticleSecDto
     @Transactional(readOnly = true)
     public QrResolveResponse resolve(String publicCode) {
         ArticleSec entity = articleRepository.findByQrHex(publicCode)
+                .filter(this::isTenantAccessible)
                 .orElseThrow(() -> new EntityNotFoundException("Article non trouvé pour le code : " + publicCode));
 
         QrResolveResponse response = new QrResolveResponse();

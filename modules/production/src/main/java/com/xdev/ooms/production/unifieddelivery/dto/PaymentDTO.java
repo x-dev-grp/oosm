@@ -9,6 +9,9 @@ import com.xdev.ooms.sharedkernel.communicator.models.shared.BankAccountDto;
 import java.util.UUID;
 
 public class PaymentDTO {
+    private java.time.LocalDate paymentDate;
+    public java.time.LocalDate getPaymentDate() { return paymentDate; }
+    public void setPaymentDate(java.time.LocalDate value) { paymentDate = value; }
     private UUID idOperation;
     private Double amount;
     private Currency currency;

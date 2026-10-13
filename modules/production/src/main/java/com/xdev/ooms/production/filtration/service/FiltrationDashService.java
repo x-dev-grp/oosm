@@ -6,10 +6,13 @@ import com.xdev.ooms.production.filtration.repository.FiltrationOperationRepo;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class FiltrationDashService
@@ -26,6 +29,21 @@ public class FiltrationDashService
     @Override
     public Set<Action> actionsMapping(FiltrationOperation entity) {
         return Set.of(Action.READ, Action.UPDATE, Action.DELETE);
+    }
+
+    /** A generic update could put a completed filtration back in progress and move its oil a second time. */
+    @Override
+    protected void checkUpdatable(FiltrationOperation existing, FiltrationDashDto request) {
+        throw new UnsupportedOperationException("Modification via /api/production/filtration uniquement.");
+    }
+
+    /** Retained dashboard contract: physically remove an owned filtration record. */
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        repository.findById(id)
+                .filter(TenantAccess::isAccessible)
+                .ifPresent(operation -> repository.deleteById(operation.getId()));
     }
 
     @Override
