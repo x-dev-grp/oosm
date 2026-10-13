@@ -10,6 +10,7 @@ import com.xdev.ooms.production.parameter.service.ParameterService;
 import com.xdev.ooms.sharedkernel.config.TenantContext;
 import com.xdev.ooms.sharedkernel.utils.OOSMLogger;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -21,6 +22,7 @@ import java.util.UUID;
  * Google Drive day-import sync for the current tenant's connected Google account.
  */
 @Service
+@ConditionalOnProperty(name = "oosm.features.day-import.enabled", havingValue = "true")
 public class DayImportDriveService {
 
     private final BooleanParameterReader booleanParameterReader;

@@ -3,6 +3,7 @@ package com.xdev.ooms.production.dayimport.controller;
 import com.xdev.ooms.production.dayimport.dto.*;
 import com.xdev.ooms.production.dayimport.service.*;
 import com.xdev.ooms.sharedkernel.communicator.models.shared.ApiResponse;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.*;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/production/import/day")
+@ConditionalOnProperty(name = "oosm.features.day-import.enabled", havingValue = "true")
 public class DayImportController {
     private final DayImportService engine;
     private final DayImportWorkflow workflow;
