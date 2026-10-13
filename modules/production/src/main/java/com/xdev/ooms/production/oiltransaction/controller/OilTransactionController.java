@@ -49,7 +49,7 @@ public class OilTransactionController extends BaseControllerImpl<OilTransaction,
     @Transactional(readOnly = true)
     public ResponseEntity<ApiResponse<OilTransaction, OilTransactionDTO>> getByStorageUnit(
             @PathVariable UUID storageUnitId) {
-        PermissionSupport.requireAction(getResourceName(), Action.READ);
+
         long startTime = System.currentTimeMillis();
         OOSMLogger.logMethodEntry(this.getClass(), "getByStorageUnit", storageUnitId);
         try {

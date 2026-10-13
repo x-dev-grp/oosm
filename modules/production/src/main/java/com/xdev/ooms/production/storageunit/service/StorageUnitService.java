@@ -61,15 +61,13 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         storageUnitRepo.save(storageUnit);
     }
 
-    /** Stock and cost change through oil transactions; the supplier through assign-supplier. */
+    /** Fields the tank form does not send; cost changes through oil transactions, the supplier through assign-supplier. */
     @Override
     protected Set<String> protectedUpdateFields() {
         return Set.of(
-                "currentVolume",
                 "avgCost",
                 "totalCost",
                 "supplier",
-                "lastInspectionDate",
                 "lastFillDate",
                 "lastEmptyDate",
                 "lastFiltrationDate"
@@ -84,11 +82,13 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         }
     }
 
+    /** Retained tank removal contract: physically remove an owned tank, including a non-empty one. */
     @Override
-    protected void checkDeletable(StorageUnit existing) {
-        if (existing.getCurrentVolume() != null && existing.getCurrentVolume() > 0) {
-            throw new IllegalStateException("Impossible de supprimer une cuve qui contient encore de l'huile.");
-        }
+    @Transactional
+    public void remove(UUID id) {
+        repository.findById(id)
+                .filter(TenantAccess::isAccessible)
+                .ifPresent(storageUnit -> repository.deleteById(storageUnit.getId()));
     }
 
     @Override

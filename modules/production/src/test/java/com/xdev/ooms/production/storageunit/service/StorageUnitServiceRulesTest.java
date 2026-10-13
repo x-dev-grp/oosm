@@ -51,7 +51,7 @@ class StorageUnitServiceRulesTest {
     }
 
     @Test
-    void updateKeepsStockCostAndSupplier() {
+    void updateAppliesFormVolumeButKeepsCostAndSupplier() {
         Supplier supplier = new Supplier();
         StorageUnit tank = tank(tenantId, 500.0);
         tank.setSupplier(supplier);
@@ -62,14 +62,14 @@ class StorageUnitServiceRulesTest {
         request.setId(tank.getId());
         request.setName("Cuve renommee");
         request.setMaxCapacity(1000.0);
-        request.setCurrentVolume(0.0);
+        request.setCurrentVolume(450.0);
         request.setAvgCost(0.0);
         request.setTotalCost(0.0);
 
         service.update(request);
 
         assertEquals("Cuve renommee", tank.getName());
-        assertEquals(500.0, tank.getCurrentVolume());
+        assertEquals(450.0, tank.getCurrentVolume());
         assertEquals(4.0, tank.getAvgCost());
         assertEquals(2000.0, tank.getTotalCost());
         assertSame(supplier, tank.getSupplier());
@@ -111,24 +111,33 @@ class StorageUnitServiceRulesTest {
     }
 
     @Test
-    void deleteRefusesTankThatStillHoldsOil() {
+    void deleteAllowsTankThatStillHoldsOil() {
         StorageUnit tank = tank(tenantId, 10.0);
-        when(repository.findByIdAndIsDeletedFalse(tank.getId())).thenReturn(Optional.of(tank));
-
-        assertThrows(IllegalStateException.class, () -> service.delete(tank.getId()));
-        verify(repository, never()).save(any());
-    }
-
-    @Test
-    void removeSoftDeletesEmptyTank() {
-        StorageUnit tank = tank(tenantId, 0.0);
         when(repository.findByIdAndIsDeletedFalse(tank.getId())).thenReturn(Optional.of(tank));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        service.remove(tank.getId());
+        service.delete(tank.getId());
 
         assertTrue(tank.getDeleted());
-        verify(repository, never()).delete(any(StorageUnit.class));
+    }
+
+    @Test
+    void removeDeletesTankOfCurrentTenant() {
+        StorageUnit tank = tank(tenantId, 0.0);
+        when(repository.findById(tank.getId())).thenReturn(Optional.of(tank));
+
+        service.remove(tank.getId());
+
+        verify(repository).deleteById(tank.getId());
+    }
+
+    @Test
+    void removeIgnoresTankOfAnotherTenant() {
+        StorageUnit tank = tank(UUID.randomUUID(), 0.0);
+        when(repository.findById(tank.getId())).thenReturn(Optional.of(tank));
+
+        service.remove(tank.getId());
+
         verify(repository, never()).deleteById(any());
     }
 
