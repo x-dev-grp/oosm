@@ -37,8 +37,3 @@ CREATE TABLE IF NOT EXISTS day_import_drive_file (
     routed BOOLEAN NOT NULL DEFAULT FALSE,
     PRIMARY KEY(tenant_id, file_id)
 );
-
--- Existing databases need a non-null version on previously created balances.
-ALTER TABLE IF EXISTS storage_unit ADD COLUMN IF NOT EXISTS balance_version BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE IF EXISTS oil_container ADD COLUMN IF NOT EXISTS balance_version BIGINT NOT NULL DEFAULT 0;
-ALTER TABLE IF EXISTS unified_delivery ADD COLUMN IF NOT EXISTS balance_version BIGINT NOT NULL DEFAULT 0;
