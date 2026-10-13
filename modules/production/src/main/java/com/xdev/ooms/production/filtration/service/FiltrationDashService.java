@@ -6,13 +6,13 @@ import com.xdev.ooms.production.filtration.repository.FiltrationOperationRepo;
 import com.xdev.ooms.sharedkernel.models.Action;
 import com.xdev.ooms.sharedkernel.repos.BaseRepository;
 import com.xdev.ooms.sharedkernel.services.impl.BaseServiceImpl;
+import com.xdev.ooms.sharedkernel.utils.TenantAccess;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import com.xdev.ooms.production.filtration.dto.FiltrationStatus;
-
-import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 @Service
 public class FiltrationDashService
@@ -28,35 +28,22 @@ public class FiltrationDashService
 
     @Override
     public Set<Action> actionsMapping(FiltrationOperation entity) {
-        if (entity != null && entity.getStatus() == FiltrationStatus.COMPLETED) {
-            return Set.of(Action.READ);
-        }
-        if (entity != null && entity.getStatus() == FiltrationStatus.IN_PROGRESS) {
-            return Set.of(Action.READ, Action.DELETE);
-        }
         return Set.of(Action.READ, Action.UPDATE, Action.DELETE);
     }
 
-    @Override
-    public FiltrationDashDto save(FiltrationDashDto request) {
-        throw new UnsupportedOperationException("Creation via /api/production/filtration uniquement.");
-    }
-
-    @Override
-    public List<FiltrationDashDto> save(List<FiltrationDashDto> request) {
-        throw new UnsupportedOperationException("Creation via /api/production/filtration uniquement.");
-    }
-
+    /** A generic update could put a completed filtration back in progress and move its oil a second time. */
     @Override
     protected void checkUpdatable(FiltrationOperation existing, FiltrationDashDto request) {
         throw new UnsupportedOperationException("Modification via /api/production/filtration uniquement.");
     }
 
+    /** Retained dashboard contract: physically remove an owned filtration record. */
     @Override
-    protected void checkDeletable(FiltrationOperation existing) {
-        if (existing.getStatus() == FiltrationStatus.COMPLETED) {
-            throw new IllegalStateException("Une filtration terminee ne peut pas etre supprimee : le stock a deja ete deplace.");
-        }
+    @Transactional
+    public void remove(UUID id) {
+        repository.findById(id)
+                .filter(TenantAccess::isAccessible)
+                .ifPresent(operation -> repository.deleteById(operation.getId()));
     }
 
     @Override

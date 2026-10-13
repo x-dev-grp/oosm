@@ -35,7 +35,6 @@ public class FiltrationController {
      */
     @PostMapping
     public ResponseEntity<?> createFiltration(@Valid @RequestBody FiltrationRequestDto req) {
-        PermissionSupport.requireAction(RESOURCE, Action.CREATE);
         try {
 
             FiltrationResultDto result = filtrationService.createFiltration(req);
@@ -61,7 +60,6 @@ public class FiltrationController {
     public ResponseEntity<?> updateFiltration(
             @PathVariable UUID operationId,
             @Valid @RequestBody FiltrationRequestDto req) {
-        PermissionSupport.requireAction(RESOURCE, Action.UPDATE);
         String requestId = generateRequestId();
 
         try {
@@ -168,7 +166,6 @@ public class FiltrationController {
     public ResponseEntity<?> addNote(
             @PathVariable UUID operationId,
             @RequestBody String note) { // La note est envoyée dans le body
-        PermissionSupport.requireAction(RESOURCE, Action.UPDATE);
         String requestId = generateRequestId();
 
         try {
@@ -191,7 +188,6 @@ public class FiltrationController {
     }
     @DeleteMapping("/{operationId}")
     public ResponseEntity<?> deleteFiltration(@PathVariable UUID operationId) {
-        PermissionSupport.requireAction(RESOURCE, Action.DELETE);
         String requestId = generateRequestId();
         try {
 
@@ -199,8 +195,6 @@ public class FiltrationController {
 
             return ResponseEntity.noContent().build(); // 204 — matches Observable<void> on the frontend
 
-        } catch (IllegalStateException e) {
-            return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
         } catch (IllegalArgumentException e) {
             return ResponseEntity
                     .status(HttpStatus.NOT_FOUND)
@@ -217,7 +211,6 @@ public class FiltrationController {
      */
     @GetMapping("/{operationId}")
     public ResponseEntity<?> getFiltration(@PathVariable UUID operationId) {
-        PermissionSupport.requireAction(RESOURCE, Action.READ);
         String requestId = generateRequestId();
 
         try {
@@ -243,7 +236,6 @@ public class FiltrationController {
      */
     @GetMapping("/all")
     public ResponseEntity<?> getAllFiltrations() {
-        PermissionSupport.requireAction(RESOURCE, Action.READ);
         String requestId = generateRequestId();
 
         try {
@@ -264,7 +256,6 @@ public class FiltrationController {
 
     @GetMapping("/status/{status}")
     public ResponseEntity<?> getFiltrationsByStatus(@PathVariable FiltrationStatus status) {
-        PermissionSupport.requireAction(RESOURCE, Action.READ);
         String requestId = generateRequestId();
 
         try {
@@ -290,7 +281,6 @@ public class FiltrationController {
     // retourner les détails de traçabilité d’une opération
     @GetMapping("/{operationId}/traceability")
     public ResponseEntity<?> getTraceability(@PathVariable UUID operationId) {
-        PermissionSupport.requireAction(RESOURCE, Action.READ);
         FiltrationResultDto dto = filtrationService.getFiltrationById(operationId);
         // On peut aussi enrichir avec les livraisons associées au lot source.
         return ResponseEntity.ok(dto);
