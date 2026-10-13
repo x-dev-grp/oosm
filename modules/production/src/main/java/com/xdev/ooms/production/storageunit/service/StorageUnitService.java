@@ -82,6 +82,15 @@ public class StorageUnitService extends BaseServiceImpl<StorageUnit, StorageUnit
         }
     }
 
+    /** Retained tank removal contract: physically remove an owned tank, including a non-empty one. */
+    @Override
+    @Transactional
+    public void remove(UUID id) {
+        repository.findById(id)
+                .filter(TenantAccess::isAccessible)
+                .ifPresent(storageUnit -> repository.deleteById(storageUnit.getId()));
+    }
+
     @Override
     @Transactional(readOnly = true)
     public StorageUnitDto findById(UUID id) {
